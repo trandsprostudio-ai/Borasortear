@@ -22,6 +22,7 @@ const Index = () => {
   const [profile, setProfile] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
   const [finishedDraw, setFinishedDraw] = useState<{ winners: any[], info: string } | null>(null);
+  const [recentWinners, setRecentWinners] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -31,7 +32,18 @@ const Index = () => {
         if (data.length > 0) setActiveModuleId(data[0].id);
       }
     };
+
+    const fetchRecentWinners = async () => {
+      const { data } = await supabase
+        .from('winners')
+        .select('*, profiles(first_name)')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (data) setRecentWinners(data);
+    };
+
     fetchModules();
+    fetchRecentWinners();
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -60,6 +72,7 @@ const Index = () => {
             })),
             info: `MESA #${payload.new.id.slice(0,4)} FINALIZADA`
           });
+          fetchRecentWinners(); // Atualiza a lista lateral
         }
       }).subscribe();
 
@@ -193,18 +206,24 @@ const Index = () => {
               <button className="text-[10px] font-black text-purple-400 hover:underline uppercase">Ver Tudo</button>
             </div>
             <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs">U{i}</div>
-                    <span className="font-bold text-sm">usuário_sortudo_{i}</span>
+              {recentWinners.length > 0 ? (
+                recentWinners.map((winner) => (
+                  <div key={winner.id} className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs">
+                        {winner.profiles?.first_name?.charAt(0) || 'U'}
+                      </div>
+                      <span className="font-bold text-sm">@{winner.profiles?.first_name || 'Usuário'}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-[10px] font-black text-white/20">POSIÇÃO {winner.position}º</span>
+                      <span className="font-black text-green-400">+{winner.prize_amount.toLocaleString()} Kz</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black text-white/20">MÓDULO M{i}</span>
-                    <span className="font-black text-green-400">+{i * 1000} Kz</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center py-4 text-white/20 text-xs font-black uppercase">Aguardando primeiros sorteios...</p>
+              )}
             </div>
           </div>
           
