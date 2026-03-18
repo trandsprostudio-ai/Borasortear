@@ -9,10 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Footer from '@/components/layout/Footer';
 
 const Support = () => {
+  const WHATSAPP_LINK = "https://wa.me/244933271690"; // Usando o número base do admin
+
   const faqs = [
     {
       q: "O que é o BORA SORTEIAR?",
-      a: "O BORA SORTEIAR é uma plataforma digital onde os utilizadores participam em sorteios organizados por módulos e salas, com valores acessíveis e resultados rápidos."
+      a: "O BORA SORTEIAR é uma plataforma digital de sorteios, organizada por módulos e salas, que permite aos utilizadores participarem em sorteios mediante a aquisição de entradas digitais, de acordo com as regras aqui estabelecidas."
     },
     {
       q: "Como participar?",
@@ -81,8 +83,13 @@ const Support = () => {
                 <MessageCircle className="text-purple-500 mb-4" size={32} />
                 <h3 className="text-xl font-black italic tracking-tighter uppercase mb-2">Suporte via WhatsApp</h3>
                 <p className="text-sm text-white/40 font-bold mb-6">Fale diretamente com nossa equipe de atendimento para resolver qualquer problema.</p>
-                <Button className="w-full h-12 bg-green-600 hover:bg-green-700 rounded-xl font-black text-xs uppercase tracking-widest">
-                  <Phone size={16} className="mr-2" /> INICIAR CONVERSA
+                <Button 
+                  asChild
+                  className="w-full h-12 bg-green-600 hover:bg-green-700 rounded-xl font-black text-xs uppercase tracking-widest"
+                >
+                  <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">
+                    <Phone size={16} className="mr-2" /> INICIAR CONVERSA
+                  </a>
                 </Button>
               </div>
 
@@ -223,8 +230,10 @@ const Support = () => {
           <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-4">Ainda tem dúvidas?</h3>
           <p className="text-white/40 font-bold mb-8">Nossa equipe está disponível 24/7 para garantir sua melhor experiência.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button className="bg-white text-black hover:bg-gray-200 font-black px-8 rounded-xl h-12">
-              FALAR COM SUPORTE
+            <Button asChild className="bg-white text-black hover:bg-gray-200 font-black px-8 rounded-xl h-12">
+              <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">
+                FALAR COM SUPORTE
+              </a>
             </Button>
           </div>
         </div>

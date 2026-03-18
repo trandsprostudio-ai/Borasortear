@@ -11,9 +11,10 @@ import WinnersCarousel from '@/components/raffle/WinnersCarousel';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, History, Trophy, Ticket, ArrowRight } from 'lucide-react';
+import { Zap, LayoutGrid, History, Trophy, Ticket, ArrowRight, Share2, Copy } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const Index = () => {
   const { rooms, loading } = useRooms();
@@ -113,6 +114,16 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
+  const copyInviteLink = () => {
+    if (!user) {
+      navigate('/auth?mode=signup');
+      return;
+    }
+    const link = `${window.location.origin}/auth?mode=signup&ref=${user.id}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Link de convite copiado! Ganhe 5% de bônus.");
+  };
+
   const activeModuleRooms = rooms
     .filter(r => r.module_id === activeModuleId && r.status === 'open')
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -155,6 +166,25 @@ const Index = () => {
               {onlinePlayers.toLocaleString()} Jogadores Online
             </span>
           </div>
+        </div>
+
+        {/* Referral Banner */}
+        <div className="mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/20 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <Share2 className="text-white" size={24} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black italic tracking-tighter uppercase">Ganhe 5% de Bônus Vitalício</h3>
+              <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Convide amigos e ganhe sobre cada prêmio que eles faturarem.</p>
+            </div>
+          </div>
+          <Button 
+            onClick={copyInviteLink}
+            className="bg-white text-black hover:bg-gray-200 font-black px-6 rounded-xl h-12 flex items-center gap-2"
+          >
+            <Copy size={16} /> COPIAR MEU LINK
+          </Button>
         </div>
 
         {/* My Active Participations */}
