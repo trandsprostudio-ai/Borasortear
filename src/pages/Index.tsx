@@ -112,11 +112,6 @@ const Index = () => {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-[#151823] border border-white/5 p-4 rounded-xl">
           <div className="flex items-center gap-6">
             <PrizeCarousel />
-            <div className="h-8 w-px bg-white/10" />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Sorteios Realizados</span>
-              <span className="text-xl font-black text-purple-500">842</span>
-            </div>
           </div>
           
           <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-lg border border-white/5">
