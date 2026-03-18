@@ -1,21 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Phone, Lock, User, Calendar, CreditCard, ShieldCheck } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Phone, Lock, User, CreditCard, ShieldCheck, UserCheck } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import Logo from '@/components/layout/Logo';
 import SplashScreen from '@/components/ui/SplashScreen';
 
 const Auth = () => {
-  // Iniciamos como falso para mostrar o Cadastro por padrão
-  const [isLogin, setIsLogin] = useState(false);
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode');
+  
+  const [isLogin, setIsLogin] = useState(mode === 'login');
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   
@@ -24,16 +26,24 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [birthDate, setBirthDate] = useState('');
+  const [age, setAge] = useState('');
   const [bankInfo, setBankInfo] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    setIsLogin(mode === 'login');
+  }, [mode]);
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!isLogin) {
+      if (parseInt(age) < 18) {
+        toast.error("Você deve ter pelo menos 18 anos para criar uma conta.");
+        return;
+      }
       if (password !== confirmPassword) {
         toast.error("As senhas não coincidem!");
         return;
@@ -45,7 +55,6 @@ const Auth = () => {
     }
 
     setLoading(true);
-    // Garantir formato internacional para o Supabase Auth (ex: +244...)
     const formattedPhone = phone.startsWith('+') ? phone : `+244${phone.replace(/\D/g, '')}`;
 
     try {
@@ -62,7 +71,7 @@ const Auth = () => {
           options: {
             data: { 
               full_name: fullName,
-              birth_date: birthDate,
+              age: parseInt(age),
               bank_info: bankInfo
             }
           }
@@ -70,21 +79,17 @@ const Auth = () => {
         
         if (error) throw error;
 
-        // Criar/Atualizar perfil com informações adicionais
         if (data.user) {
           await supabase
             .from('profiles')
             .update({ 
               first_name: fullName.split(' ')[0],
               last_name: fullName.split(' ').slice(1).join(' '),
-              // Nota: Se as colunas birth_date e bank_info não existirem no banco, 
-              // elas serão ignoradas. O ideal é que existam na tabela profiles.
             })
             .eq('id', data.user.id);
         }
       }
       
-      // Ativar Splash Screen por 3 segundos conforme solicitado
       setShowSplash(true);
       setTimeout(() => {
         navigate('/');
@@ -126,7 +131,6 @@ const Auth = () => {
 
         <form className="space-y-4" onSubmit={handleAuth}>
           {!isLogin ? (
-            // CAMPOS DE CADASTRO (PADRÃO)
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome Completo</Label>
@@ -143,15 +147,17 @@ const Auth = () => {
               </div>
               
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Data de Nascimento</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Idade (Mínimo 18)</Label>
                 <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <Input 
-                    type="date" 
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 text-white/60" 
+                    type="number" 
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    placeholder="Ex: 25"
+                    className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" 
                     required
+                    min="18"
                   />
                 </div>
               </div>
@@ -228,7 +234,6 @@ const Auth = () => {
               </div>
             </div>
           ) : (
-            // CAMPOS DE LOGIN
             <>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone</Label>

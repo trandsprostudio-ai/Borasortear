@@ -100,7 +100,7 @@ const Index = () => {
 
   const handleParticipateClick = (room: Room, module: Module) => {
     if (!user) { 
-      navigate('/auth'); 
+      navigate('/auth?mode=login'); 
       return; 
     }
     setSelectedRoom({ room, module });
@@ -242,7 +242,7 @@ const Index = () => {
             <h3 className="text-xl font-black italic mb-2">SEJA O PRÓXIMO!</h3>
             <p className="text-xs text-white/60 font-bold mb-6">Milhares de kwanzas são pagos todos os dias aos nossos jogadores.</p>
             <button 
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth?mode=signup')}
               className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-black text-sm transition-all"
             >
               DEPOSITAR AGORA

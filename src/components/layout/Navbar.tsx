@@ -75,7 +75,6 @@ const Navbar = ({ user }: NavbarProps) => {
                 </div>
                 <ChevronDown size={14} className="text-white/40" />
                 
-                {/* Menu Dropdown Simples */}
                 <div className="absolute top-full right-0 mt-2 w-48 bg-[#1A1D29] border border-white/5 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2">
                   <Link to="/wallet" className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg text-xs font-bold">
                     <Wallet size={14} /> Minha Carteira
@@ -90,13 +89,13 @@ const Navbar = ({ user }: NavbarProps) => {
             <div className="flex items-center gap-2">
               <Button 
                 variant="ghost" 
-                onClick={() => navigate('/auth')} 
+                onClick={() => navigate('/auth?mode=login')} 
                 className="text-white font-bold hover:bg-white/5"
               >
                 Entrar
               </Button>
               <Button 
-                onClick={() => navigate('/auth')} 
+                onClick={() => navigate('/auth?mode=signup')} 
                 className="bg-purple-600 hover:bg-purple-700 text-white font-black px-6 rounded-lg"
               >
                 CADASTRE-SE
