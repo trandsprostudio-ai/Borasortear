@@ -66,12 +66,14 @@ export interface Database {
           id: string
           user_id: string
           room_id: string
+          ticket_code: string
           created_at: string
         }
         Insert: {
           id?: string
           user_id: string
           room_id: string
+          ticket_code?: string
           created_at?: string
         }
       }
