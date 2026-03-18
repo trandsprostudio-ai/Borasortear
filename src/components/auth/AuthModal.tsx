@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Auth } from '@supabase/auth-ui-react';
-import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { Phone, UserPlus } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -12,51 +12,38 @@ interface AuthModalProps {
 }
 
 const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
+  const navigate = useNavigate();
+
+  const handleGoToAuth = () => {
+    onClose();
+    navigate('/auth');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="glass-card border-white/10 rounded-3xl max-w-md">
+      <DialogContent className="glass-card border-white/10 rounded-3xl max-w-sm">
         <DialogHeader className="text-center">
-          <DialogTitle className="text-2xl font-bold">Bem-vindo ao BORA SORTEIAR</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Use seu número de telefone para entrar ou criar sua conta.
+          <DialogTitle className="text-2xl font-black italic tracking-tighter">BORA JOGAR?</DialogTitle>
+          <DialogDescription className="text-white/40 font-bold text-xs uppercase tracking-widest">
+            Acesse sua conta com seu número de telefone
           </DialogDescription>
         </DialogHeader>
         
-        <div className="mt-4">
-          <Auth
-            supabaseClient={supabase}
-            appearance={{
-              theme: ThemeSupa,
-              variables: {
-                default: {
-                  colors: {
-                    brand: '#7C3AED',
-                    brandAccent: '#06B6D4',
-                    inputBackground: 'rgba(255, 255, 255, 0.05)',
-                    inputText: 'white',
-                    inputBorder: 'rgba(255, 255, 255, 0.1)',
-                  },
-                },
-              },
-            }}
-            theme="dark"
-            providers={[]}
-            onlyThirdPartyProviders={false}
-            localization={{
-              variables: {
-                sign_up: {
-                  phone_label: 'Número de Telefone',
-                  password_label: 'Senha',
-                  button_label: 'Cadastrar',
-                },
-                sign_in: {
-                  phone_label: 'Número de Telefone',
-                  password_label: 'Senha',
-                  button_label: 'Entrar',
-                }
-              }
-            }}
-          />
+        <div className="space-y-3 mt-4">
+          <Button 
+            onClick={handleGoToAuth}
+            className="w-full h-14 premium-gradient rounded-2xl font-black text-lg flex items-center justify-center gap-3"
+          >
+            <Phone size={20} /> ENTRAR COM TELEFONE
+          </Button>
+          
+          <Button 
+            variant="ghost"
+            onClick={handleGoToAuth}
+            className="w-full h-12 rounded-2xl font-black text-xs text-white/40 hover:text-white hover:bg-white/5 uppercase tracking-widest"
+          >
+            <UserPlus size={16} className="mr-2" /> Criar nova conta
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
