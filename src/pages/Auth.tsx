@@ -40,7 +40,7 @@ const Auth = () => {
     e.preventDefault();
     
     if (!isLogin) {
-      if (parseInt(age) < 18) {
+      if (!age || parseInt(age) < 18) {
         toast.error("Você deve ter pelo menos 18 anos para criar uma conta.");
         return;
       }
@@ -55,24 +55,29 @@ const Auth = () => {
     }
 
     setLoading(true);
-    const formattedPhone = phone.startsWith('+') ? phone : `+244${phone.replace(/\D/g, '')}`;
+    
+    // Técnica: Transformar telefone em um identificador de e-mail para o Supabase
+    // Isso evita o erro "Phone signups are disabled" e permite usar apenas o telefone no UI
+    const cleanPhone = phone.replace(/\D/g, '');
+    const internalEmail = `${cleanPhone}@bora-sorteiar.com`;
 
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ 
-          phone: formattedPhone, 
+          email: internalEmail, 
           password 
         });
         if (error) throw error;
       } else {
         const { data, error } = await supabase.auth.signUp({
-          phone: formattedPhone,
+          email: internalEmail,
           password,
           options: {
             data: { 
               full_name: fullName,
               age: parseInt(age),
-              bank_info: bankInfo
+              bank_info: bankInfo,
+              phone_number: phone // Guardamos o telefone real nos metadados
             }
           }
         });
@@ -80,6 +85,7 @@ const Auth = () => {
         if (error) throw error;
 
         if (data.user) {
+          // Atualizar perfil público
           await supabase
             .from('profiles')
             .update({ 
