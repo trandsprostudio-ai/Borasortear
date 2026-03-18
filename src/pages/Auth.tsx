@@ -21,7 +21,6 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   
-  // Estados do Formulário
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,30 +41,29 @@ const Auth = () => {
     const cleanPhone = phone.trim().replace(/\D/g, '');
     
     if (!cleanPhone || cleanPhone.length < 9) {
-      toast.error("Por favor, insira um número de telefone válido (9 dígitos).");
+      toast.error("Número de telefone inválido.");
       return;
     }
 
     if (!isLogin) {
       if (!age || parseInt(age) < 18) {
-        toast.error("Você deve ter pelo menos 18 anos para criar uma conta.");
+        toast.error("Mínimo 18 anos.");
         return;
       }
       if (password !== confirmPassword) {
-        toast.error("As senhas não coincidem!");
+        toast.error("Senhas diferentes.");
         return;
       }
       if (!acceptTerms) {
-        toast.error("Você deve aceitar os termos da plataforma.");
+        toast.error("Aceite os termos.");
         return;
       }
     }
 
     setLoading(true);
     
-    // Usamos o telefone como um e-mail interno para o Supabase
-    // Isso permite login com Número + Senha sem precisar de SMS (Twilio)
-    const internalEmail = `${cleanPhone}@bora-sorteiar.com`;
+    // Identificador único baseado no telefone
+    const internalEmail = `${cleanPhone}@bora.com`;
 
     try {
       if (isLogin) {
@@ -75,58 +73,56 @@ const Auth = () => {
         });
         if (error) throw error;
       } else {
+        // Tentativa de cadastro
         const { data, error } = await supabase.auth.signUp({
           email: internalEmail,
           password,
           options: {
             data: { 
               full_name: fullName,
-              age: parseInt(age),
-              bank_info: bankInfo,
-              phone_number: cleanPhone
+              phone_number: cleanPhone,
+              bank_info: bankInfo
             }
           }
         });
         
-        if (error) throw error;
+        if (error) {
+          // Se o erro for de cadastro desativado, damos uma instrução clara
+          if (error.message.includes("signups are disabled")) {
+            throw new Error("O Supabase ainda diz que o cadastro está desativado. Verifique se você SALVOU as alterações no painel (Authentication -> Providers -> Email -> Allow Signups: ON).");
+          }
+          throw error;
+        }
 
         if (data.user) {
-          // Criar perfil na tabela pública
-          await supabase
-            .from('profiles')
-            .upsert({ 
-              id: data.user.id,
-              first_name: fullName.split(' ')[0],
-              last_name: fullName.split(' ').slice(1).join(' '),
-              balance: 0
-            });
+          await supabase.from('profiles').upsert({ 
+            id: data.user.id,
+            first_name: fullName.split(' ')[0],
+            last_name: fullName.split(' ').slice(1).join(' '),
+            balance: 0
+          });
         }
       }
       
       setShowSplash(true);
-      setTimeout(() => {
-        navigate('/');
-      }, 3000);
+      setTimeout(() => navigate('/'), 2000);
       
     } catch (error: any) {
       setLoading(false);
-      if (error.message?.includes("signups are disabled")) {
-        toast.error("O cadastro está desativado no painel do Supabase. Ative 'Allow signups' no provedor de Email.");
-      } else {
-        toast.error(error.message || "Erro na operação. Verifique os dados.");
-      }
+      console.error("[Auth Error]", error);
+      toast.error(error.message);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0B12] relative overflow-hidden">
       <AnimatePresence>
-        {showSplash && <SplashScreen message={isLogin ? "Autenticando..." : "Criando sua Conta..."} />}
+        {showSplash && <SplashScreen message={isLogin ? "Entrando..." : "Criando Conta..."} />}
       </AnimatePresence>
 
       <Link to="/" className="absolute top-8 left-8 flex items-center gap-2 text-white/40 hover:text-white transition-colors z-10 font-bold text-xs uppercase tracking-widest">
         <ArrowLeft size={16} />
-        <span>Voltar ao Início</span>
+        <span>Início</span>
       </Link>
 
       <motion.div 
@@ -139,72 +135,42 @@ const Auth = () => {
             <Logo className="scale-110" />
           </div>
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
-            {isLogin ? 'Acessar Conta' : 'Cadastro de Jogador'}
+            {isLogin ? 'Acessar' : 'Cadastro'}
           </h1>
-          <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-2">
-            {isLogin ? 'Entre com seu telefone e senha' : 'Preencha seus dados para começar a ganhar'}
-          </p>
         </div>
 
         <form className="space-y-4" onSubmit={handleAuth}>
           {!isLogin ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome Completo</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome</Label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Seu nome completo" 
-                    className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" 
-                    required
-                  />
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nome Completo" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Idade (Mínimo 18)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Idade</Label>
                 <div className="relative">
                   <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    type="number" 
-                    value={age}
-                    onChange={(e) => setAge(e.target.value)}
-                    placeholder="Ex: 25"
-                    className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" 
-                    required
-                    min="18"
-                  />
+                  <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="18+" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required min="18" />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone (Angola)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone</Label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    type="tel" 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="9XX XXX XXX" 
-                    className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" 
-                    required
-                  />
+                  <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Coordenadas Bancárias (IBAN/Conta)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">IBAN / Conta</Label>
                 <div className="relative">
                   <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    value={bankInfo}
-                    onChange={(e) => setBankInfo(e.target.value)}
-                    placeholder="AO06 ...." 
-                    className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" 
-                    required
-                  />
+                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Dados para saque" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
 
@@ -212,42 +178,21 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Senha</Label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••" 
-                    className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" 
-                    required
-                  />
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Confirmar Senha</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Confirmar</Label>
                 <div className="relative">
                   <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    type="password" 
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••" 
-                    className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" 
-                    required
-                  />
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
 
               <div className="md:col-span-2 flex items-center space-x-2 pt-2">
-                <Checkbox 
-                  id="terms" 
-                  checked={acceptTerms} 
-                  onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
-                  className="border-white/20 data-[state=checked]:bg-purple-600"
-                />
-                <label htmlFor="terms" className="text-[10px] font-bold text-white/40 leading-none cursor-pointer">
-                  Aceito os termos e condições da plataforma BORA SORTEIAR
-                </label>
+                <Checkbox id="terms" checked={acceptTerms} onCheckedChange={(c) => setAcceptTerms(c as boolean)} className="border-white/20" />
+                <label htmlFor="terms" className="text-[10px] font-bold text-white/40 cursor-pointer">Aceito os termos do BORA SORTEIAR</label>
               </div>
             </div>
           ) : (
@@ -256,48 +201,27 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone</Label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    type="tel" 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="9XX XXX XXX" 
-                    className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" 
-                    required
-                  />
+                  <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" required />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Senha</Label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••" 
-                    className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" 
-                    required
-                  />
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" required />
                 </div>
               </div>
             </>
           )}
 
-          <Button 
-            type="submit" 
-            disabled={loading}
-            className="w-full premium-gradient h-14 rounded-2xl font-black text-lg mt-4 shadow-xl shadow-purple-500/20"
-          >
-            {loading ? 'PROCESSANDO...' : isLogin ? 'ENTRAR AGORA' : 'CRIAR MINHA CONTA'}
+          <Button type="submit" disabled={loading} className="w-full premium-gradient h-14 rounded-2xl font-black text-lg mt-4">
+            {loading ? 'CARREGANDO...' : isLogin ? 'ENTRAR' : 'CADASTRAR'}
           </Button>
         </form>
 
         <div className="mt-8 text-center">
-          <button 
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-[10px] text-white/40 hover:text-purple-400 font-black uppercase tracking-widest transition-colors"
-          >
-            {isLogin ? 'Não tem conta? Cadastre-se aqui' : 'Já possui conta? Faça o login'}
+          <button onClick={() => setIsLogin(!isLogin)} className="text-[10px] text-white/40 hover:text-purple-400 font-black uppercase tracking-widest">
+            {isLogin ? 'Criar conta' : 'Já tenho conta'}
           </button>
         </div>
       </motion.div>
