@@ -63,19 +63,20 @@ const Auth = () => {
 
     setLoading(true);
     
-    // Formato E.164 para Angola (+244)
-    const formattedPhone = `+244${cleanPhone}`;
+    // Usamos o telefone como parte de um e-mail interno para evitar erros de Twilio/SMS
+    // IMPORTANTE: Desative "Confirm Email" no painel do Supabase para login instantâneo
+    const internalEmail = `${cleanPhone}@bora.com`;
 
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ 
-          phone: formattedPhone, 
+          email: internalEmail, 
           password 
         });
         if (error) throw error;
       } else {
         const { data, error } = await supabase.auth.signUp({
-          phone: formattedPhone,
+          email: internalEmail,
           password,
           options: {
             data: { 
@@ -90,8 +91,7 @@ const Auth = () => {
         if (error) throw error;
 
         if (data.user) {
-          // Criar perfil na tabela pública usando o UUID gerado pelo Auth
-          // O identificador de login será o telefone, mas o ID interno permanece UUID para integridade
+          // Criar/Atualizar perfil na tabela pública
           await supabase
             .from('profiles')
             .upsert({ 
@@ -110,7 +110,12 @@ const Auth = () => {
       
     } catch (error: any) {
       setLoading(false);
-      toast.error(error.message || "Erro na operação. Verifique os dados.");
+      // Tratamento amigável para o limite de e-mail do Supabase
+      if (error.message?.includes("rate limit")) {
+        toast.error("Muitas tentativas! Por favor, tente novamente em alguns minutos ou desative a confirmação de e-mail no painel.");
+      } else {
+        toast.error(error.message || "Erro na operação. Verifique os dados.");
+      }
     }
   };
 
