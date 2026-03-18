@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '@/components/ui/SplashScreen';
+import TransactionModal from '@/components/wallet/TransactionModal';
 
 interface NavbarProps {
   user?: any;
@@ -27,6 +28,7 @@ interface NavbarProps {
 const Navbar = ({ user }: NavbarProps) => {
   const [profile, setProfile] = useState<any>(null);
   const [showExitSplash, setShowExitSplash] = useState(false);
+  const [isDepositOpen, setIsDepositOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,6 +67,16 @@ const Navbar = ({ user }: NavbarProps) => {
         {showExitSplash && <SplashScreen message="Saindo da conta..." />}
       </AnimatePresence>
 
+      {user && (
+        <TransactionModal 
+          isOpen={isDepositOpen} 
+          onClose={() => setIsDepositOpen(false)} 
+          type="deposit" 
+          user={user} 
+          currentBalance={profile?.balance || 0} 
+        />
+      )}
+
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F111A]/80 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-4">
         <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between">
           <Link to="/" className="hover:opacity-80 transition-opacity">
@@ -74,17 +86,21 @@ const Navbar = ({ user }: NavbarProps) => {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <Link to="/wallet" className="hidden sm:flex items-center bg-[#1A1D29] rounded-xl p-1 border border-white/5 hover:border-purple-500/30 transition-all group">
-                  <div className="px-4 py-1 flex flex-col items-end">
+                <div className="hidden sm:flex items-center bg-[#1A1D29] rounded-xl p-1 border border-white/5 hover:border-purple-500/30 transition-all group">
+                  <Link to="/wallet" className="px-4 py-1 flex flex-col items-end">
                     <span className="text-[9px] text-white/30 font-black leading-none uppercase tracking-tighter">Saldo Disponível</span>
                     <span className="text-sm font-black text-green-400 leading-tight">
                       {profile?.balance?.toLocaleString() || '0'} <span className="text-[10px]">Kz</span>
                     </span>
-                  </div>
-                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white font-black h-9 px-4 rounded-lg shadow-lg shadow-purple-900/20">
+                  </Link>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setIsDepositOpen(true)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-black h-9 px-4 rounded-lg shadow-lg shadow-purple-900/20"
+                  >
                     DEPOSITAR
                   </Button>
-                </Link>
+                </div>
                 
                 <div className="h-8 w-px bg-white/5 mx-1" />
                 

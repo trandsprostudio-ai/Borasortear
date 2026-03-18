@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import MobileNav from '@/components/layout/MobileNav';
+import TransactionModal from '@/components/wallet/TransactionModal';
 
 const Wallet = () => {
   const [profile, setProfile] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [modalConfig, setModalConfig] = useState<{ open: boolean, type: 'deposit' | 'withdrawal' }>({ open: false, type: 'deposit' });
 
   useEffect(() => {
     const getSession = async () => {
@@ -48,6 +50,14 @@ const Wallet = () => {
     <div className="min-h-screen bg-[#0A0B12] text-white pb-24">
       <Navbar user={user} />
       
+      <TransactionModal 
+        isOpen={modalConfig.open} 
+        onClose={() => setModalConfig({ ...modalConfig, open: false })}
+        type={modalConfig.type}
+        user={user}
+        currentBalance={profile?.balance || 0}
+      />
+
       <main className="max-w-6xl mx-auto px-4 pt-28">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
           {/* Card de Saldo Principal */}
@@ -73,10 +83,17 @@ const Wallet = () => {
               </h1>
               
               <div className="flex flex-wrap gap-3">
-                <Button className="bg-white text-purple-600 hover:bg-white/90 h-14 px-8 rounded-2xl font-black text-sm shadow-xl">
+                <Button 
+                  onClick={() => setModalConfig({ open: true, type: 'deposit' })}
+                  className="bg-white text-purple-600 hover:bg-white/90 h-14 px-8 rounded-2xl font-black text-sm shadow-xl"
+                >
                   <Plus size={20} className="mr-2" /> DEPOSITAR
                 </Button>
-                <Button variant="ghost" className="bg-black/20 text-white hover:bg-black/30 h-14 px-8 rounded-2xl font-black text-sm border border-white/10">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setModalConfig({ open: true, type: 'withdrawal' })}
+                  className="bg-black/20 text-white hover:bg-black/30 h-14 px-8 rounded-2xl font-black text-sm border border-white/10"
+                >
                   <ArrowDownLeft size={20} className="mr-2" /> SOLICITAR SAQUE
                 </Button>
               </div>
@@ -112,10 +129,6 @@ const Wallet = () => {
                 </div>
               </div>
             </motion.div>
-            
-            <Button asChild variant="ghost" className="w-full h-16 rounded-3xl bg-white/5 border border-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest">
-              <Link to="/ranking">Ver Ranking Global <ArrowUpRight size={14} className="ml-2 text-purple-500" /></Link>
-            </Button>
           </div>
         </div>
 
@@ -169,9 +182,6 @@ const Wallet = () => {
                   <History size={32} />
                 </div>
                 <p className="text-white/20 font-black text-[10px] uppercase tracking-widest">Nenhuma atividade registrada ainda.</p>
-                <Button asChild variant="link" className="text-purple-500 mt-2 font-black text-xs uppercase">
-                  <Link to="/">Começar a Jogar</Link>
-                </Button>
               </div>
             )}
           </div>
