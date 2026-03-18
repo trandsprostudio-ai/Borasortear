@@ -18,6 +18,9 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
   const progress = (room.currentParticipants / room.maxParticipants) * 100;
   const isAlmostFull = progress > 90;
 
+  // Cálculo do prêmio com base nos participantes atuais (ex: 90% do valor arrecadado)
+  const currentPrizePool = module.price * room.currentParticipants * 0.9;
+
   useEffect(() => {
     const calculateTime = () => {
       const expiry = new Date(room.expiresAt).getTime();
@@ -81,8 +84,10 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
 
         <div className="flex flex-col gap-2 pt-2">
           <div className="flex items-center justify-between text-[9px] font-black text-white/20 uppercase">
-            <span>Prêmio Estimado:</span>
-            <span className="text-green-400">{(module.price * room.maxParticipants * 0.9).toLocaleString()} Kz</span>
+            <span>Prêmio Acumulado:</span>
+            <span className="text-green-400 font-black">
+              {currentPrizePool > 0 ? currentPrizePool.toLocaleString() : "0"} Kz
+            </span>
           </div>
           
           <Button 
