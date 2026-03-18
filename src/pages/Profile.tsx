@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap, Trash2, AlertTriangle } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap, Trash2, AlertTriangle, Share2, Copy } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -69,22 +68,19 @@ const Profile = () => {
     }
   };
 
+  const copyInviteLink = () => {
+    const link = `${window.location.origin}/auth?mode=signup&ref=${user.id}`;
+    navigator.clipboard.writeText(link);
+    toast.success("Link de convite copiado! Ganhe 5% de bônus.");
+  };
+
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      // 1. Limpar dados relacionados (O cascade no banco deve cuidar disso, mas garantimos aqui)
-      // Deletar perfil (isso deve disparar o cascade para transações e participações se configurado)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
-
+      const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
       if (profileError) throw profileError;
-
-      // 2. Sair da conta
       await supabase.auth.signOut();
-      
-      toast.success("Sua conta e todos os seus dados foram excluídos permanentemente.");
+      toast.success("Conta excluída permanentemente.");
       navigate('/');
     } catch (error: any) {
       toast.error("Erro ao excluir conta: " + error.message);
@@ -100,7 +96,6 @@ const Profile = () => {
       
       <main className="max-w-4xl mx-auto px-4 pt-28">
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Sidebar de Stats */}
           <div className="w-full md:w-1/3 space-y-6">
             <div className="glass-card p-8 rounded-[2.5rem] text-center border-white/5">
               <div className="w-24 h-24 bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-purple-500/20">
@@ -123,7 +118,22 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Danger Zone */}
+            {/* Referral Card */}
+            <div className="glass-card p-6 rounded-[2rem] border-purple-500/20 bg-purple-500/5">
+              <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <Share2 size={14} /> Programa de Bônus
+              </h4>
+              <p className="text-[11px] font-bold text-white/40 mb-4 leading-relaxed">
+                Convide amigos e ganhe <span className="text-green-400">5% de bônus</span> sobre todos os prêmios que eles ganharem!
+              </p>
+              <Button 
+                onClick={copyInviteLink}
+                className="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 font-black text-[10px] uppercase tracking-widest"
+              >
+                <Copy size={14} className="mr-2" /> COPIAR MEU LINK
+              </Button>
+            </div>
+
             <div className="glass-card p-6 rounded-[2rem] border-red-500/10 bg-red-500/5">
               <h4 className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <AlertTriangle size={14} /> Zona de Perigo
@@ -138,24 +148,18 @@ const Profile = () => {
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-xl font-black italic tracking-tighter text-red-500">EXCLUIR TUDO DEFINITIVAMENTE?</AlertDialogTitle>
                     <AlertDialogDescription className="text-white/40 font-bold">
-                      Esta ação é irreversível. Seu saldo, histórico de sorteios e transações serão apagados permanentemente para liberar espaço em nossos servidores.
+                      Esta ação é irreversível. Seu saldo e histórico serão apagados.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-xl border-white/10 bg-transparent hover:bg-white/5 font-bold">CANCELAR</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleDeleteAccount}
-                      className="rounded-xl bg-red-500 hover:bg-red-600 font-black"
-                    >
-                      {deleting ? "APAGANDO..." : "SIM, APAGAR TUDO"}
-                    </AlertDialogAction>
+                    <AlertDialogCancel className="rounded-xl border-white/10 bg-transparent font-bold">CANCELAR</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount} className="rounded-xl bg-red-500 font-black">SIM, APAGAR</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
             </div>
           </div>
 
-          {/* Formulário de Edição */}
           <div className="flex-1">
             <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
               <h3 className="text-xl font-black italic tracking-tighter uppercase mb-8 flex items-center gap-3">

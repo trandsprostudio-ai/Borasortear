@@ -16,6 +16,7 @@ import SplashScreen from '@/components/ui/SplashScreen';
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
+  const refId = searchParams.get('ref');
   
   const [isLogin, setIsLogin] = useState(mode === 'login');
   const [loading, setLoading] = useState(false);
@@ -61,19 +62,13 @@ const Auth = () => {
     }
 
     setLoading(true);
-    
-    // Identificador único baseado no telefone
     const internalEmail = `${cleanPhone}@bora.com`;
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ 
-          email: internalEmail, 
-          password 
-        });
+        const { error } = await supabase.auth.signInWithPassword({ email: internalEmail, password });
         if (error) throw error;
       } else {
-        // Tentativa de cadastro
         const { data, error } = await supabase.auth.signUp({
           email: internalEmail,
           password,
@@ -86,20 +81,15 @@ const Auth = () => {
           }
         });
         
-        if (error) {
-          // Se o erro for de cadastro desativado, damos uma instrução clara
-          if (error.message.includes("signups are disabled")) {
-            throw new Error("O Supabase ainda diz que o cadastro está desativado. Verifique se você SALVOU as alterações no painel (Authentication -> Providers -> Email -> Allow Signups: ON).");
-          }
-          throw error;
-        }
+        if (error) throw error;
 
         if (data.user) {
           await supabase.from('profiles').upsert({ 
             id: data.user.id,
             first_name: fullName.split(' ')[0],
             last_name: fullName.split(' ').slice(1).join(' '),
-            balance: 0
+            balance: 0,
+            referred_by: refId || null // Salva quem indicou
           });
         }
       }
@@ -109,7 +99,6 @@ const Auth = () => {
       
     } catch (error: any) {
       setLoading(false);
-      console.error("[Auth Error]", error);
       toast.error(error.message);
     }
   };
@@ -137,6 +126,11 @@ const Auth = () => {
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
             {isLogin ? 'Acessar' : 'Cadastro'}
           </h1>
+          {refId && !isLogin && (
+            <p className="text-[10px] text-purple-400 font-black uppercase tracking-widest mt-2">
+              Você foi convidado! Ganhe bônus ao jogar.
+            </p>
+          )}
         </div>
 
         <form className="space-y-4" onSubmit={handleAuth}>

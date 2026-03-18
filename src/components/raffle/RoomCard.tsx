@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Users, Zap, Flame, Trophy, Clock } from 'lucide-react';
+import { Users, Clock, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RoomCardProps {
   room: Room;
@@ -18,7 +20,6 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
   const progress = (room.currentParticipants / room.maxParticipants) * 100;
   const isAlmostFull = progress > 90;
 
-  // Cálculo do prêmio com base nos participantes atuais (ex: 90% do valor arrecadado)
   const currentPrizePool = module.price * room.currentParticipants * 0.9;
 
   useEffect(() => {
@@ -26,19 +27,28 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
       const expiry = new Date(room.expiresAt).getTime();
       const now = new Date().getTime();
       const diff = expiry - now;
-
       if (diff <= 0) return "SORTEANDO...";
-      
       const h = Math.floor(diff / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((diff % (1000 * 60)) / 1000);
-      
       return `${h}h ${m}m ${s}s`;
     };
-
     const timer = setInterval(() => setTimeLeft(calculateTime()), 1000);
     return () => clearInterval(timer);
   }, [room.expiresAt]);
+
+  const handleInvite = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Faça login para convidar amigos e ganhar bônus!");
+      return;
+    }
+    
+    const inviteUrl = `${window.location.origin}/auth?mode=signup&ref=${session.user.id}&room=${room.id}`;
+    navigator.clipboard.writeText(inviteUrl);
+    toast.success("Link de convite copiado! Ganhe 5% dos prêmios do seu amigo.");
+  };
 
   return (
     <motion.div 
@@ -57,12 +67,13 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             <span className="text-[10px] font-bold text-purple-500">KZ</span>
           </div>
         </div>
-        <div className="flex flex-col items-end">
-          <div className="flex items-center gap-1 text-[10px] font-black text-amber-500 bg-amber-500/10 px-2 py-1 rounded-md">
-            <Clock size={10} />
-            <span>{timeLeft}</span>
-          </div>
-        </div>
+        <button 
+          onClick={handleInvite}
+          className="p-2 bg-white/5 rounded-lg text-white/40 hover:text-purple-400 hover:bg-purple-500/10 transition-all"
+          title="Convidar e ganhar bônus"
+        >
+          <Share2 size={16} />
+        </button>
       </div>
 
       <div className="space-y-3">
@@ -71,7 +82,10 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             <Users size={12} />
             <span>{room.currentParticipants}/{room.maxParticipants}</span>
           </div>
-          <span className={isAlmostFull ? 'text-amber-500' : 'text-purple-500'}>{Math.round(progress)}%</span>
+          <div className="flex items-center gap-1 text-amber-500">
+            <Clock size={10} />
+            <span>{timeLeft}</span>
+          </div>
         </div>
         
         <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
@@ -93,7 +107,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
           <Button 
             size="sm" 
             onClick={() => onParticipate(room, module)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[11px] uppercase tracking-widest h-10 w-full rounded-lg shadow-lg shadow-purple-900/20 group-hover:scale-[1.02] transition-transform"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[11px] uppercase tracking-widest h-10 w-full rounded-lg shadow-lg"
           >
             ENTRAR NA MESA
           </Button>
