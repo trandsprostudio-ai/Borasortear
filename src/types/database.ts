@@ -85,6 +85,8 @@ export interface Database {
           avatar_url: string | null
           balance: number
           updated_at: string
+          bank_info: string | null
+          referred_by: string | null
         }
         Insert: {
           id: string
@@ -93,6 +95,8 @@ export interface Database {
           avatar_url?: string | null
           balance?: number
           updated_at?: string
+          bank_info?: string | null
+          referred_by?: string | null
         }
         Update: {
           id?: string
@@ -101,6 +105,50 @@ export interface Database {
           avatar_url?: string | null
           balance?: number
           updated_at?: string
+          bank_info?: string | null
+          referred_by?: string | null
+        }
+      }
+      transactions: {
+        Row: {
+          id: string
+          user_id: string
+          type: 'deposit' | 'withdrawal'
+          amount: number
+          status: 'pending' | 'completed' | 'rejected'
+          payment_method: string | null
+          proof_url: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: 'deposit' | 'withdrawal'
+          amount: number
+          status?: 'pending' | 'completed' | 'rejected'
+          payment_method?: string | null
+          proof_url?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: 'deposit' | 'withdrawal'
+          amount?: number
+          status?: 'pending' | 'completed' | 'rejected'
+          payment_method?: string | null
+          proof_url?: string | null
+          created_at?: string
+        }
+      }
+      winners: {
+        Row: {
+          id: string
+          draw_id: string
+          user_id: string
+          prize_amount: number
+          position: number
+          created_at: string
         }
       }
     }
