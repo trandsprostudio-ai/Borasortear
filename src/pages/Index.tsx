@@ -7,6 +7,7 @@ import RoomCard from '@/components/raffle/RoomCard';
 import JoinRoomModal from '@/components/raffle/JoinRoomModal';
 import DrawOverlay from '@/components/raffle/DrawOverlay';
 import PrizeCarousel from '@/components/raffle/PrizeCarousel';
+import WinnersCarousel from '@/components/raffle/WinnersCarousel';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +24,7 @@ const Index = () => {
   const [myParticipations, setMyParticipations] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
   const [finishedDraw, setFinishedDraw] = useState<{ winners: any[], info: string } | null>(null);
-  const [recentWinners, setRecentWinners] = useState<any[]>([]);
+  const [topWinners, setTopWinners] = useState<any[]>([]);
   const [onlinePlayers, setOnlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   
   const navigate = useNavigate();
@@ -37,17 +38,17 @@ const Index = () => {
       }
     };
 
-    const fetchRecentWinners = async () => {
+    const fetchTopWinners = async () => {
       const { data } = await supabase
         .from('winners')
         .select('*, profiles(first_name)')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      if (data) setRecentWinners(data);
+        .order('prize_amount', { ascending: false })
+        .limit(10);
+      if (data) setTopWinners(data);
     };
 
     fetchModules();
-    fetchRecentWinners();
+    fetchTopWinners();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
@@ -78,7 +79,7 @@ const Index = () => {
             })),
             info: `MESA #${payload.new.id.slice(0,4)} FINALIZADA`
           });
-          fetchRecentWinners();
+          fetchTopWinners();
           if (user) fetchMyParticipations(user.id);
         }
       }).subscribe();
@@ -156,7 +157,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* My Active Participations (Only for logged users) */}
+        {/* My Active Participations */}
         {user && myParticipations.length > 0 && (
           <div className="mb-12">
             <div className="flex items-center justify-between mb-5">
@@ -164,7 +165,7 @@ const Index = () => {
                 <Ticket size={18} className="text-purple-500" />
                 <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">Minhas Participações Recentes</h2>
               </div>
-              <Button variant="ghost" onClick={() => navigate('/wallet')} className="text-[10px] font-black text-purple-400 uppercase tracking-widest h-auto p-0">Ver Todas</Button>
+              <Button variant="ghost" onClick={() => navigate('/my-participations')} className="text-[10px] font-black text-purple-400 uppercase tracking-widest h-auto p-0">Ver Todas</Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {myParticipations.map((p) => (
@@ -253,40 +254,17 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Winners & CTA Section */}
+        {/* Winners Section & CTA */}
         <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-[#151823]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3 text-white/40">
-                <History size={18} className="text-purple-500" /> Histórico de Ganhadores
+            <div className="flex items-center gap-3 mb-8">
+              <History size={18} className="text-purple-500" />
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">
+                Maiores Ganhadores da Plataforma
               </h3>
-              <button onClick={() => navigate('/ranking')} className="text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest transition-colors">Ver Ranking Completo</button>
             </div>
-            <div className="space-y-4">
-              {recentWinners.length > 0 ? (
-                recentWinners.map((winner) => (
-                  <div key={winner.id} className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5 hover:border-purple-500/20 transition-all group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center text-purple-400 font-black text-sm border border-white/5">
-                        {winner.profiles?.first_name?.charAt(0) || 'U'}
-                      </div>
-                      <div>
-                        <p className="font-black text-sm text-white">@{winner.profiles?.first_name || 'Usuário'}</p>
-                        <p className="text-[9px] font-bold text-white/20 uppercase tracking-tighter">Posição: {winner.position}º Lugar</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-black text-base md:text-lg text-green-400">+{winner.prize_amount.toLocaleString()} Kz</p>
-                      <p className="text-[9px] font-bold text-white/20 uppercase">Sorteio Finalizado</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="py-10 text-center">
-                  <p className="text-white/10 font-black text-xs uppercase tracking-widest">Aguardando os próximos resultados...</p>
-                </div>
-              )}
-            </div>
+            
+            <WinnersCarousel winners={topWinners} />
           </div>
           
           <div className="bg-gradient-to-br from-purple-900/40 via-[#151823] to-black border border-purple-500/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden group">
