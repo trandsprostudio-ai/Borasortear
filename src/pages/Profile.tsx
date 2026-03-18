@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap, Trash2, AlertTriangle, Share2, Copy } from 'lucide-react';
+import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap, Trash2, AlertTriangle, Share2, Copy, Users } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +29,7 @@ const Profile = () => {
   const [deleting, setDeleting] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
+  const [referralStats, setReferralStats] = useState({ count: 0, totalEarned: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,6 +39,7 @@ const Profile = () => {
         setUser(session.user);
         const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         setProfile(data);
+        fetchReferralStats(session.user.id);
       } else {
         navigate('/auth?mode=login');
       }
@@ -45,6 +47,18 @@ const Profile = () => {
     };
     fetchUser();
   }, [navigate]);
+
+  const fetchReferralStats = async (userId: string) => {
+    const [refCount, refEarnings] = await Promise.all([
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('referred_by', userId),
+      supabase.from('transactions').select('amount').eq('user_id', userId).eq('payment_method', 'Bônus de Indicação').eq('status', 'completed')
+    ]);
+
+    setReferralStats({
+      count: refCount.count || 0,
+      totalEarned: refEarnings.data?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0
+    });
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,11 +118,16 @@ const Profile = () => {
               <h2 className="text-2xl font-black italic tracking-tighter uppercase">{profile?.first_name || 'Jogador'}</h2>
               <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mb-6">Membro desde {new Date(user?.created_at).getFullYear()}</p>
               
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white/5 p-3 rounded-2xl">
                   <Trophy size={16} className="text-amber-500 mx-auto mb-1" />
                   <p className="text-[10px] font-black text-white/20 uppercase">Vitórias</p>
                   <p className="font-black">0</p>
+                </div>
+                <div className="bg-white/5 p-3 rounded-2xl">
+                  <Users size={16} className="text-purple-500 mx-auto mb-1" />
+                  <p className="text-[10px] font-black text-white/20 uppercase">Indicados</p>
+                  <p className="font-black">{referralStats.count}</p>
                 </div>
               </div>
             </div>
@@ -118,6 +137,10 @@ const Profile = () => {
               <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <Share2 size={14} /> Programa de Bônus
               </h4>
+              <div className="mb-4">
+                <p className="text-[9px] font-black text-white/20 uppercase mb-1">Total Ganho em Bônus</p>
+                <p className="text-xl font-black text-green-400">{referralStats.totalEarned.toLocaleString()} Kz</p>
+              </div>
               <p className="text-[11px] font-bold text-white/40 mb-4 leading-relaxed">
                 Convide amigos e ganhe <span className="text-green-400">5% de bônus</span> sobre todos os prêmios que eles ganharem!
               </p>
