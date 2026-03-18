@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import RoomCard from '@/components/raffle/RoomCard';
 import { MODULES, Room } from '@/types/raffle';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Zap, History, TrendingUp, Users } from 'lucide-react';
+import { Trophy, Zap, History, TrendingUp, Users, Wallet, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // Mock de salas ativas
