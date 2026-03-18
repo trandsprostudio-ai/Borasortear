@@ -104,16 +104,11 @@ const Profile = () => {
               <h2 className="text-2xl font-black italic tracking-tighter uppercase">{profile?.first_name || 'Jogador'}</h2>
               <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mb-6">Membro desde {new Date(user?.created_at).getFullYear()}</p>
               
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <div className="bg-white/5 p-3 rounded-2xl">
                   <Trophy size={16} className="text-amber-500 mx-auto mb-1" />
                   <p className="text-[10px] font-black text-white/20 uppercase">Vitórias</p>
                   <p className="font-black">0</p>
-                </div>
-                <div className="bg-white/5 p-3 rounded-2xl">
-                  <Zap size={16} className="text-purple-500 mx-auto mb-1" />
-                  <p className="text-[10px] font-black text-white/20 uppercase">Nível</p>
-                  <p className="font-black">1</p>
                 </div>
               </div>
             </div>

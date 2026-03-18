@@ -31,7 +31,6 @@ const FloatingNav = () => {
     { icon: LayoutGrid, label: 'Minhas Mesas', path: '/my-participations' },
     { icon: Search, label: 'Consultar', path: '/consult-draw' },
     { icon: HelpCircle, label: 'Suporte', path: '/support' },
-    { icon: User, label: 'Perfil', path: '/profile' },
   ];
 
   return (
