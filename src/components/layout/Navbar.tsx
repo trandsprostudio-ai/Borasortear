@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Wallet, User, Bell, LogOut, ChevronDown, ShieldCheck } from 'lucide-react';
+import { Wallet, User, Bell, LogOut, ChevronDown, ShieldCheck, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -79,9 +79,15 @@ const Navbar = ({ user }: NavbarProps) => {
 
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F111A]/80 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-4">
         <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between">
-          <Link to="/" className="hover:opacity-80 transition-opacity">
-            <Logo />
-          </Link>
+          <div className="flex items-center gap-8">
+            <Link to="/" className="hover:opacity-80 transition-opacity">
+              <Logo />
+            </Link>
+            
+            <Link to="/consult-draw" className="hidden md:flex items-center gap-2 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">
+              <Search size={14} className="text-purple-500" /> Consultar Bilhete
+            </Link>
+          </div>
 
           <div className="flex items-center gap-3">
             {user ? (
@@ -131,6 +137,10 @@ const Navbar = ({ user }: NavbarProps) => {
                       <Wallet size={16} className="text-purple-500" /> Minha Carteira
                     </Link>
                     
+                    <Link to="/consult-draw" className="flex md:hidden items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-xs font-black transition-colors">
+                      <Search size={16} className="text-blue-500" /> Consultar Bilhete
+                    </Link>
+                    
                     <Link to="/ranking" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-xs font-black transition-colors">
                       <ShieldCheck size={16} className="text-amber-500" /> Hall da Fama
                     </Link>
@@ -159,6 +169,9 @@ const Navbar = ({ user }: NavbarProps) => {
               </>
             ) : (
               <div className="flex items-center gap-2">
+                <Link to="/consult-draw" className="mr-4 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">
+                  Consultar
+                </Link>
                 <Button 
                   variant="ghost" 
                   onClick={() => navigate('/auth?mode=login')} 

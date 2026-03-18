@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Home, Trophy, Wallet, User } from 'lucide-react';
+import { Home, Trophy, Wallet, Search } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +10,7 @@ const MobileNav = () => {
   
   const navItems = [
     { icon: Home, label: 'Início', path: '/' },
+    { icon: Search, label: 'Consultar', path: '/consult-draw' },
     { icon: Trophy, label: 'Ranking', path: '/ranking' },
     { icon: Wallet, label: 'Carteira', path: '/wallet' },
   ];
