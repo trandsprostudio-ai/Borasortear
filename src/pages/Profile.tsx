@@ -3,20 +3,34 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap } from 'lucide-react';
+import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap, Trash2, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import MobileNav from '@/components/layout/MobileNav';
+import FloatingNav from '@/components/layout/FloatingNav';
 import Footer from '@/components/layout/Footer';
+import { useNavigate } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -25,11 +39,13 @@ const Profile = () => {
         setUser(session.user);
         const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         setProfile(data);
+      } else {
+        navigate('/auth?mode=login');
       }
       setLoading(false);
     };
     fetchUser();
-  }, []);
+  }, [navigate]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +56,7 @@ const Profile = () => {
         .update({
           first_name: profile.first_name,
           last_name: profile.last_name,
-          bank_info: profile.bank_info // Assumindo que adicionamos esta coluna no banco
+          bank_info: profile.bank_info
         })
         .eq('id', user.id);
 
@@ -53,10 +69,33 @@ const Profile = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      // 1. Limpar dados relacionados (O cascade no banco deve cuidar disso, mas garantimos aqui)
+      // Deletar perfil (isso deve disparar o cascade para transações e participações se configurado)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // 2. Sair da conta
+      await supabase.auth.signOut();
+      
+      toast.success("Sua conta e todos os seus dados foram excluídos permanentemente.");
+      navigate('/');
+    } catch (error: any) {
+      toast.error("Erro ao excluir conta: " + error.message);
+      setDeleting(false);
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
   return (
-    <div className="min-h-screen bg-[#0A0B12] text-white pb-24">
+    <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
       <Navbar user={user} />
       
       <main className="max-w-4xl mx-auto px-4 pt-28">
@@ -82,6 +121,37 @@ const Profile = () => {
                   <p className="font-black">1</p>
                 </div>
               </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="glass-card p-6 rounded-[2rem] border-red-500/10 bg-red-500/5">
+              <h4 className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <AlertTriangle size={14} /> Zona de Perigo
+              </h4>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" className="w-full h-12 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 font-black text-[10px] uppercase tracking-widest">
+                    <Trash2 size={16} className="mr-2" /> APAGAR MINHA CONTA
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="glass-card border-white/10 rounded-3xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-xl font-black italic tracking-tighter text-red-500">EXCLUIR TUDO DEFINITIVAMENTE?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-white/40 font-bold">
+                      Esta ação é irreversível. Seu saldo, histórico de sorteios e transações serão apagados permanentemente para liberar espaço em nossos servidores.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="rounded-xl border-white/10 bg-transparent hover:bg-white/5 font-bold">CANCELAR</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDeleteAccount}
+                      className="rounded-xl bg-red-500 hover:bg-red-600 font-black"
+                    >
+                      {deleting ? "APAGANDO..." : "SIM, APAGAR TUDO"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
 
@@ -135,7 +205,6 @@ const Profile = () => {
                       className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" 
                     />
                   </div>
-                  <p className="text-[9px] font-bold text-white/20 uppercase tracking-tighter">Certifique-se de que os dados estão corretos para evitar atrasos nos pagamentos.</p>
                 </div>
 
                 <Button 
@@ -151,7 +220,7 @@ const Profile = () => {
         </div>
       </main>
 
-      <MobileNav />
+      <FloatingNav />
       <Footer />
     </div>
   );

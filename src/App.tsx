@@ -13,6 +13,7 @@ import Support from "./pages/Support";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import FloatingNav from "./components/layout/FloatingNav";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <FloatingNav />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
