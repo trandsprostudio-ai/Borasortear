@@ -63,9 +63,9 @@ const Auth = () => {
 
     setLoading(true);
     
-    // Usamos o telefone como parte de um e-mail interno para evitar erros de Twilio/SMS
-    // IMPORTANTE: Desative "Confirm Email" no painel do Supabase para login instantâneo
-    const internalEmail = `${cleanPhone}@bora.com`;
+    // Usamos o telefone como um e-mail interno para o Supabase
+    // Isso permite login com Número + Senha sem precisar de SMS (Twilio)
+    const internalEmail = `${cleanPhone}@bora-sorteiar.com`;
 
     try {
       if (isLogin) {
@@ -91,7 +91,7 @@ const Auth = () => {
         if (error) throw error;
 
         if (data.user) {
-          // Criar/Atualizar perfil na tabela pública
+          // Criar perfil na tabela pública
           await supabase
             .from('profiles')
             .upsert({ 
@@ -110,9 +110,8 @@ const Auth = () => {
       
     } catch (error: any) {
       setLoading(false);
-      // Tratamento amigável para o limite de e-mail do Supabase
-      if (error.message?.includes("rate limit")) {
-        toast.error("Muitas tentativas! Por favor, tente novamente em alguns minutos ou desative a confirmação de e-mail no painel.");
+      if (error.message?.includes("signups are disabled")) {
+        toast.error("O cadastro está desativado no painel do Supabase. Ative 'Allow signups' no provedor de Email.");
       } else {
         toast.error(error.message || "Erro na operação. Verifique os dados.");
       }
