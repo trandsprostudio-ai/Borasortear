@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogIn, UserPlus, ArrowLeft, Loader2 } from 'lucide-react';
+import { LogIn, UserPlus, ArrowLeft, Loader2, Phone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -14,30 +14,48 @@ import Logo from '@/components/layout/Logo';
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const navigate = useNavigate();
+
+  const formatPhone = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    // Adiciona o código de Angola se não tiver
+    if (numbers.length > 0 && !numbers.startsWith('244')) {
+      return '+244' + numbers;
+    }
+    return numbers.startsWith('244') ? '+' + numbers : numbers;
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    const formattedPhone = phone.startsWith('+') ? phone : formatPhone(phone);
+
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ 
+          phone: formattedPhone, 
+          password 
+        });
         if (error) throw error;
         toast.success("Bem-vindo de volta!");
       } else {
         const { error } = await supabase.auth.signUp({
-          email,
+          phone: formattedPhone,
           password,
           options: {
-            data: { first_name: name, balance: 0 }
+            data: { 
+              first_name: name, 
+              balance: 0 
+            }
           }
         });
         if (error) throw error;
-        toast.success("Conta criada! Verifique seu e-mail.");
+        toast.success("Conta criada com sucesso!");
       }
       navigate('/');
     } catch (error: any) {
@@ -69,7 +87,7 @@ const Auth = () => {
             {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">
-            {isLogin ? 'Acesse sua carteira e participe dos sorteios' : 'Comece a ganhar prêmios hoje mesmo'}
+            {isLogin ? 'Acesse sua carteira com seu número' : 'Cadastre seu número para começar'}
           </p>
         </div>
 
@@ -89,16 +107,20 @@ const Auth = () => {
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="exemplo@email.com" 
-              className="bg-white/5 border-white/10 rounded-xl h-12" 
-              required
-            />
+            <Label htmlFor="phone">Número de Telefone</Label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+              <Input 
+                id="phone" 
+                type="tel" 
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="9XX XXX XXX" 
+                className="bg-white/5 border-white/10 rounded-xl h-12 pl-10" 
+                required
+              />
+            </div>
+            <p className="text-[10px] text-white/40">Ex: 923 000 000 (Angola +244)</p>
           </div>
 
           <div className="space-y-2">

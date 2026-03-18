@@ -18,7 +18,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         <DialogHeader className="text-center">
           <DialogTitle className="text-2xl font-bold">Bem-vindo ao BORA SORTEIAR</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Faça login ou crie sua conta para participar dos sorteios.
+            Use seu número de telefone para entrar ou criar sua conta.
           </DialogDescription>
         </DialogHeader>
         
@@ -41,6 +41,21 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
             }}
             theme="dark"
             providers={[]}
+            onlyThirdPartyProviders={false}
+            localization={{
+              variables: {
+                sign_up: {
+                  phone_label: 'Número de Telefone',
+                  password_label: 'Senha',
+                  button_label: 'Cadastrar',
+                },
+                sign_in: {
+                  phone_label: 'Número de Telefone',
+                  password_label: 'Senha',
+                  button_label: 'Entrar',
+                }
+              }
+            }}
           />
         </div>
       </DialogContent>
