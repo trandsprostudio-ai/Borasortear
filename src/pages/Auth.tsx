@@ -39,6 +39,13 @@ const Auth = () => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    const cleanPhone = phone.trim().replace(/\D/g, '');
+    
+    if (!cleanPhone || cleanPhone.length < 7) {
+      toast.error("Por favor, insira um número de telefone válido.");
+      return;
+    }
+
     if (!isLogin) {
       if (!age || parseInt(age) < 18) {
         toast.error("Você deve ter pelo menos 18 anos para criar uma conta.");
@@ -56,10 +63,8 @@ const Auth = () => {
 
     setLoading(true);
     
-    // Técnica: Transformar telefone em um identificador de e-mail para o Supabase
-    // Isso evita o erro "Phone signups are disabled" e permite usar apenas o telefone no UI
-    const cleanPhone = phone.replace(/\D/g, '');
-    const internalEmail = `${cleanPhone}@bora-sorteiar.com`;
+    // Usando um formato de e-mail mais simples e garantido
+    const internalEmail = `u${cleanPhone}@bora.com`;
 
     try {
       if (isLogin) {
@@ -77,7 +82,7 @@ const Auth = () => {
               full_name: fullName,
               age: parseInt(age),
               bank_info: bankInfo,
-              phone_number: phone // Guardamos o telefone real nos metadados
+              phone_number: cleanPhone
             }
           }
         });
@@ -85,14 +90,15 @@ const Auth = () => {
         if (error) throw error;
 
         if (data.user) {
-          // Atualizar perfil público
+          // Criar perfil na tabela pública
           await supabase
             .from('profiles')
-            .update({ 
+            .upsert({ 
+              id: data.user.id,
               first_name: fullName.split(' ')[0],
               last_name: fullName.split(' ').slice(1).join(' '),
-            })
-            .eq('id', data.user.id);
+              balance: 0
+            });
         }
       }
       
@@ -103,7 +109,13 @@ const Auth = () => {
       
     } catch (error: any) {
       setLoading(false);
-      toast.error(error.message || "Erro na operação. Verifique os dados.");
+      // Se o erro for sobre confirmação de e-mail, avisamos o usuário ou tentamos logar
+      if (error.message?.includes("Email confirmation")) {
+        toast.info("Conta criada! Por favor, aguarde a ativação administrativa.");
+        navigate('/');
+      } else {
+        toast.error(error.message || "Erro na operação. Verifique os dados.");
+      }
     }
   };
 
