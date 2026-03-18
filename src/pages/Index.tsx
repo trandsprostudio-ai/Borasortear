@@ -7,14 +7,13 @@ import AuthModal from '@/components/auth/AuthModal';
 import JoinRoomModal from '@/components/raffle/JoinRoomModal';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Trophy, Zap, Flame, Star, LayoutGrid, History } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Zap, LayoutGrid, History, Trophy } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 
 const Index = () => {
   const { rooms, loading } = useRooms();
   const [modules, setModules] = useState<any[]>([]);
-  const [activeModule, setActiveModule] = useState<string | null>(null);
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -25,7 +24,7 @@ const Index = () => {
       const { data } = await supabase.from('modules').select('*').order('price', { ascending: true });
       if (data) {
         setModules(data);
-        if (data.length > 0) setActiveModule(data[0].id);
+        if (data.length > 0) setActiveModuleId(data[0].id);
       }
     };
     fetchModules();
@@ -52,10 +51,15 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
-  const openRooms = rooms.filter(r => r.status === 'open');
+  // Filtra as salas do módulo ativo
+  const activeModuleRooms = rooms
+    .filter(r => r.module_id === activeModuleId && r.status === 'open')
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+
+  const activeModule = modules.find(m => m.id === activeModuleId);
 
   return (
-    <div className="min-h-screen bg-[#0A0B12] text-white">
+    <div className="min-h-screen bg-[#0A0B12] text-white font-sans">
       <Navbar onAuthClick={() => setShowAuth(true)} user={user} />
       
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
@@ -70,94 +74,122 @@ const Index = () => {
       )}
 
       <main className="max-w-[1600px] mx-auto px-4 pt-20 pb-20">
-        {/* Banner de Destaque Compacto */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-8">
-          <div className="lg:col-span-8 bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-white/5 rounded-2xl p-8 flex flex-col justify-center relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 blur-[100px]" />
-            <h1 className="text-4xl font-black italic tracking-tighter mb-2">SORTEIOS AO VIVO</h1>
-            <p className="text-white/60 font-bold uppercase tracking-widest text-xs">Participe agora e multiplique seu capital em segundos</p>
-            <div className="flex gap-4 mt-6">
-              <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-lg border border-white/5">
-                <Zap size={16} className="text-amber-500" />
-                <span className="text-sm font-black">1.240 ATIVOS</span>
-              </div>
-              <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-lg border border-white/5">
-                <Trophy size={16} className="text-green-400" />
-                <span className="text-sm font-black">450k KZ PAGOS HOJE</span>
-              </div>
+        {/* Header de Status da Plataforma */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-[#151823] border border-white/5 p-4 rounded-xl">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Total Prêmios Hoje</span>
+              <span className="text-xl font-black text-green-400">1.450.000 Kz</span>
+            </div>
+            <div className="h-8 w-px bg-white/10" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Sorteios Realizados</span>
+              <span className="text-xl font-black text-purple-500">842</span>
             </div>
           </div>
           
-          <div className="lg:col-span-4 bg-[#151823] border border-white/5 rounded-2xl p-6 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-black text-white/40 uppercase tracking-widest">Último Resultado</span>
-              <History size={14} className="text-white/20" />
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
-                <Trophy size={24} />
-              </div>
-              <div>
-                <p className="text-sm font-black">@antonio_melo</p>
-                <p className="text-xl font-black text-green-400">150.000 Kz</p>
-              </div>
-            </div>
-            <button className="w-full mt-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">
-              Ver Histórico Completo
-            </button>
+          <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-lg border border-white/5">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+            <span className="text-xs font-black uppercase tracking-widest">2.140 Jogadores Online</span>
           </div>
         </div>
 
-        {/* Categorias / Módulos */}
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
-          <button 
-            onClick={() => setActiveModule(null)}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm transition-all whitespace-nowrap border ${
-              activeModule === null ? 'bg-purple-600 border-purple-500 text-white' : 'bg-[#151823] border-white/5 text-white/40 hover:text-white'
-            }`}
-          >
-            <LayoutGrid size={16} /> TODOS
-          </button>
-          {modules.map((mod) => (
-            <button 
-              key={mod.id}
-              onClick={() => setActiveModule(mod.id)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm transition-all whitespace-nowrap border ${
-                activeModule === mod.id ? 'bg-purple-600 border-purple-500 text-white' : 'bg-[#151823] border-white/5 text-white/40 hover:text-white'
-              }`}
-            >
-              <Zap size={16} className={activeModule === mod.id ? 'text-white' : 'text-amber-500'} />
-              {mod.name} - {mod.price} Kz
-            </button>
-          ))}
+        {/* Seleção de Módulos (Categorias) */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <LayoutGrid size={18} className="text-purple-500" />
+            <h2 className="text-sm font-black uppercase tracking-widest text-white/60">Escolha o Valor do Sorteio</h2>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+            {modules.map((mod) => (
+              <button 
+                key={mod.id}
+                onClick={() => setActiveModuleId(mod.id)}
+                className={`flex flex-col items-center justify-center min-w-[120px] h-20 rounded-xl font-black transition-all border ${
+                  activeModuleId === mod.id 
+                    ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-500/20' 
+                    : 'bg-[#151823] border-white/5 text-white/40 hover:text-white hover:border-white/20'
+                }`}
+              >
+                <span className="text-[10px] uppercase tracking-tighter mb-1">{mod.name}</span>
+                <span className="text-lg">{mod.price} Kz</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Grid de Salas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {loading ? (
-            Array(10).fill(0).map((_, i) => (
-              <div key={i} className="h-48 bg-[#151823] animate-pulse rounded-2xl border border-white/5" />
-            ))
-          ) : (
-            (activeModule ? openRooms.filter(r => r.module_id === activeModule) : openRooms).map((room) => {
-              const mod = modules.find(m => m.id === room.module_id);
-              if (!mod) return null;
-              return (
+        {/* Grid de Salas (Mesas) do Módulo Selecionado */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap size={18} className="text-amber-500" />
+              <h2 className="text-xl font-black italic tracking-tighter">
+                SALAS DISPONÍVEIS - {activeModule?.name} ({activeModule?.price} Kz)
+              </h2>
+            </div>
+            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">5 Salas Ativas</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {loading ? (
+              Array(5).fill(0).map((_, i) => (
+                <div key={i} className="h-44 bg-[#151823] animate-pulse rounded-xl border border-white/5" />
+              ))
+            ) : activeModuleRooms.length > 0 ? (
+              activeModuleRooms.map((room, index) => (
                 <RoomCard 
                   key={room.id} 
+                  roomNumber={index + 1}
                   room={{
                     id: room.id, moduleId: room.module_id, status: room.status,
                     currentParticipants: room.current_participants, maxParticipants: room.max_participants,
                     expiresAt: room.expires_at, createdAt: room.created_at
                   }} 
-                  module={{
-                    id: mod.id, name: mod.name, price: mod.price, maxParticipants: mod.max_participants
-                  }} 
+                  module={activeModule} 
                   onParticipate={handleParticipateClick}
                 />
-              );
-            })
-          )}
+              ))
+            ) : (
+              <div className="col-span-full py-12 text-center bg-[#151823] rounded-xl border border-dashed border-white/10">
+                <p className="text-white/20 font-black uppercase tracking-widest text-sm">Nenhuma sala aberta neste módulo.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Rodapé de Atividade Recente */}
+        <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 bg-[#151823] border border-white/5 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                <History size={16} className="text-purple-500" /> Últimos Ganhadores
+              </h3>
+              <button className="text-[10px] font-black text-purple-400 hover:underline uppercase">Ver Tudo</button>
+            </div>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 font-bold text-xs">U{i}</div>
+                    <span className="font-bold text-sm">usuário_sortudo_{i}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[10px] font-black text-white/20">MÓDULO M{i}</span>
+                    <span className="font-black text-green-400">+{i * 1000} Kz</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-br from-purple-900/20 to-black border border-purple-500/20 rounded-xl p-6 flex flex-col items-center justify-center text-center">
+            <Trophy size={48} className="text-amber-500 mb-4" />
+            <h3 className="text-xl font-black italic mb-2">SEJA O PRÓXIMO!</h3>
+            <p className="text-xs text-white/60 font-bold mb-6">Milhares de kwanzas são pagos todos os dias aos nossos jogadores.</p>
+            <button className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-black text-sm transition-all">
+              DEPOSITAR AGORA
+            </button>
+          </div>
         </div>
       </main>
     </div>

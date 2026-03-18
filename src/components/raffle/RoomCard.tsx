@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Users, Zap, Flame } from 'lucide-react';
+import { Users, Zap, Flame, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
@@ -10,21 +10,27 @@ import CountdownTimer from './CountdownTimer';
 interface RoomCardProps {
   room: Room;
   module: Module;
+  roomNumber: number;
   onParticipate: (room: Room, module: Module) => void;
 }
 
-const RoomCard = ({ room, module, onParticipate }: RoomCardProps) => {
+const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) => {
   const progress = (room.currentParticipants / room.maxParticipants) * 100;
   const isAlmostFull = progress > 85;
   
   return (
     <motion.div 
-      whileHover={{ y: -4 }}
-      className="bg-[#151823] border border-white/5 rounded-xl p-4 flex flex-col justify-between hover:border-purple-500/50 transition-all group"
+      whileHover={{ y: -4, borderColor: 'rgba(124, 58, 237, 0.5)' }}
+      className="bg-[#151823] border border-white/5 rounded-xl p-4 flex flex-col justify-between transition-all group relative overflow-hidden"
     >
-      <div className="flex justify-between items-start mb-4">
+      {/* Indicador de Sala/Mesa */}
+      <div className="absolute top-0 left-0 bg-purple-600 text-[9px] font-black px-2 py-1 rounded-br-lg z-10">
+        SALA {roomNumber}
+      </div>
+
+      <div className="flex justify-between items-start mb-4 pt-2">
         <div className="flex flex-col">
-          <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">SALA #{room.id.slice(0, 4)}</span>
+          <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">ID: {room.id.slice(0, 4)}</span>
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-black text-white italic">{module.price}</span>
             <span className="text-[10px] font-bold text-purple-500">KZ</span>
@@ -54,14 +60,19 @@ const RoomCard = ({ room, module, onParticipate }: RoomCardProps) => {
           />
         </div>
 
-        <div className="flex items-center justify-between pt-2 gap-2">
-          <CountdownTimer initialSeconds={Math.floor(Math.random() * 300) + 60} />
+        <div className="flex flex-col gap-2 pt-2">
+          <div className="flex items-center justify-between">
+            <CountdownTimer initialSeconds={Math.floor(Math.random() * 300) + 60} />
+            <Zap size={14} className="text-white/10 group-hover:text-purple-500 transition-colors" />
+          </div>
+          
           <Button 
             size="sm" 
             onClick={() => onParticipate(room, module)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[10px] uppercase tracking-widest h-8 px-4 rounded-lg flex-1"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[10px] uppercase tracking-widest h-9 w-full rounded-lg shadow-lg shadow-purple-900/20"
           >
-            PARTICIPAR
+            ENTRAR NA SALA
+            <ArrowRight size={12} className="ml-2" />
           </Button>
         </div>
       </div>
