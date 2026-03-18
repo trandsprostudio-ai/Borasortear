@@ -8,7 +8,6 @@ import JoinRoomModal from '@/components/raffle/JoinRoomModal';
 import DrawOverlay from '@/components/raffle/DrawOverlay';
 import PrizeCarousel from '@/components/raffle/PrizeCarousel';
 import Footer from '@/components/layout/Footer';
-import MobileNav from '@/components/layout/MobileNav';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap, LayoutGrid, History, Trophy, Ticket, ArrowRight } from 'lucide-react';
@@ -309,7 +308,6 @@ const Index = () => {
           </div>
         </div>
       </main>
-      <MobileNav />
       <Footer />
     </div>
   );

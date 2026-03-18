@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { HelpCircle, MessageCircle, ShieldCheck, Zap, ChevronRight, Phone, Mail } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from '@/components/ui/button';
-import MobileNav from '@/components/layout/MobileNav';
 import Footer from '@/components/layout/Footer';
 
 const Support = () => {
@@ -94,7 +93,6 @@ const Support = () => {
         </div>
       </main>
 
-      <MobileNav />
       <Footer />
     </div>
   );

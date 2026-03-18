@@ -7,7 +7,6 @@ import { Search, Ticket, Trophy, Clock, AlertCircle, CheckCircle2, Loader2 } fro
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import MobileNav from '@/components/layout/MobileNav';
 import Footer from '@/components/layout/Footer';
 
 const ConsultDraw = () => {
@@ -44,7 +43,7 @@ const ConsultDraw = () => {
           .from('winners')
           .select('*')
           .eq('user_id', participant.user_id)
-          .eq('draw_id', participant.rooms.id) // Usando room_id como draw_id por simplicidade no schema atual
+          .eq('draw_id', participant.rooms.id)
           .single();
         winnerInfo = winner;
       }
@@ -159,7 +158,6 @@ const ConsultDraw = () => {
         </AnimatePresence>
       </main>
 
-      <MobileNav />
       <Footer />
     </div>
   );

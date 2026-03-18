@@ -4,7 +4,6 @@ import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
 import { Trophy, Medal, Star, TrendingUp } from 'lucide-react';
-import MobileNav from '@/components/layout/MobileNav';
 
 const Ranking = () => {
   const leaders = [
@@ -105,7 +104,6 @@ const Ranking = () => {
           ))}
         </div>
       </main>
-      <MobileNav />
     </div>
   );
 };

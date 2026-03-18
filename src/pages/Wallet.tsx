@@ -7,7 +7,6 @@ import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Zap, ArrowUpRight
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
-import MobileNav from '@/components/layout/MobileNav';
 import TransactionModal from '@/components/wallet/TransactionModal';
 
 const Wallet = () => {
@@ -188,7 +187,6 @@ const Wallet = () => {
         </section>
       </main>
       
-      <MobileNav />
       <Footer />
     </div>
   );
