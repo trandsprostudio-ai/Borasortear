@@ -1,4 +1,4 @@
-export type RoomStatus = 'aberta' | 'encerrada' | 'processando' | 'finalizada';
+export type RoomStatus = 'open' | 'closed' | 'processing' | 'finished';
 
 export interface Module {
   id: string;

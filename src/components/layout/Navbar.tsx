@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Wallet, User, Bell, LogOut, ChevronDown, ShieldCheck, Search, Settings } from 'lucide-react';
+import { Wallet, User, Bell, LogOut, ChevronDown, ShieldCheck, Search, Settings, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
