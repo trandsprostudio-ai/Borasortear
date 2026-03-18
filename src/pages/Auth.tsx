@@ -14,11 +14,12 @@ import Logo from '@/components/layout/Logo';
 import SplashScreen from '@/components/ui/SplashScreen';
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  // Iniciamos como falso para mostrar o Cadastro por padrão
+  const [isLogin, setIsLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   
-  // Form States
+  // Estados do Formulário
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,14 +29,6 @@ const Auth = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const navigate = useNavigate();
-
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length > 0 && !numbers.startsWith('244')) {
-      return '+244' + numbers;
-    }
-    return numbers.startsWith('244') ? '+' + numbers : numbers;
-  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +45,8 @@ const Auth = () => {
     }
 
     setLoading(true);
-    const formattedPhone = phone.startsWith('+') ? phone : formatPhone(phone);
+    // Garantir formato internacional para o Supabase Auth (ex: +244...)
+    const formattedPhone = phone.startsWith('+') ? phone : `+244${phone.replace(/\D/g, '')}`;
 
     try {
       if (isLogin) {
@@ -67,31 +61,30 @@ const Auth = () => {
           password,
           options: {
             data: { 
-              first_name: fullName.split(' ')[0],
               full_name: fullName,
+              birth_date: birthDate,
+              bank_info: bankInfo
             }
           }
         });
         
         if (error) throw error;
 
-        // Atualizar perfil com informações adicionais
+        // Criar/Atualizar perfil com informações adicionais
         if (data.user) {
-          const { error: profileError } = await supabase
+          await supabase
             .from('profiles')
             .update({ 
               first_name: fullName.split(' ')[0],
               last_name: fullName.split(' ').slice(1).join(' '),
-              // Nota: Estas colunas precisam existir no banco. 
-              // Se não existirem, o Supabase ignorará ou retornará erro.
+              // Nota: Se as colunas birth_date e bank_info não existirem no banco, 
+              // elas serão ignoradas. O ideal é que existam na tabela profiles.
             })
             .eq('id', data.user.id);
-          
-          if (profileError) console.error("Erro ao atualizar perfil:", profileError);
         }
       }
       
-      // Ativar Splash Screen por 3 segundos
+      // Ativar Splash Screen por 3 segundos conforme solicitado
       setShowSplash(true);
       setTimeout(() => {
         navigate('/');
@@ -99,19 +92,19 @@ const Auth = () => {
       
     } catch (error: any) {
       setLoading(false);
-      toast.error(error.message || "Erro na operação");
+      toast.error(error.message || "Erro na operação. Verifique os dados.");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0B12] relative overflow-hidden">
       <AnimatePresence>
-        {showSplash && <SplashScreen message={isLogin ? "Validando Acesso..." : "Criando sua Conta..."} />}
+        {showSplash && <SplashScreen message={isLogin ? "Autenticando..." : "Criando sua Conta..."} />}
       </AnimatePresence>
 
       <Link to="/" className="absolute top-8 left-8 flex items-center gap-2 text-white/40 hover:text-white transition-colors z-10 font-bold text-xs uppercase tracking-widest">
         <ArrowLeft size={16} />
-        <span>Voltar</span>
+        <span>Voltar ao Início</span>
       </Link>
 
       <motion.div 
@@ -124,45 +117,16 @@ const Auth = () => {
             <Logo className="scale-110" />
           </div>
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
-            {isLogin ? 'Entrar na Plataforma' : 'Cadastro de Jogador'}
+            {isLogin ? 'Acessar Conta' : 'Cadastro de Jogador'}
           </h1>
+          <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-2">
+            {isLogin ? 'Entre com seu telefone e senha' : 'Preencha seus dados para começar a ganhar'}
+          </p>
         </div>
 
         <form className="space-y-4" onSubmit={handleAuth}>
-          {isLogin ? (
-            // LOGIN FIELDS
-            <>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone</Label>
-                <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    type="tel" 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="9XX XXX XXX" 
-                    className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" 
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••" 
-                    className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" 
-                    required
-                  />
-                </div>
-              </div>
-            </>
-          ) : (
-            // REGISTER FIELDS
+          {!isLogin ? (
+            // CAMPOS DE CADASTRO (PADRÃO)
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome Completo</Label>
@@ -193,7 +157,7 @@ const Auth = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone (Angola)</Label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <Input 
@@ -263,6 +227,38 @@ const Auth = () => {
                 </label>
               </div>
             </div>
+          ) : (
+            // CAMPOS DE LOGIN
+            <>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input 
+                    type="tel" 
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="9XX XXX XXX" 
+                    className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" 
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input 
+                    type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••" 
+                    className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" 
+                    required
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           <Button 
@@ -270,7 +266,7 @@ const Auth = () => {
             disabled={loading}
             className="w-full premium-gradient h-14 rounded-2xl font-black text-lg mt-4 shadow-xl shadow-purple-500/20"
           >
-            {isLogin ? 'ENTRAR AGORA' : 'CRIAR MINHA CONTA'}
+            {loading ? 'PROCESSANDO...' : isLogin ? 'ENTRAR AGORA' : 'CRIAR MINHA CONTA'}
           </Button>
         </form>
 
