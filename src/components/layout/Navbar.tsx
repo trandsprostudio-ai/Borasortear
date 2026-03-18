@@ -84,9 +84,11 @@ const Navbar = ({ user }: NavbarProps) => {
               <Logo className="scale-90 md:scale-100" />
             </Link>
             
-            <Link to="/consult-draw" className="hidden md:flex items-center gap-2 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">
-              <Search size={14} className="text-purple-500" /> Consultar Bilhete
-            </Link>
+            {user && (
+              <Link to="/consult-draw" className="hidden md:flex items-center gap-2 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">
+                <Search size={14} className="text-purple-500" /> Consultar Bilhete
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-2 md:gap-3">
@@ -141,12 +143,12 @@ const Navbar = ({ user }: NavbarProps) => {
                       <Wallet size={16} className="text-purple-500" /> Minha Carteira
                     </Link>
                     
-                    <Link to="/consult-draw" className="flex md:hidden items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-xs font-black transition-colors">
-                      <Search size={16} className="text-blue-500" /> Consultar Bilhete
+                    <Link to="/my-participations" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-xs font-black transition-colors">
+                      <LayoutGrid size={16} className="text-amber-500" /> Minhas Mesas
                     </Link>
                     
-                    <Link to="/ranking" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-xs font-black transition-colors">
-                      <ShieldCheck size={16} className="text-amber-500" /> Hall da Fama
+                    <Link to="/consult-draw" className="flex md:hidden items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-xs font-black transition-colors">
+                      <Search size={16} className="text-blue-500" /> Consultar Bilhete
                     </Link>
 
                     <AlertDialog>
@@ -173,9 +175,6 @@ const Navbar = ({ user }: NavbarProps) => {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <Link to="/consult-draw" className="hidden xs:block mr-2 md:mr-4 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">
-                  Consultar
-                </Link>
                 <Button 
                   variant="ghost" 
                   onClick={() => navigate('/auth?mode=login')} 

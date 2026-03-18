@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Home, Trophy, HelpCircle, Search, User } from 'lucide-react';
+import { Home, Trophy, HelpCircle, Search, User, LayoutGrid } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,8 +28,8 @@ const FloatingNav = () => {
   
   const navItems = [
     { icon: Home, label: 'Início', path: '/' },
+    { icon: LayoutGrid, label: 'Minhas Mesas', path: '/my-participations' },
     { icon: Search, label: 'Consultar', path: '/consult-draw' },
-    { icon: Trophy, label: 'Ranking', path: '/ranking' },
     { icon: HelpCircle, label: 'Suporte', path: '/support' },
     { icon: User, label: 'Perfil', path: '/profile' },
   ];
