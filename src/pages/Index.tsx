@@ -11,10 +11,9 @@ import Footer from '@/components/layout/Footer';
 import MobileNav from '@/components/layout/MobileNav';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, History, Trophy, Lock, ArrowRight } from 'lucide-react';
+import { Zap, LayoutGrid, History, Trophy } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
 
 const Index = () => {
   const { rooms, loading } = useRooms();
@@ -189,74 +188,31 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Restricted Access Overlay */}
-          {!user ? (
-            <div className="relative min-h-[400px] rounded-3xl overflow-hidden border border-white/5 bg-[#151823]/30">
-              <div className="absolute inset-0 backdrop-blur-md z-10 flex flex-col items-center justify-center p-8 text-center">
-                <motion.div 
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="max-w-md"
-                >
-                  <div className="w-20 h-20 bg-purple-600/20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-purple-500 border border-purple-500/20">
-                    <Lock size={40} />
-                  </div>
-                  <h3 className="text-3xl font-black italic tracking-tighter mb-4">ACESSO RESTRITO</h3>
-                  <p className="text-white/40 font-bold mb-8 leading-relaxed">
-                    Você precisa estar logado para visualizar e participar das mesas de sorteio disponíveis.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button 
-                      onClick={() => navigate('/auth?mode=login')}
-                      className="h-14 px-8 rounded-2xl bg-purple-600 hover:bg-purple-700 font-black text-lg shadow-xl shadow-purple-900/40"
-                    >
-                      ENTRAR AGORA
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => navigate('/auth?mode=signup')}
-                      className="h-14 px-8 rounded-2xl border-white/10 hover:bg-white/5 font-black text-lg"
-                    >
-                      CRIAR CONTA <ArrowRight size={20} className="ml-2" />
-                    </Button>
-                  </div>
-                </motion.div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {loading ? (
+              Array(5).fill(0).map((_, i) => (
+                <div key={i} className="h-56 bg-[#151823] animate-pulse rounded-2xl border border-white/5" />
+              ))
+            ) : activeModuleRooms.length > 0 ? (
+              activeModuleRooms.map((room, index) => (
+                <RoomCard 
+                  key={room.id} 
+                  roomNumber={index + 1}
+                  room={{
+                    id: room.id, moduleId: room.module_id, status: room.status,
+                    currentParticipants: room.current_participants, maxParticipants: room.max_participants,
+                    expiresAt: room.expires_at, createdAt: room.created_at
+                  }} 
+                  module={activeModule} 
+                  onParticipate={handleParticipateClick}
+                />
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center bg-[#151823]/50 rounded-3xl border border-dashed border-white/10">
+                <p className="text-white/20 font-black uppercase tracking-[0.3em] text-xs">Nenhuma mesa aberta neste módulo no momento.</p>
               </div>
-              
-              {/* Blurred Background Content */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 p-6 opacity-20 grayscale">
-                {Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="h-56 bg-white/5 rounded-2xl border border-white/10" />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {loading ? (
-                Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="h-56 bg-[#151823] animate-pulse rounded-2xl border border-white/5" />
-                ))
-              ) : activeModuleRooms.length > 0 ? (
-                activeModuleRooms.map((room, index) => (
-                  <RoomCard 
-                    key={room.id} 
-                    roomNumber={index + 1}
-                    room={{
-                      id: room.id, moduleId: room.module_id, status: room.status,
-                      currentParticipants: room.current_participants, maxParticipants: room.max_participants,
-                      expiresAt: room.expires_at, createdAt: room.created_at
-                    }} 
-                    module={activeModule} 
-                    onParticipate={handleParticipateClick}
-                  />
-                ))
-              ) : (
-                <div className="col-span-full py-20 text-center bg-[#151823]/50 rounded-3xl border border-dashed border-white/10">
-                  <p className="text-white/20 font-black uppercase tracking-[0.3em] text-xs">Nenhuma mesa aberta neste módulo no momento.</p>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Winners & CTA Section */}
