@@ -5,11 +5,13 @@ import Navbar from '@/components/layout/Navbar';
 import RoomCard from '@/components/raffle/RoomCard';
 import DrawOverlay from '@/components/raffle/DrawOverlay';
 import AuthModal from '@/components/auth/AuthModal';
+import JoinRoomModal from '@/components/raffle/JoinRoomModal';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, History, Users, Star, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Room, Module } from '@/types/raffle';
 
 const Index = () => {
   const { rooms, loading } = useRooms();
@@ -18,6 +20,9 @@ const Index = () => {
   const [showDraw, setShowDraw] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  
+  const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -30,17 +35,39 @@ const Index = () => {
 
     fetchModules();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-    });
+      if (session?.user) fetchProfile(session.user.id);
+    };
+
+    getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session) setShowAuth(false);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+        setShowAuth(false);
+      } else {
+        setProfile(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    if (data) setProfile(data);
+  };
+
+  const handleParticipateClick = (room: Room, module: Module) => {
+    if (!user) {
+      setShowAuth(true);
+      return;
+    }
+    setSelectedRoom({ room, module });
+  };
 
   const openRooms = rooms.filter(r => r.status === 'open');
 
@@ -50,10 +77,22 @@ const Index = () => {
       
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
       
+      {selectedRoom && user && profile && (
+        <JoinRoomModal 
+          isOpen={!!selectedRoom}
+          onClose={() => setSelectedRoom(null)}
+          room={selectedRoom.room}
+          module={selectedRoom.module}
+          userBalance={profile.balance}
+          userId={user.id}
+          onSuccess={() => fetchProfile(user.id)}
+        />
+      )}
+      
       <DrawOverlay 
         isOpen={showDraw} 
         onClose={() => setShowDraw(false)} 
-        winners={[]} // To be populated from real winners table
+        winners={[]} 
       />
 
       <main className="max-w-7xl mx-auto px-4 pt-28">
@@ -157,6 +196,7 @@ const Index = () => {
                             price: mod.price,
                             maxParticipants: mod.max_participants
                           }} 
+                          onParticipate={handleParticipateClick}
                         />
                       ))
                     ) : (
@@ -173,41 +213,6 @@ const Index = () => {
               <p className="text-white/40 font-black text-xl uppercase tracking-widest">Aguardando inicialização do sistema...</p>
             </div>
           )}
-        </section>
-
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          <div className="glass-card p-8 rounded-3xl flex items-center gap-6 border-l-4 border-l-green-500">
-            <div className="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-400">
-              <History size={28} />
-            </div>
-            <div>
-              <p className="text-xs font-black text-white/40 uppercase tracking-widest mb-1">Último Ganhador</p>
-              <p className="font-black text-xl text-white">---</p>
-              <p className="text-sm font-bold text-green-400">Aguardando sorteio</p>
-            </div>
-          </div>
-          
-          <div className="glass-card p-8 rounded-3xl flex items-center gap-6 border-l-4 border-l-cyan-400">
-            <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-400">
-              <Users size={28} />
-            </div>
-            <div>
-              <p className="text-xs font-black text-white/40 uppercase tracking-widest mb-1">Online Agora</p>
-              <p className="font-black text-xl text-white">---</p>
-              <p className="text-sm font-bold text-cyan-400">Participantes</p>
-            </div>
-          </div>
-          
-          <div className="glass-card p-8 rounded-3xl flex items-center gap-6 border-l-4 border-l-purple-500">
-            <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-400">
-              <Trophy size={28} />
-            </div>
-            <div>
-              <p className="text-xs font-black text-white/40 uppercase tracking-widest mb-1">Próximo Sorteio</p>
-              <p className="font-black text-xl text-white">--:--</p>
-              <p className="text-sm font-bold text-purple-400">Contagem Regressiva</p>
-            </div>
-          </div>
         </section>
       </main>
     </div>

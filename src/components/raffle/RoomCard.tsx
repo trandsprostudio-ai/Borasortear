@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Users, ArrowRight, Zap, Flame } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
@@ -11,9 +10,10 @@ import CountdownTimer from './CountdownTimer';
 interface RoomCardProps {
   room: Room;
   module: Module;
+  onParticipate: (room: Room, module: Module) => void;
 }
 
-const RoomCard = ({ room, module }: RoomCardProps) => {
+const RoomCard = ({ room, module, onParticipate }: RoomCardProps) => {
   const progress = (room.currentParticipants / room.maxParticipants) * 100;
   const isAlmostFull = progress > 85;
   
@@ -27,7 +27,6 @@ const RoomCard = ({ room, module }: RoomCardProps) => {
       }}
       className="glass-card p-6 rounded-2xl relative overflow-hidden group transition-all duration-300"
     >
-      {/* Background Glow Effect */}
       <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-600/10 blur-[80px] group-hover:bg-purple-600/20 transition-colors" />
       
       <div className="flex justify-between items-start mb-6">
@@ -81,6 +80,7 @@ const RoomCard = ({ room, module }: RoomCardProps) => {
           
           <Button 
             size="sm" 
+            onClick={() => onParticipate(room, module)}
             className="premium-gradient border-0 rounded-xl px-5 font-bold shadow-lg shadow-purple-500/20 group-hover:shadow-purple-500/40 transition-all active:scale-95"
           >
             Participar
