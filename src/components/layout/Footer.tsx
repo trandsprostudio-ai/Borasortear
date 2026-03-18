@@ -1,29 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { Shield } from 'lucide-react';
 
 const Footer = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-    };
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // O Footer só aparece para usuários logados
-  if (!isAuthenticated) return null;
-
   return (
     <footer className="py-10 border-t border-white/5 mt-20 bg-[#0A0B12] relative z-10 pb-28 sm:pb-10">
       <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -34,10 +15,11 @@ const Footer = () => {
             </p>
             <Link 
               to="/admin-login" 
-              className="text-white/5 hover:text-purple-500/40 transition-colors text-[10px] cursor-default select-none"
-              title="System Access"
+              className="text-white/5 hover:text-purple-500/40 transition-colors flex items-center gap-1 group"
+              title="Acesso Administrativo"
             >
-              •
+              <Shield size={8} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="text-[10px]">•</span>
             </Link>
           </div>
           <p className="text-[9px] text-white/10 font-bold uppercase tracking-tighter">
