@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Wallet, User, Bell, LogOut, ChevronDown, ShieldCheck, Search } from 'lucide-react';
+import { Wallet, User, Bell, LogOut, ChevronDown, ShieldCheck, Search, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -133,6 +133,10 @@ const Navbar = ({ user }: NavbarProps) => {
                       <p className="text-xs font-bold text-white truncate">{user.email?.split('@')[0]}</p>
                     </div>
                     
+                    <Link to="/profile" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-xs font-black transition-colors">
+                      <Settings size={16} className="text-white/40" /> Meu Perfil
+                    </Link>
+
                     <Link to="/wallet" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-xs font-black transition-colors">
                       <Wallet size={16} className="text-purple-500" /> Minha Carteira
                     </Link>
