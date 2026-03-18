@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import RoomCard from '@/components/raffle/RoomCard';
-import AuthModal from '@/components/auth/AuthModal';
 import JoinRoomModal from '@/components/raffle/JoinRoomModal';
 import DrawOverlay from '@/components/raffle/DrawOverlay';
 import PrizeCarousel from '@/components/raffle/PrizeCarousel';
@@ -17,15 +17,14 @@ const Index = () => {
   const { rooms, loading } = useRooms();
   const [modules, setModules] = useState<any[]>([]);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
-  const [showAuth, setShowAuth] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
   const [finishedDraw, setFinishedDraw] = useState<{ winners: any[], info: string } | null>(null);
   const [recentWinners, setRecentWinners] = useState<any[]>([]);
-  
-  // Estado para jogadores online (fictício)
   const [onlinePlayers, setOnlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
+  
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -48,14 +47,13 @@ const Index = () => {
     fetchModules();
     fetchRecentWinners();
 
-    // Lógica para atualizar jogadores online a cada 3 minutos
     const onlineInterval = setInterval(() => {
       setOnlinePlayers(prev => {
-        const change = Math.floor(Math.random() * 300) - 150; // Oscilação entre -150 e +150
+        const change = Math.floor(Math.random() * 300) - 150;
         const next = prev + change;
         return next < 1000 ? 1000 + Math.floor(Math.random() * 200) : next;
       });
-    }, 180000); // 3 minutos
+    }, 180000);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -101,7 +99,10 @@ const Index = () => {
   };
 
   const handleParticipateClick = (room: Room, module: Module) => {
-    if (!user) { setShowAuth(true); return; }
+    if (!user) { 
+      navigate('/auth'); 
+      return; 
+    }
     setSelectedRoom({ room, module });
   };
 
@@ -113,9 +114,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white font-sans">
-      <Navbar onAuthClick={() => setShowAuth(true)} user={user} />
-      
-      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
+      <Navbar user={user} />
       
       {selectedRoom && user && profile && (
         <JoinRoomModal 
@@ -134,7 +133,6 @@ const Index = () => {
       />
 
       <main className="max-w-[1600px] mx-auto px-4 pt-20 pb-20">
-        {/* Header de Status com Carrossel e Jogadores Online */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-[#151823] border border-white/5 p-4 rounded-xl">
           <div className="flex items-center gap-6">
             <PrizeCarousel />
@@ -148,7 +146,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Seleção de Módulos */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <LayoutGrid size={18} className="text-purple-500" />
@@ -172,7 +169,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Grid de Mesas */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -211,7 +207,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Atividade Recente */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-[#151823] border border-white/5 rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
@@ -246,7 +241,10 @@ const Index = () => {
             <Trophy size={48} className="text-amber-500 mb-4" />
             <h3 className="text-xl font-black italic mb-2">SEJA O PRÓXIMO!</h3>
             <p className="text-xs text-white/60 font-bold mb-6">Milhares de kwanzas são pagos todos os dias aos nossos jogadores.</p>
-            <button className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-black text-sm transition-all">
+            <button 
+              onClick={() => navigate('/auth')}
+              className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-black text-sm transition-all"
+            >
               DEPOSITAR AGORA
             </button>
           </div>
