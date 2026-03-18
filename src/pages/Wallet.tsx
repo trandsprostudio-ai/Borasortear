@@ -3,15 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Zap, ArrowUpRight, CreditCard, ArrowDownLeft } from 'lucide-react';
+import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Zap, ArrowUpRight, CreditCard, ArrowDownLeft, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import TransactionModal from '@/components/wallet/TransactionModal';
 
 const Wallet = () => {
   const [profile, setProfile] = useState<any>(null);
-  const [history, setHistory] = useState<any[]>([]);
+  const [participations, setParticipations] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [modalConfig, setModalConfig] = useState<{ open: boolean, type: 'deposit' | 'withdrawal' }>({ open: false, type: 'deposit' });
@@ -21,25 +23,23 @@ const Wallet = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchHistory(session.user.id);
+        fetchData(session.user.id);
       }
     };
     getSession();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    if (data) setProfile(data);
-  };
+  const fetchData = async (userId: string) => {
+    setLoading(true);
+    const [profRes, partRes, transRes] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase.from('participants').select('*, rooms(*, modules(*))').eq('user_id', userId).order('created_at', { ascending: false }),
+      supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+    ]);
 
-  const fetchHistory = async (userId: string) => {
-    const { data } = await supabase
-      .from('participants')
-      .select('*, rooms(*, modules(*))')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    if (data) setHistory(data);
+    if (profRes.data) setProfile(profRes.data);
+    if (partRes.data) setParticipations(partRes.data);
+    if (transRes.data) setTransactions(transRes.data);
     setLoading(false);
   };
 
@@ -51,7 +51,10 @@ const Wallet = () => {
       
       <TransactionModal 
         isOpen={modalConfig.open} 
-        onClose={() => setModalConfig({ ...modalConfig, open: false })}
+        onClose={() => {
+          setModalConfig({ ...modalConfig, open: false });
+          if (user) fetchData(user.id);
+        }}
         type={modalConfig.type}
         user={user}
         currentBalance={profile?.balance || 0}
@@ -59,11 +62,10 @@ const Wallet = () => {
 
       <main className="max-w-6xl mx-auto px-4 pt-24 md:pt-28">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-          {/* Card de Saldo Principal */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="lg:col-span-2 bg-gradient-to-br from-purple-600 to-blue-700 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] relative overflow-hidden shadow-2xl shadow-purple-500/20"
+            className="lg:col-span-2 bg-gradient-to-br from-purple-600 to-blue-700 p-6 md:p-8 rounded-[2.5rem] relative overflow-hidden shadow-2xl shadow-purple-500/20"
           >
             <div className="absolute -bottom-10 -right-10 opacity-10 rotate-12 hidden md:block">
               <WalletIcon size={240} />
@@ -99,7 +101,6 @@ const Wallet = () => {
             </div>
           </motion.div>
 
-          {/* Stats Rápidas */}
           <div className="space-y-4">
             <motion.div 
               initial={{ opacity: 0, x: 20 }}
@@ -124,67 +125,118 @@ const Wallet = () => {
                     </div>
                     <span className="text-xs font-black uppercase text-white/60">Participações</span>
                   </div>
-                  <span className="text-xl font-black">{history.length}</span>
+                  <span className="text-xl font-black">{participations.length}</span>
                 </div>
               </div>
             </motion.div>
           </div>
         </div>
 
-        {/* Histórico */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg md:text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-              <History className="text-purple-500" /> Histórico de Atividade
-            </h2>
-          </div>
-          
-          <div className="glass-card rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border-white/5">
-            {history.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/30">
-                    <tr>
-                      <th className="p-4 md:p-6">Data</th>
-                      <th className="p-4 md:p-6">Mesa / Módulo</th>
-                      <th className="p-4 md:p-6">Valor</th>
-                      <th className="p-4 md:p-6">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-xs font-bold">
-                    {history.map((item) => (
-                      <tr key={item.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="p-4 md:p-6 text-white/40">{new Date(item.created_at).toLocaleDateString()}</td>
-                        <td className="p-4 md:p-6">
-                          <div className="flex flex-col">
-                            <span className="text-purple-400 font-black">#{item.rooms?.id.slice(0, 8)}</span>
-                            <span className="text-[10px] text-white/20 uppercase">{item.rooms?.modules?.name}</span>
-                          </div>
-                        </td>
-                        <td className="p-4 md:p-6 font-black">{item.rooms?.modules?.price.toLocaleString()} Kz</td>
-                        <td className="p-4 md:p-6">
-                          <span className={`px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] uppercase font-black ${
-                            item.rooms?.status === 'open' ? 'bg-blue-500/10 text-blue-400' : 
-                            item.rooms?.status === 'finished' ? 'bg-green-500/10 text-green-400' : 'bg-white/10 text-white/40'
-                          }`}>
-                            {item.rooms?.status === 'open' ? 'Em Aberto' : 'Finalizado'}
-                          </span>
-                        </td>
+        <Tabs defaultValue="participations" className="space-y-8">
+          <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-14">
+            <TabsTrigger value="participations" className="rounded-xl px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
+              <History size={14} className="mr-2" /> Minhas Mesas
+            </TabsTrigger>
+            <TabsTrigger value="transactions" className="rounded-xl px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
+              <CreditCard size={14} className="mr-2" /> Transações Financeiras
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="participations">
+            <div className="glass-card rounded-[2rem] overflow-hidden border-white/5">
+              {participations.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/30">
+                      <tr>
+                        <th className="p-6">Data</th>
+                        <th className="p-6">Mesa / Módulo</th>
+                        <th className="p-6">Valor</th>
+                        <th className="p-6">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="py-20 text-center">
-                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white/10">
-                  <History size={32} />
+                    </thead>
+                    <tbody className="text-xs font-bold">
+                      {participations.map((item) => (
+                        <tr key={item.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                          <td className="p-6 text-white/40">{new Date(item.created_at).toLocaleDateString()}</td>
+                          <td className="p-6">
+                            <div className="flex flex-col">
+                              <span className="text-purple-400 font-black">#{item.rooms?.id.slice(0, 8)}</span>
+                              <span className="text-[10px] text-white/20 uppercase">{item.rooms?.modules?.name}</span>
+                            </div>
+                          </td>
+                          <td className="p-6 font-black">{item.rooms?.modules?.price.toLocaleString()} Kz</td>
+                          <td className="p-6">
+                            <span className={`px-3 py-1 rounded-lg text-[9px] uppercase font-black ${
+                              item.rooms?.status === 'open' ? 'bg-blue-500/10 text-blue-400' : 
+                              item.rooms?.status === 'finished' ? 'bg-green-500/10 text-green-400' : 'bg-white/10 text-white/40'
+                            }`}>
+                              {item.rooms?.status === 'open' ? 'Em Aberto' : 'Finalizado'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <p className="text-white/20 font-black text-[10px] uppercase tracking-widest">Nenhuma atividade registrada ainda.</p>
-              </div>
-            )}
-          </div>
-        </section>
+              ) : (
+                <div className="py-20 text-center">
+                  <History size={32} className="mx-auto mb-4 text-white/10" />
+                  <p className="text-white/20 font-black text-[10px] uppercase tracking-widest">Nenhuma participação registrada.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="transactions">
+            <div className="glass-card rounded-[2rem] overflow-hidden border-white/5">
+              {transactions.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/30">
+                      <tr>
+                        <th className="p-6">Data</th>
+                        <th className="p-6">Tipo</th>
+                        <th className="p-6">Valor</th>
+                        <th className="p-6">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-xs font-bold">
+                      {transactions.map((tx) => (
+                        <tr key={tx.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                          <td className="p-6 text-white/40">{new Date(tx.created_at).toLocaleString()}</td>
+                          <td className="p-6">
+                            <div className="flex items-center gap-2">
+                              {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
+                              <span className="uppercase font-black">{tx.type === 'deposit' ? 'Depósito' : 'Saque'}</span>
+                            </div>
+                          </td>
+                          <td className="p-6 font-black text-lg">{tx.amount.toLocaleString()} Kz</td>
+                          <td className="p-6">
+                            <div className="flex items-center gap-2">
+                              {tx.status === 'pending' ? <Clock size={14} className="text-amber-500" /> : 
+                               tx.status === 'completed' ? <CheckCircle2 size={14} className="text-green-500" /> : 
+                               <XCircle size={14} className="text-red-500" />}
+                              <span className={`text-[9px] uppercase font-black ${
+                                tx.status === 'pending' ? 'text-amber-500' : 
+                                tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
+                              }`}>{tx.status}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-20 text-center">
+                  <CreditCard size={32} className="mx-auto mb-4 text-white/10" />
+                  <p className="text-white/20 font-black text-[10px] uppercase tracking-widest">Nenhuma transação financeira registrada.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
       
       <Footer />

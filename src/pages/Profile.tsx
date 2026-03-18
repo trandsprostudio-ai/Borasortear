@@ -166,18 +166,18 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Primeiro Nome</Label>
-                    <Input 
+                    <input 
                       value={profile?.first_name || ''} 
                       onChange={(e) => setProfile({...profile, first_name: e.target.value})}
-                      className="bg-white/5 border-white/10 rounded-2xl h-12" 
+                      className="bg-white/5 border-white/10 rounded-2xl h-12 px-4 w-full focus:outline-none focus:border-purple-500/50" 
                     />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Sobrenome</Label>
-                    <Input 
+                    <input 
                       value={profile?.last_name || ''} 
                       onChange={(e) => setProfile({...profile, last_name: e.target.value})}
-                      className="bg-white/5 border-white/10 rounded-2xl h-12" 
+                      className="bg-white/5 border-white/10 rounded-2xl h-12 px-4 w-full focus:outline-none focus:border-purple-500/50" 
                     />
                   </div>
                 </div>
@@ -186,10 +186,10 @@ const Profile = () => {
                   <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone (Não editável)</Label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/10" size={18} />
-                    <Input 
+                    <input 
                       value={user?.email?.split('@')[0] || ''} 
                       disabled 
-                      className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 opacity-50" 
+                      className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 w-full opacity-50 cursor-not-allowed" 
                     />
                   </div>
                 </div>
@@ -198,11 +198,11 @@ const Profile = () => {
                   <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Dados para Saque (IBAN / Conta)</Label>
                   <div className="relative">
                     <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                    <Input 
+                    <input 
                       value={profile?.bank_info || ''} 
                       onChange={(e) => setProfile({...profile, bank_info: e.target.value})}
                       placeholder="AO06..." 
-                      className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" 
+                      className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 w-full focus:outline-none focus:border-purple-500/50" 
                     />
                   </div>
                 </div>
