@@ -5,7 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, Users, Settings, LogOut, RefreshCw, 
-  DollarSign, TrendingUp, Wallet, ArrowDownLeft, ArrowUpRight
+  DollarSign, TrendingUp, Wallet, ArrowDownLeft, ArrowUpRight,
+  ShieldAlert, Activity
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,7 +21,8 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalDeposits: 0,
     totalWithdrawals: 0,
-    platformBalance: 0
+    platformBalance: 0,
+    pendingTxs: 0
   });
 
   useEffect(() => {
@@ -40,10 +42,13 @@ const AdminDashboard = () => {
       if (txs) {
         const deposits = txs.filter(t => t.type === 'deposit' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
         const withdrawals = txs.filter(t => t.type === 'withdrawal' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
+        const pending = txs.filter(t => t.status === 'pending').length;
+        
         setStats({
           totalDeposits: deposits,
           totalWithdrawals: withdrawals,
-          platformBalance: deposits - withdrawals
+          platformBalance: deposits - withdrawals,
+          pendingTxs: pending
         });
       }
     } catch (error) {
@@ -64,16 +69,16 @@ const AdminDashboard = () => {
       <aside className="w-72 border-r border-white/5 bg-[#0F111A] p-8 flex flex-col hidden lg:flex">
         <div className="flex items-center gap-3 mb-12">
           <div className="w-10 h-10 premium-gradient rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <Settings className="text-white" size={20} />
+            <Activity className="text-white" size={20} />
           </div>
           <div>
-            <h2 className="font-black italic tracking-tighter leading-none">ADMIN</h2>
+            <h2 className="font-black italic tracking-tighter leading-none">COMANDO</h2>
             <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Bora Sorteiar</p>
           </div>
         </div>
 
         <nav className="space-y-2 flex-1">
-          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-4">Menu Principal</p>
+          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-4">Gestão</p>
           <Button variant="ghost" className="w-full justify-start gap-4 h-12 rounded-xl bg-white/5 text-white border border-white/5">
             <LayoutDashboard size={18} className="text-purple-500" /> Dashboard
           </Button>
@@ -94,16 +99,24 @@ const AdminDashboard = () => {
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase">Centro de Comando</h1>
-            <p className="text-white/40 text-sm font-bold">Gestão em tempo real de ativos e jogadores.</p>
+            <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase">Painel de Controle</h1>
+            <p className="text-white/40 text-sm font-bold">Monitoramento global e validação de ativos.</p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={fetchGlobalStats} 
-            className="border-white/10 bg-white/5 hover:bg-white/10 h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest"
-          >
-            <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Atualizar
-          </Button>
+          <div className="flex gap-3">
+            {stats.pendingTxs > 0 && (
+              <div className="bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-xl flex items-center gap-2 text-amber-500 animate-pulse">
+                <ShieldAlert size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest">{stats.pendingTxs} Pendentes</span>
+              </div>
+            )}
+            <Button 
+              variant="outline" 
+              onClick={fetchGlobalStats} 
+              className="border-white/10 bg-white/5 hover:bg-white/10 h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest"
+            >
+              <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+            </Button>
+          </div>
         </header>
 
         {/* Stats Grid */}
@@ -112,18 +125,15 @@ const AdminDashboard = () => {
             <div className="absolute -right-4 -bottom-4 text-purple-500/10 group-hover:scale-110 transition-transform">
               <Users size={100} />
             </div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Total Jogadores</p>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Jogadores</p>
             <p className="text-4xl font-black italic">{totalUsers}</p>
-            <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-green-400">
-              <TrendingUp size={12} /> +12% este mês
-            </div>
           </div>
 
           <div className="glass-card p-6 rounded-3xl border-green-500/20 relative overflow-hidden group">
             <div className="absolute -right-4 -bottom-4 text-green-500/10 group-hover:scale-110 transition-transform">
               <ArrowDownLeft size={100} />
             </div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Total Depósitos</p>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Depósitos</p>
             <p className="text-4xl font-black italic text-green-400">{stats.totalDeposits.toLocaleString()} <span className="text-xs not-italic opacity-60">Kz</span></p>
           </div>
 
@@ -131,7 +141,7 @@ const AdminDashboard = () => {
             <div className="absolute -right-4 -bottom-4 text-amber-500/10 group-hover:scale-110 transition-transform">
               <ArrowUpRight size={100} />
             </div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Total Saques</p>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Saques</p>
             <p className="text-4xl font-black italic text-amber-500">{stats.totalWithdrawals.toLocaleString()} <span className="text-xs not-italic opacity-60">Kz</span></p>
           </div>
 
@@ -139,7 +149,7 @@ const AdminDashboard = () => {
             <div className="absolute -right-4 -bottom-4 text-blue-500/10 group-hover:scale-110 transition-transform">
               <DollarSign size={100} />
             </div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Balanço Plataforma</p>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Lucro Bruto</p>
             <p className="text-4xl font-black italic text-blue-400">{stats.platformBalance.toLocaleString()} <span className="text-xs not-italic opacity-60">Kz</span></p>
           </div>
         </div>

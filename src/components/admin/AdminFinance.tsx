@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Smartphone, Banknote, CreditCard, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminFinanceProps {
@@ -31,7 +31,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   };
 
   const handleApprove = async (tx: any) => {
-    if (!confirm(`Aprovar ${tx.type === 'deposit' ? 'depósito' : 'saque'} de ${tx.amount.toLocaleString()} Kz?`)) return;
+    if (!confirm(`APROVAR ${tx.type === 'deposit' ? 'DEPÓSITO' : 'SAQUE'} DE ${tx.amount.toLocaleString()} Kz?`)) return;
 
     try {
       if (tx.type === 'deposit') {
@@ -41,7 +41,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       // Para saque, o saldo já foi deduzido no pedido (escrow)
 
       await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
-      toast.success("Transação aprovada!");
+      toast.success("Transação aprovada com sucesso!");
       fetchTransactions();
       onUpdate();
     } catch (error) {
@@ -50,20 +50,30 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   };
 
   const handleReject = async (tx: any) => {
-    if (!confirm("Rejeitar esta transação?")) return;
+    const reason = prompt("Motivo da rejeição (será visível para o usuário):", "Comprovativo inválido ou não recebido.");
+    if (reason === null) return;
 
     try {
       if (tx.type === 'withdrawal') {
+        // Devolver saldo ao usuário em caso de saque rejeitado
         const newBalance = (tx.profiles?.balance || 0) + Number(tx.amount);
         await supabase.from('profiles').update({ balance: newBalance }).eq('id', tx.user_id);
       }
 
       await supabase.from('transactions').update({ status: 'rejected' }).eq('id', tx.id);
-      toast.success("Transação rejeitada");
+      toast.success("Transação rejeitada.");
       fetchTransactions();
       onUpdate();
     } catch (error) {
       toast.error("Erro ao rejeitar transação");
+    }
+  };
+
+  const getMethodIcon = (method: string) => {
+    switch (method) {
+      case 'iban': return <Banknote size={14} className="text-blue-400" />;
+      case 'express': return <CreditCard size={14} className="text-purple-400" />;
+      default: return <Smartphone size={14} className="text-amber-400" />;
     }
   };
 
@@ -74,7 +84,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           <TableRow className="border-white/5 hover:bg-transparent">
             <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Data / Jogador</TableHead>
             <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Tipo / Valor</TableHead>
-            <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Dados Bancários</TableHead>
+            <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Método / Info</TableHead>
             <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Status</TableHead>
             <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
           </TableRow>
@@ -94,8 +104,14 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                   <span className="font-black text-lg">{tx.amount.toLocaleString()} Kz</span>
                 </div>
               </TableCell>
-              <TableCell className="p-6 text-white/40 text-xs max-w-[150px] truncate">
-                {tx.profiles?.bank_info || 'N/A'}
+              <TableCell className="p-6">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    {getMethodIcon(tx.payment_method)}
+                    <span className="text-[10px] font-black uppercase text-white/60">{tx.payment_method || 'N/A'}</span>
+                  </div>
+                  <span className="text-[9px] text-white/20 truncate max-w-[120px]">{tx.profiles?.bank_info}</span>
+                </div>
               </TableCell>
               <TableCell className="p-6">
                 <div className="flex items-center gap-2">
