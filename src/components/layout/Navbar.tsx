@@ -1,12 +1,50 @@
 "use client";
 
-import React from 'react';
-import { Wallet, User, Bell, Menu, Ticket } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Wallet, User, Bell, Menu, Ticket, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 
-const Navbar = () => {
+interface NavbarProps {
+  onAuthClick?: () => void;
+  user?: any;
+}
+
+const Navbar = ({ onAuthClick, user }: NavbarProps) => {
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      const fetchProfile = async () => {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (data) setProfile(data);
+      };
+      fetchProfile();
+
+      const channel = supabase
+        .channel(`profile-${user.id}`)
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+          (payload) => setProfile(payload.new)
+        )
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); };
+    } else {
+      setProfile(null);
+    }
+  }, [user]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0F]/80 backdrop-blur-md border-b border-white/5 px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -29,21 +67,34 @@ const Navbar = () => {
         </Link>
 
         <div className="flex items-center gap-3">
-          <Link to="/wallet" className="hidden md:flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 transition-all group">
-            <Wallet size={18} className="text-purple-400 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-sm">12.500 Kz</span>
-          </Link>
+          {user && (
+            <Link to="/wallet" className="hidden md:flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 transition-all group">
+              <Wallet size={18} className="text-purple-400 group-hover:scale-110 transition-transform" />
+              <span className="font-bold text-sm">{profile?.balance?.toLocaleString() || '0'} Kz</span>
+            </Link>
+          )}
           
           <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10 relative">
             <Bell size={20} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+            {user && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />}
           </Button>
           
-          <Link to="/auth">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
-              <User size={20} />
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Link to="/profile">
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
+                  <User size={20} />
+                </Button>
+              </Link>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="rounded-full hover:bg-white/10 text-red-400">
+                <LogOut size={20} />
+              </Button>
+            </div>
+          ) : (
+            <Button onClick={onAuthClick} className="premium-gradient rounded-full px-6 font-bold h-10">
+              Entrar
             </Button>
-          </Link>
+          )}
           
           <Button variant="ghost" size="icon" className="md:hidden rounded-full hover:bg-white/10">
             <Menu size={20} />
