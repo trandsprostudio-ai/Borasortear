@@ -53,7 +53,7 @@ const Index = () => {
       <DrawOverlay 
         isOpen={showDraw} 
         onClose={() => setShowDraw(false)} 
-        winners={[]} // To be populated from real winners table
+        winners={[]} 
       />
 
       <main className="max-w-7xl mx-auto px-4 pt-28">
@@ -142,21 +142,10 @@ const Index = () => {
                       openRooms.filter(r => r.module_id === mod.id).map((room) => (
                         <RoomCard 
                           key={room.id} 
-                          room={{
-                            id: room.id,
-                            moduleId: room.module_id,
-                            status: room.status,
-                            currentParticipants: room.current_participants,
-                            maxParticipants: room.max_participants,
-                            expiresAt: room.expires_at,
-                            createdAt: room.created_at
-                          }} 
-                          module={{
-                            id: mod.id,
-                            name: mod.name,
-                            price: mod.price,
-                            maxParticipants: mod.max_participants
-                          }} 
+                          room={room} 
+                          module={mod} 
+                          user={user}
+                          onAuthRequired={() => setShowAuth(true)}
                         />
                       ))
                     ) : (
