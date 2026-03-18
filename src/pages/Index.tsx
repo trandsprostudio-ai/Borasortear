@@ -23,6 +23,9 @@ const Index = () => {
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
   const [finishedDraw, setFinishedDraw] = useState<{ winners: any[], info: string } | null>(null);
   const [recentWinners, setRecentWinners] = useState<any[]>([]);
+  
+  // Estado para jogadores online (fictício)
+  const [onlinePlayers, setOnlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -44,6 +47,15 @@ const Index = () => {
 
     fetchModules();
     fetchRecentWinners();
+
+    // Lógica para atualizar jogadores online a cada 3 minutos
+    const onlineInterval = setInterval(() => {
+      setOnlinePlayers(prev => {
+        const change = Math.floor(Math.random() * 300) - 150; // Oscilação entre -150 e +150
+        const next = prev + change;
+        return next < 1000 ? 1000 + Math.floor(Math.random() * 200) : next;
+      });
+    }, 180000); // 3 minutos
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -72,13 +84,14 @@ const Index = () => {
             })),
             info: `MESA #${payload.new.id.slice(0,4)} FINALIZADA`
           });
-          fetchRecentWinners(); // Atualiza a lista lateral
+          fetchRecentWinners();
         }
       }).subscribe();
 
     return () => {
       subscription.unsubscribe();
       supabase.removeChannel(channel);
+      clearInterval(onlineInterval);
     };
   }, []);
 
@@ -121,7 +134,7 @@ const Index = () => {
       />
 
       <main className="max-w-[1600px] mx-auto px-4 pt-20 pb-20">
-        {/* Header de Status com Carrossel */}
+        {/* Header de Status com Carrossel e Jogadores Online */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-[#151823] border border-white/5 p-4 rounded-xl">
           <div className="flex items-center gap-6">
             <PrizeCarousel />
@@ -129,7 +142,9 @@ const Index = () => {
           
           <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-lg border border-white/5">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-            <span className="text-xs font-black uppercase tracking-widest">2.140 Jogadores Online</span>
+            <span className="text-xs font-black uppercase tracking-widest">
+              {onlinePlayers.toLocaleString()} Jogadores Online
+            </span>
           </div>
         </div>
 
