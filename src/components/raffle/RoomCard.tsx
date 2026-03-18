@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Users, ArrowRight, Zap, Flame } from 'lucide-react';
+import { Users, Zap, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
@@ -19,72 +19,49 @@ const RoomCard = ({ room, module, onParticipate }: RoomCardProps) => {
   
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ 
-        scale: 1.03,
-        boxShadow: "0 0 30px rgba(124, 58, 237, 0.2)"
-      }}
-      className="glass-card p-6 rounded-2xl relative overflow-hidden group transition-all duration-300"
+      whileHover={{ y: -4 }}
+      className="bg-[#151823] border border-white/5 rounded-xl p-4 flex flex-col justify-between hover:border-purple-500/50 transition-all group"
     >
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-600/10 blur-[80px] group-hover:bg-purple-600/20 transition-colors" />
-      
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">
-              SALA #{room.id.slice(0, 4)}
-            </span>
-            {isAlmostFull && (
-              <span className="flex items-center gap-0.5 bg-amber-500/20 text-amber-500 text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse">
-                <Flame size={10} /> ÚLTIMAS VAGAS
-              </span>
-            )}
-          </div>
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex flex-col">
+          <span className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">SALA #{room.id.slice(0, 4)}</span>
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-black text-white tracking-tight">{module.price}</span>
-            <span className="text-sm font-bold text-purple-400">Kz</span>
+            <span className="text-2xl font-black text-white italic">{module.price}</span>
+            <span className="text-[10px] font-bold text-purple-500">KZ</span>
           </div>
         </div>
-        
-        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-purple-500/50 transition-colors">
-          <Zap size={20} className="text-purple-400 group-hover:fill-purple-400 transition-all" />
-        </div>
+        {isAlmostFull && (
+          <div className="bg-amber-500/10 text-amber-500 p-1.5 rounded-lg animate-pulse">
+            <Flame size={14} />
+          </div>
+        )}
       </div>
 
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <div className="flex justify-between text-[11px] font-black tracking-tight">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Users size={14} className="text-cyan-400" />
-              <span>{room.currentParticipants.toLocaleString()} / {room.maxParticipants.toLocaleString()}</span>
-            </div>
-            <span className={isAlmostFull ? 'text-amber-500' : 'text-purple-400'}>
-              {Math.round(progress)}%
-            </span>
+      <div className="space-y-3">
+        <div className="flex justify-between items-end text-[10px] font-black uppercase tracking-tighter">
+          <div className="flex items-center gap-1 text-white/40">
+            <Users size={12} />
+            <span>{room.currentParticipants}/{room.maxParticipants}</span>
           </div>
-          <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden">
-            <motion.div 
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className={`absolute top-0 left-0 h-full rounded-full ${
-                isAlmostFull ? 'gold-gradient' : 'premium-gradient'
-              } ${progress > 90 ? 'animate-pulse-glow' : ''}`}
-            />
-          </div>
+          <span className={isAlmostFull ? 'text-amber-500' : 'text-purple-500'}>{Math.round(progress)}%</span>
+        </div>
+        
+        <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            className={`h-full rounded-full ${isAlmostFull ? 'bg-amber-500' : 'bg-purple-600'}`}
+          />
         </div>
 
-        <div className="flex items-center justify-between pt-2">
-          <CountdownTimer initialSeconds={Math.floor(Math.random() * 600) + 30} />
-          
+        <div className="flex items-center justify-between pt-2 gap-2">
+          <CountdownTimer initialSeconds={Math.floor(Math.random() * 300) + 60} />
           <Button 
             size="sm" 
             onClick={() => onParticipate(room, module)}
-            className="premium-gradient border-0 rounded-xl px-5 font-bold shadow-lg shadow-purple-500/20 group-hover:shadow-purple-500/40 transition-all active:scale-95"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[10px] uppercase tracking-widest h-8 px-4 rounded-lg flex-1"
           >
-            Participar
-            <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
+            PARTICIPAR
           </Button>
         </div>
       </div>
