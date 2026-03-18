@@ -49,6 +49,7 @@ const Index = () => {
     fetchModules();
     fetchRecentWinners();
 
+    // Simulação de jogadores online variando
     const onlineInterval = setInterval(() => {
       setOnlinePlayers(prev => {
         const change = Math.floor(Math.random() * 300) - 150;
@@ -67,9 +68,11 @@ const Index = () => {
       if (session?.user) fetchProfile(session.user.id);
     });
 
+    // Escutar finalização de salas para mostrar o overlay de sorteio
     const channel = supabase.channel('draw-results')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'status=eq.finished' }, 
       async (payload) => {
+        // Buscar vencedores desta sala específica
         const { data: winners } = await supabase
           .from('winners')
           .select('*, profiles(first_name)')
@@ -84,7 +87,7 @@ const Index = () => {
             })),
             info: `MESA #${payload.new.id.slice(0,4)} FINALIZADA`
           });
-          fetchRecentWinners();
+          fetchRecentWinners(); // Atualiza a lista lateral
         }
       }).subscribe();
 
