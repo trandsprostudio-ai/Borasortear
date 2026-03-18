@@ -1,11 +1,10 @@
 "use client";
 
-import React from 'react';
-import { Users, Zap, Flame, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, Zap, Flame, Trophy, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
-import CountdownTimer from './CountdownTimer';
 
 interface RoomCardProps {
   room: Room;
@@ -15,17 +14,36 @@ interface RoomCardProps {
 }
 
 const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) => {
+  const [timeLeft, setTimeLeft] = useState("");
   const progress = (room.currentParticipants / room.maxParticipants) * 100;
-  const isAlmostFull = progress > 85;
-  
+  const isAlmostFull = progress > 90;
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const expiry = new Date(room.expiresAt).getTime();
+      const now = new Date().getTime();
+      const diff = expiry - now;
+
+      if (diff <= 0) return "SORTEANDO...";
+      
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      return `${h}h ${m}m ${s}s`;
+    };
+
+    const timer = setInterval(() => setTimeLeft(calculateTime()), 1000);
+    return () => clearInterval(timer);
+  }, [room.expiresAt]);
+
   return (
     <motion.div 
-      whileHover={{ y: -4, borderColor: 'rgba(124, 58, 237, 0.5)' }}
-      className="bg-[#151823] border border-white/5 rounded-xl p-4 flex flex-col justify-between transition-all group relative overflow-hidden"
+      whileHover={{ y: -4 }}
+      className="bg-[#151823] border border-white/5 rounded-xl p-4 flex flex-col justify-between hover:border-purple-500/50 transition-all group relative overflow-hidden"
     >
-      {/* Indicador de Sala/Mesa */}
       <div className="absolute top-0 left-0 bg-purple-600 text-[9px] font-black px-2 py-1 rounded-br-lg z-10">
-        SALA {roomNumber}
+        MESA {roomNumber}
       </div>
 
       <div className="flex justify-between items-start mb-4 pt-2">
@@ -36,11 +54,12 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             <span className="text-[10px] font-bold text-purple-500">KZ</span>
           </div>
         </div>
-        {isAlmostFull && (
-          <div className="bg-amber-500/10 text-amber-500 p-1.5 rounded-lg animate-pulse">
-            <Flame size={14} />
+        <div className="flex flex-col items-end">
+          <div className="flex items-center gap-1 text-[10px] font-black text-amber-500 bg-amber-500/10 px-2 py-1 rounded-md">
+            <Clock size={10} />
+            <span>{timeLeft}</span>
           </div>
-        )}
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -52,27 +71,26 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
           <span className={isAlmostFull ? 'text-amber-500' : 'text-purple-500'}>{Math.round(progress)}%</span>
         </div>
         
-        <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            className={`h-full rounded-full ${isAlmostFull ? 'bg-amber-500' : 'bg-purple-600'}`}
+            className={`h-full rounded-full ${isAlmostFull ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'bg-purple-600'}`}
           />
         </div>
 
         <div className="flex flex-col gap-2 pt-2">
-          <div className="flex items-center justify-between">
-            <CountdownTimer initialSeconds={Math.floor(Math.random() * 300) + 60} />
-            <Zap size={14} className="text-white/10 group-hover:text-purple-500 transition-colors" />
+          <div className="flex items-center justify-between text-[9px] font-black text-white/20 uppercase">
+            <span>Prêmio Estimado:</span>
+            <span className="text-green-400">{(module.price * room.maxParticipants * 0.9).toLocaleString()} Kz</span>
           </div>
           
           <Button 
             size="sm" 
             onClick={() => onParticipate(room, module)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[10px] uppercase tracking-widest h-9 w-full rounded-lg shadow-lg shadow-purple-900/20"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[11px] uppercase tracking-widest h-10 w-full rounded-lg shadow-lg shadow-purple-900/20 group-hover:scale-[1.02] transition-transform"
           >
-            ENTRAR NA SALA
-            <ArrowRight size={12} className="ml-2" />
+            ENTRAR NA MESA
           </Button>
         </div>
       </div>

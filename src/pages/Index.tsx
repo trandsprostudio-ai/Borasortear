@@ -5,6 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import RoomCard from '@/components/raffle/RoomCard';
 import AuthModal from '@/components/auth/AuthModal';
 import JoinRoomModal from '@/components/raffle/JoinRoomModal';
+import DrawOverlay from '@/components/raffle/DrawOverlay';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap, LayoutGrid, History, Trophy } from 'lucide-react';
@@ -18,6 +19,9 @@ const Index = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
+  
+  // Estado para o sorteio finalizado
+  const [finishedDraw, setFinishedDraw] = useState<{ winners: any[], info: string } | null>(null);
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -38,7 +42,33 @@ const Index = () => {
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
     });
-    return () => subscription.unsubscribe();
+
+    // Escutar por salas finalizadas para mostrar o overlay
+    const channel = supabase.channel('draw-results')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'status=eq.finished' }, 
+      async (payload) => {
+        // Buscar vencedores reais da sala
+        const { data: winners } = await supabase
+          .from('winners')
+          .select('*, profiles(first_name)')
+          .eq('draw_id', payload.new.id); // Simplificação: usando room_id como draw_id no SQL acima
+        
+        if (winners) {
+          setFinishedDraw({
+            winners: winners.map(w => ({ 
+              name: w.profiles?.first_name || 'Usuário', 
+              prize: `${w.prize_amount.toLocaleString()} Kz`,
+              position: w.position 
+            })),
+            info: `MESA #${payload.new.id.slice(0,4)} FINALIZADA`
+          });
+        }
+      }).subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchProfile = async (userId: string) => {
@@ -51,7 +81,6 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
-  // Filtra as salas do módulo ativo
   const activeModuleRooms = rooms
     .filter(r => r.module_id === activeModuleId && r.status === 'open')
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -73,8 +102,15 @@ const Index = () => {
         />
       )}
 
+      <DrawOverlay 
+        isOpen={!!finishedDraw} 
+        onClose={() => setFinishedDraw(null)} 
+        winners={finishedDraw?.winners || []}
+        roomInfo={finishedDraw?.info}
+      />
+
       <main className="max-w-[1600px] mx-auto px-4 pt-20 pb-20">
-        {/* Header de Status da Plataforma */}
+        {/* Header de Status */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-[#151823] border border-white/5 p-4 rounded-xl">
           <div className="flex items-center gap-6">
             <div className="flex flex-col">
@@ -94,7 +130,7 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Seleção de Módulos (Categorias) */}
+        {/* Seleção de Módulos */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <LayoutGrid size={18} className="text-purple-500" />
@@ -118,16 +154,16 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Grid de Salas (Mesas) do Módulo Selecionado */}
+        {/* Grid de Mesas */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Zap size={18} className="text-amber-500" />
               <h2 className="text-xl font-black italic tracking-tighter">
-                SALAS DISPONÍVEIS - {activeModule?.name} ({activeModule?.price} Kz)
+                MESAS DISPONÍVEIS - {activeModule?.name} ({activeModule?.price} Kz)
               </h2>
             </div>
-            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">5 Salas Ativas</span>
+            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Sorteio em até 5h ou ao lotar</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -151,13 +187,13 @@ const Index = () => {
               ))
             ) : (
               <div className="col-span-full py-12 text-center bg-[#151823] rounded-xl border border-dashed border-white/10">
-                <p className="text-white/20 font-black uppercase tracking-widest text-sm">Nenhuma sala aberta neste módulo.</p>
+                <p className="text-white/20 font-black uppercase tracking-widest text-sm">Nenhuma mesa aberta neste módulo.</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Rodapé de Atividade Recente */}
+        {/* Atividade Recente */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-[#151823] border border-white/5 rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
