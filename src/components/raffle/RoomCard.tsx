@@ -1,11 +1,12 @@
 "use client";
 
 import React from 'react';
-import { Users, Timer, ArrowRight } from 'lucide-react';
+import { Users, ArrowRight, Zap, Flame } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
+import CountdownTimer from './CountdownTimer';
 
 interface RoomCardProps {
   room: Room;
@@ -14,51 +15,76 @@ interface RoomCardProps {
 
 const RoomCard = ({ room, module }: RoomCardProps) => {
   const progress = (room.currentParticipants / room.maxParticipants) * 100;
+  const isAlmostFull = progress > 85;
   
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.02 }}
-      className="glass-card p-5 rounded-2xl relative overflow-hidden group"
+      whileHover={{ 
+        scale: 1.03,
+        boxShadow: "0 0 30px rgba(124, 58, 237, 0.2)"
+      }}
+      className="glass-card p-6 rounded-2xl relative overflow-hidden group transition-all duration-300"
     >
-      <div className="absolute top-0 right-0 p-3">
-        <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full ${
-          room.status === 'aberta' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
-        }`}>
-          {room.status}
-        </span>
-      </div>
-
-      <div className="mb-4">
-        <h3 className="text-sm text-muted-foreground font-medium mb-1">Sala #{room.id.slice(0, 4)}</h3>
-        <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-bold">{module.price}</span>
-          <span className="text-xs font-medium text-muted-foreground">Kz</span>
+      {/* Background Glow Effect */}
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-600/10 blur-[80px] group-hover:bg-purple-600/20 transition-colors" />
+      
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] uppercase tracking-widest font-black text-muted-foreground">
+              SALA #{room.id.slice(0, 4)}
+            </span>
+            {isAlmostFull && (
+              <span className="flex items-center gap-0.5 bg-amber-500/20 text-amber-500 text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse">
+                <Flame size={10} /> ÚLTIMAS VAGAS
+              </span>
+            )}
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-3xl font-black text-white tracking-tight">{module.price}</span>
+            <span className="text-sm font-bold text-purple-400">Kz</span>
+          </div>
+        </div>
+        
+        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-purple-500/50 transition-colors">
+          <Zap size={20} className="text-purple-400 group-hover:fill-purple-400 transition-all" />
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="space-y-2">
-          <div className="flex justify-between text-xs font-medium">
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Users size={14} />
-              <span>{room.currentParticipants}/{room.maxParticipants}</span>
+          <div className="flex justify-between text-[11px] font-black tracking-tight">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Users size={14} className="text-cyan-400" />
+              <span>{room.currentParticipants.toLocaleString()} / {room.maxParticipants.toLocaleString()}</span>
             </div>
-            <span className="text-purple-400">{Math.round(progress)}%</span>
+            <span className={isAlmostFull ? 'text-amber-500' : 'text-purple-400'}>
+              {Math.round(progress)}%
+            </span>
           </div>
-          <Progress value={progress} className="h-1.5 bg-white/5" />
+          <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className={`absolute top-0 left-0 h-full rounded-full ${
+                isAlmostFull ? 'gold-gradient' : 'premium-gradient'
+              } ${progress > 90 ? 'animate-pulse-glow' : ''}`}
+            />
+          </div>
         </div>
 
         <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Timer size={14} className="text-blue-400" />
-            <span>04:22:15</span>
-          </div>
+          <CountdownTimer initialSeconds={Math.floor(Math.random() * 600) + 30} />
           
-          <Button size="sm" className="premium-gradient border-0 rounded-xl px-4 group-hover:shadow-lg group-hover:shadow-purple-500/20 transition-all">
+          <Button 
+            size="sm" 
+            className="premium-gradient border-0 rounded-xl px-5 font-bold shadow-lg shadow-purple-500/20 group-hover:shadow-purple-500/40 transition-all active:scale-95"
+          >
             Participar
-            <ArrowRight size={14} className="ml-1 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight size={14} className="ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
       </div>
