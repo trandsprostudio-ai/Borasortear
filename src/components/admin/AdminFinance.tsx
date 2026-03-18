@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Smartphone, Banknote, CreditCard, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Smartphone, Banknote, CreditCard, ExternalLink, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminFinanceProps {
@@ -38,7 +38,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         const newBalance = (tx.profiles?.balance || 0) + Number(tx.amount);
         await supabase.from('profiles').update({ balance: newBalance }).eq('id', tx.user_id);
       }
-      // Para saque, o saldo já foi deduzido no pedido (escrow)
 
       await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
       toast.success("Transação aprovada com sucesso!");
@@ -50,12 +49,11 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   };
 
   const handleReject = async (tx: any) => {
-    const reason = prompt("Motivo da rejeição (será visível para o usuário):", "Comprovativo inválido ou não recebido.");
+    const reason = prompt("Motivo da rejeição:", "Comprovativo inválido ou não recebido.");
     if (reason === null) return;
 
     try {
       if (tx.type === 'withdrawal') {
-        // Devolver saldo ao usuário em caso de saque rejeitado
         const newBalance = (tx.profiles?.balance || 0) + Number(tx.amount);
         await supabase.from('profiles').update({ balance: newBalance }).eq('id', tx.user_id);
       }
@@ -84,7 +82,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           <TableRow className="border-white/5 hover:bg-transparent">
             <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Data / Jogador</TableHead>
             <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Tipo / Valor</TableHead>
-            <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Método / Info</TableHead>
+            <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Método / Comprovativo</TableHead>
             <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Status</TableHead>
             <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
           </TableRow>
@@ -105,12 +103,23 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                 </div>
               </TableCell>
               <TableCell className="p-6">
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     {getMethodIcon(tx.payment_method)}
                     <span className="text-[10px] font-black uppercase text-white/60">{tx.payment_method || 'N/A'}</span>
                   </div>
-                  <span className="text-[9px] text-white/20 truncate max-w-[120px]">{tx.profiles?.bank_info}</span>
+                  {tx.proof_url ? (
+                    <a 
+                      href={tx.proof_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest"
+                    >
+                      <FileText size={12} /> Ver Comprovativo <ExternalLink size={10} />
+                    </a>
+                  ) : (
+                    <span className="text-[9px] text-white/10 uppercase font-bold">Sem anexo</span>
+                  )}
                 </div>
               </TableCell>
               <TableCell className="p-6">

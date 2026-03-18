@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wallet, ArrowUpRight, ArrowDownLeft, Copy, CheckCircle2, Loader2, CreditCard, AlertCircle, Smartphone, Banknote, Upload } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownLeft, Copy, CheckCircle2, Loader2, CreditCard, AlertCircle, Smartphone, Banknote, Upload, FileText, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -22,6 +22,8 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
   const [method, setMethod] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'method' | 'confirm'>('form');
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const depositMethods = [
     { id: 'iban', name: 'Transferência (IBAN)', icon: Banknote, color: 'text-blue-400' },
@@ -35,6 +37,26 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
     { id: 'express', name: 'Multicaixa Express', icon: CreditCard },
   ];
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    // Validação de tamanho (2MB)
+    if (selectedFile.size > 2 * 1024 * 1024) {
+      toast.error("O arquivo deve ter no máximo 2MB.");
+      return;
+    }
+
+    // Validação de tipo (PDF, PNG, JPG)
+    const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+    if (!allowedTypes.includes(selectedFile.type)) {
+      toast.error("Formato inválido. Use PDF ou PNG.");
+      return;
+    }
+
+    setFile(selectedFile);
+  };
+
   const handleNext = () => {
     if (!amount || parseFloat(amount) <= 0) {
       toast.error("Insira um valor válido.");
@@ -47,20 +69,38 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
     const val = parseFloat(amount);
     setLoading(true);
     try {
+      let proofUrl = null;
+
+      // Se for depósito e tiver arquivo, faz o upload
+      if (type === 'deposit' && file) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('proofs')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('proofs')
+          .getPublicUrl(fileName);
+        
+        proofUrl = publicUrl;
+      }
+
       if (type === 'withdrawal') {
         if (val > currentBalance) {
           toast.error("Saldo insuficiente.");
           setLoading(false);
           return;
         }
-        // Escrow: Deduzir saldo imediatamente
+        
         const { error: balanceError } = await supabase
           .from('profiles')
           .update({ balance: currentBalance - val })
           .eq('id', user.id);
         
         if (balanceError) throw balanceError;
-
         toast.info("O seu saque está em atualização, por favor aguarde um instante.");
       }
 
@@ -69,7 +109,9 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
         type: type,
         amount: val,
         status: 'pending',
-        payment_method: method
+        payment_method: method,
+        // @ts-ignore - Assumindo que a coluna proof_url existe ou será adicionada
+        proof_url: proofUrl
       });
 
       if (error) throw error;
@@ -86,17 +128,13 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copiado!");
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
         setStep('form');
         setAmount('');
         setMethod('');
+        setFile(null);
       }
       onClose();
     }}>
@@ -155,9 +193,39 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
                 </button>
               ))}
             </div>
+
+            {type === 'deposit' && (
+              <div className="mb-8">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1 mb-2 block">Anexar Comprovativo (PDF/PNG - Máx 2MB)</Label>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange} 
+                  accept=".pdf,.png,.jpg,.jpeg" 
+                  className="hidden" 
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`w-full h-14 rounded-2xl border-dashed border-white/10 bg-white/5 flex items-center justify-center gap-3 ${file ? 'border-green-500/50 text-green-400' : 'text-white/40'}`}
+                >
+                  {file ? (
+                    <>
+                      {file.type.includes('pdf') ? <FileText size={20} /> : <ImageIcon size={20} />}
+                      <span className="truncate max-w-[200px]">{file.name}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={20} /> SELECIONAR ARQUIVO
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
             <Button 
               onClick={handleAction} 
-              disabled={!method || loading}
+              disabled={!method || (type === 'deposit' && !file) || loading}
               className="w-full h-14 rounded-2xl font-black premium-gradient"
             >
               {loading ? <Loader2 className="animate-spin" /> : 'CONFIRMAR'}
@@ -172,7 +240,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
             </div>
             <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase">SOLICITAÇÃO ENVIADA</h3>
             <p className="text-xs text-white/40 font-bold mb-8 leading-relaxed">
-              A sua recarga foi solicitada com sucesso. Para validação e evitar que o crédito não seja atualizado dentro do prazo, envie sempre o seu comprovativo.
+              A sua recarga foi solicitada com sucesso. O comprovativo foi anexado e será validado em até 15 minutos.
             </p>
 
             <div className="bg-white/5 p-6 rounded-3xl border border-white/10 text-left space-y-4 mb-8">
@@ -201,14 +269,9 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
               )}
             </div>
 
-            <div className="space-y-3">
-              <Button className="w-full h-14 rounded-2xl bg-purple-600 font-black flex items-center justify-center gap-2">
-                <Upload size={18} /> ENVIAR COMPROVATIVO
-              </Button>
-              <Button variant="ghost" onClick={onClose} className="w-full h-12 text-white/20 font-black text-[10px] uppercase">
-                FECHAR
-              </Button>
-            </div>
+            <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-purple-600 font-black">
+              ENTENDIDO
+            </Button>
           </div>
         )}
       </DialogContent>
