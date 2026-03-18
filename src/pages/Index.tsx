@@ -12,7 +12,7 @@ import LiveActivity from '@/components/raffle/LiveActivity';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, History, Trophy, Ticket, ArrowRight, Share2, Copy } from 'lucide-react';
+import { Zap, LayoutGrid, History, Trophy, Ticket, ArrowRight, Share2, Copy, CheckCircle2, Wallet, PlayCircle } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -169,6 +169,52 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Hero Section / How it Works */}
+        <section className="mb-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 bg-gradient-to-br from-purple-600/20 to-transparent border border-white/5 p-8 md:p-12 rounded-[3rem] relative overflow-hidden">
+            <div className="relative z-10">
+              <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase mb-6 leading-none">
+                A Maior Arena de <br /> <span className="text-purple-500">Sorteios de Angola</span>
+              </h1>
+              <p className="text-white/40 font-bold text-sm md:text-lg max-w-xl mb-10 leading-relaxed">
+                Entre em mesas exclusivas, garanta seu bilhete e concorra a prêmios em Kwanzas instantaneamente. Transparência total e pagamentos rápidos.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Button onClick={() => navigate(user ? '/wallet' : '/auth?mode=signup')} className="h-14 px-8 rounded-2xl premium-gradient font-black text-lg shadow-2xl shadow-purple-500/20">
+                  COMEÇAR AGORA
+                </Button>
+                <Button variant="ghost" onClick={() => navigate('/support')} className="h-14 px-8 rounded-2xl bg-white/5 border border-white/10 font-black text-sm uppercase tracking-widest">
+                  SAIBA MAIS
+                </Button>
+              </div>
+            </div>
+            <div className="absolute -right-20 -bottom-20 opacity-10 rotate-12 hidden lg:block">
+              <Trophy size={400} />
+            </div>
+          </div>
+
+          <div className="glass-card p-8 rounded-[3rem] border-white/5 flex flex-col justify-between">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-8">Como Funciona</h3>
+            <div className="space-y-8">
+              {[
+                { icon: Wallet, title: "Recarregue", desc: "Adicione saldo via IBAN ou Express" },
+                { icon: PlayCircle, title: "Escolha a Mesa", desc: "Selecione o valor e entre na sala" },
+                { icon: CheckCircle2, title: "Ganhe", desc: "Aguarde o sorteio e receba o prêmio" }
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0">
+                    <step.icon size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-sm uppercase tracking-tighter">{step.title}</h4>
+                    <p className="text-[11px] font-bold text-white/30 uppercase">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Referral Banner */}
         <div className="mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/20 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -307,11 +353,14 @@ const Index = () => {
         {/* Winners Section & CTA */}
         <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-[#151823]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
-            <div className="flex items-center gap-3 mb-8">
-              <History size={18} className="text-purple-500" />
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">
-                Maiores Ganhadores da Plataforma
-              </h3>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <History size={18} className="text-purple-500" />
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">
+                  Maiores Ganhadores da Plataforma
+                </h3>
+              </div>
+              <Button variant="ghost" onClick={() => navigate('/leaderboard')} className="text-[10px] font-black text-purple-400 uppercase tracking-widest h-auto p-0">Ver Ranking</Button>
             </div>
             
             <WinnersCarousel winners={topWinners} />
