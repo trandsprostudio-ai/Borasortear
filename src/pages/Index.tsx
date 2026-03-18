@@ -6,6 +6,8 @@ import RoomCard from '@/components/raffle/RoomCard';
 import AuthModal from '@/components/auth/AuthModal';
 import JoinRoomModal from '@/components/raffle/JoinRoomModal';
 import DrawOverlay from '@/components/raffle/DrawOverlay';
+import PrizeCarousel from '@/components/raffle/PrizeCarousel';
+import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap, LayoutGrid, History, Trophy } from 'lucide-react';
@@ -19,8 +21,6 @@ const Index = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
-  
-  // Estado para o sorteio finalizado
   const [finishedDraw, setFinishedDraw] = useState<{ winners: any[], info: string } | null>(null);
 
   useEffect(() => {
@@ -43,15 +43,13 @@ const Index = () => {
       if (session?.user) fetchProfile(session.user.id);
     });
 
-    // Escutar por salas finalizadas para mostrar o overlay
     const channel = supabase.channel('draw-results')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'status=eq.finished' }, 
       async (payload) => {
-        // Buscar vencedores reais da sala
         const { data: winners } = await supabase
           .from('winners')
           .select('*, profiles(first_name)')
-          .eq('draw_id', payload.new.id); // Simplificação: usando room_id como draw_id no SQL acima
+          .eq('draw_id', payload.new.id);
         
         if (winners) {
           setFinishedDraw({
@@ -110,13 +108,10 @@ const Index = () => {
       />
 
       <main className="max-w-[1600px] mx-auto px-4 pt-20 pb-20">
-        {/* Header de Status */}
+        {/* Header de Status com Carrossel */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-[#151823] border border-white/5 p-4 rounded-xl">
           <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Total Prêmios Hoje</span>
-              <span className="text-xl font-black text-green-400">1.450.000 Kz</span>
-            </div>
+            <PrizeCarousel />
             <div className="h-8 w-px bg-white/10" />
             <div className="flex flex-col">
               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Sorteios Realizados</span>
@@ -228,6 +223,7 @@ const Index = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
