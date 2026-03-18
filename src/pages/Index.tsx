@@ -8,6 +8,7 @@ import JoinRoomModal from '@/components/raffle/JoinRoomModal';
 import DrawOverlay from '@/components/raffle/DrawOverlay';
 import PrizeCarousel from '@/components/raffle/PrizeCarousel';
 import Footer from '@/components/layout/Footer';
+import MobileNav from '@/components/layout/MobileNav';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
 import { Zap, LayoutGrid, History, Trophy, Lock, ArrowRight } from 'lucide-react';
@@ -115,7 +116,7 @@ const Index = () => {
   const activeModule = modules.find(m => m.id === activeModuleId);
 
   return (
-    <div className="min-h-screen bg-[#0A0B12] text-white font-sans">
+    <div className="min-h-screen bg-[#0A0B12] text-white font-sans pb-24">
       <Navbar user={user} />
       
       {selectedRoom && user && profile && (
@@ -313,6 +314,7 @@ const Index = () => {
           </div>
         </div>
       </main>
+      <MobileNav />
       <Footer />
     </div>
   );
