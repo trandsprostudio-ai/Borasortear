@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Wallet, User, LogOut, ChevronDown, Search, Settings, LayoutGrid, Plus } from 'lucide-react';
+import { Wallet, User, LogOut, ChevronDown, Search, Settings, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -21,36 +21,52 @@ import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '@/components/ui/SplashScreen';
 import TransactionModal from '@/components/wallet/TransactionModal';
 
-interface NavbarProps {
-  user?: any;
-}
-
-const Navbar = ({ user }: NavbarProps) => {
+const Navbar = () => {
+  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showExitSplash, setShowExitSplash] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      const fetchProfile = async () => {
-        const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        if (data) setProfile(data);
-      };
-      fetchProfile();
+    // Verificar sessão inicial
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      if (session?.user) fetchProfile(session.user.id);
+    };
+    checkSession();
+
+    // Ouvir mudanças na autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchProfile(currentUser.id);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    if (data) setProfile(data);
+
+    // Real-time para o saldo
+    const channel = supabase.channel(`nav-profile-${userId}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'profiles', 
+        filter: `id=eq.${userId}` 
+      }, (payload) => setProfile(payload.new))
+      .subscribe();
       
-      const channel = supabase.channel(`nav-profile-${user.id}`)
-        .on('postgres_changes', { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'profiles', 
-          filter: `id=eq.${user.id}` 
-        }, (payload) => setProfile(payload.new))
-        .subscribe();
-        
-      return () => { supabase.removeChannel(channel); };
-    }
-  }, [user]);
+    return () => { supabase.removeChannel(channel); };
+  };
 
   const handleLogout = async () => {
     setShowExitSplash(true);
@@ -58,7 +74,7 @@ const Navbar = ({ user }: NavbarProps) => {
       await supabase.auth.signOut();
       setShowExitSplash(false);
       navigate('/');
-    }, 2000);
+    }, 1500);
   };
 
   return (

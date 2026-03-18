@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { motion } from 'framer-motion';
 import { HelpCircle, MessageCircle, ShieldCheck, Zap, ChevronRight, Phone, Mail } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from '@/components/ui/button';

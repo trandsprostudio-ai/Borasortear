@@ -24,7 +24,6 @@ const ConsultDraw = () => {
     setResult(null);
 
     try {
-      // Buscar participação pelo código
       const { data: participant, error: pError } = await supabase
         .from('participants')
         .select('*, rooms(*, modules(*))')
@@ -36,7 +35,6 @@ const ConsultDraw = () => {
         return;
       }
 
-      // Se a sala estiver finalizada, buscar se este usuário ganhou
       let winnerInfo = null;
       if (participant.rooms.status === 'finished') {
         const { data: winner } = await supabase
