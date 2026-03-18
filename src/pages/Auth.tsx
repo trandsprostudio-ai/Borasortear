@@ -41,8 +41,8 @@ const Auth = () => {
     
     const cleanPhone = phone.trim().replace(/\D/g, '');
     
-    if (!cleanPhone || cleanPhone.length < 7) {
-      toast.error("Por favor, insira um número de telefone válido.");
+    if (!cleanPhone || cleanPhone.length < 9) {
+      toast.error("Por favor, insira um número de telefone válido (9 dígitos).");
       return;
     }
 
@@ -63,19 +63,19 @@ const Auth = () => {
 
     setLoading(true);
     
-    // Usando um formato de e-mail mais simples e garantido
-    const internalEmail = `u${cleanPhone}@bora.com`;
+    // Formato E.164 para Angola (+244)
+    const formattedPhone = `+244${cleanPhone}`;
 
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ 
-          email: internalEmail, 
+          phone: formattedPhone, 
           password 
         });
         if (error) throw error;
       } else {
         const { data, error } = await supabase.auth.signUp({
-          email: internalEmail,
+          phone: formattedPhone,
           password,
           options: {
             data: { 
@@ -90,7 +90,8 @@ const Auth = () => {
         if (error) throw error;
 
         if (data.user) {
-          // Criar perfil na tabela pública
+          // Criar perfil na tabela pública usando o UUID gerado pelo Auth
+          // O identificador de login será o telefone, mas o ID interno permanece UUID para integridade
           await supabase
             .from('profiles')
             .upsert({ 
@@ -109,13 +110,7 @@ const Auth = () => {
       
     } catch (error: any) {
       setLoading(false);
-      // Se o erro for sobre confirmação de e-mail, avisamos o usuário ou tentamos logar
-      if (error.message?.includes("Email confirmation")) {
-        toast.info("Conta criada! Por favor, aguarde a ativação administrativa.");
-        navigate('/');
-      } else {
-        toast.error(error.message || "Erro na operação. Verifique os dados.");
-      }
+      toast.error(error.message || "Erro na operação. Verifique os dados.");
     }
   };
 
