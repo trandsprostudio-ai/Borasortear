@@ -49,7 +49,6 @@ const Index = () => {
     fetchModules();
     fetchRecentWinners();
 
-    // Simulação de jogadores online variando
     const onlineInterval = setInterval(() => {
       setOnlinePlayers(prev => {
         const change = Math.floor(Math.random() * 300) - 150;
@@ -68,11 +67,9 @@ const Index = () => {
       if (session?.user) fetchProfile(session.user.id);
     });
 
-    // Escutar finalização de salas para mostrar o overlay de sorteio
     const channel = supabase.channel('draw-results')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'status=eq.finished' }, 
       async (payload) => {
-        // Buscar vencedores desta sala específica
         const { data: winners } = await supabase
           .from('winners')
           .select('*, profiles(first_name)')
@@ -87,7 +84,7 @@ const Index = () => {
             })),
             info: `MESA #${payload.new.id.slice(0,4)} FINALIZADA`
           });
-          fetchRecentWinners(); // Atualiza a lista lateral
+          fetchRecentWinners();
         }
       }).subscribe();
 
@@ -137,14 +134,14 @@ const Index = () => {
         roomInfo={finishedDraw?.info}
       />
 
-      <main className="max-w-[1600px] mx-auto px-4 pt-24 pb-20">
+      <main className="max-w-[1600px] mx-auto px-4 pt-20 md:pt-24 pb-20">
         {/* Top Bar Stats */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-[#151823]/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-[#151823]/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
+          <div className="flex items-center gap-6 w-full md:w-auto">
             <PrizeCarousel />
           </div>
           
-          <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/5">
+          <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/5 w-full md:w-auto justify-center">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
             <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
               {onlinePlayers.toLocaleString()} Jogadores Online
@@ -158,19 +155,19 @@ const Index = () => {
             <LayoutGrid size={18} className="text-purple-500" />
             <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">Selecione o Valor da Mesa</h2>
           </div>
-          <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
+          <div className="flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
             {modules.map((mod) => (
               <button 
                 key={mod.id}
                 onClick={() => setActiveModuleId(mod.id)}
-                className={`flex flex-col items-center justify-center min-w-[140px] h-24 rounded-2xl font-black transition-all border-2 ${
+                className={`flex flex-col items-center justify-center min-w-[120px] md:min-w-[140px] h-20 md:h-24 rounded-2xl font-black transition-all border-2 ${
                   activeModuleId === mod.id 
                     ? 'bg-purple-600 border-purple-400 text-white shadow-2xl shadow-purple-500/40 scale-105' 
                     : 'bg-[#151823] border-white/5 text-white/30 hover:text-white hover:border-white/20'
                 }`}
               >
-                <span className="text-[9px] uppercase tracking-widest mb-1 opacity-60">{mod.name}</span>
-                <span className="text-xl italic tracking-tighter">{mod.price.toLocaleString()} Kz</span>
+                <span className="text-[8px] md:text-[9px] uppercase tracking-widest mb-1 opacity-60">{mod.name}</span>
+                <span className="text-lg md:text-xl italic tracking-tighter">{mod.price.toLocaleString()} Kz</span>
               </button>
             ))}
           </div>
@@ -181,7 +178,7 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Zap size={20} className="text-amber-500" />
-              <h2 className="text-2xl font-black italic tracking-tighter uppercase">
+              <h2 className="text-xl md:text-2xl font-black italic tracking-tighter uppercase">
                 Mesas {activeModule?.name} <span className="text-purple-500">—</span> {activeModule?.price.toLocaleString()} Kz
               </h2>
             </div>
@@ -220,8 +217,8 @@ const Index = () => {
 
         {/* Winners & CTA Section */}
         <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-[#151823]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-8">
-            <div className="flex items-center justify-between mb-8">
+          <div className="lg:col-span-2 bg-[#151823]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
               <h3 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3 text-white/40">
                 <History size={18} className="text-purple-500" /> Histórico de Ganhadores
               </h3>
@@ -241,7 +238,7 @@ const Index = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-black text-lg text-green-400">+{winner.prize_amount.toLocaleString()} Kz</p>
+                      <p className="font-black text-base md:text-lg text-green-400">+{winner.prize_amount.toLocaleString()} Kz</p>
                       <p className="text-[9px] font-bold text-white/20 uppercase">Sorteio Finalizado</p>
                     </div>
                   </div>
@@ -260,7 +257,7 @@ const Index = () => {
             <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-6 text-amber-500 border border-amber-500/20 shadow-2xl shadow-amber-500/10">
               <Trophy size={40} />
             </div>
-            <h3 className="text-3xl font-black italic tracking-tighter mb-3 uppercase">Sua Sorte Começa Aqui</h3>
+            <h3 className="text-2xl md:text-3xl font-black italic tracking-tighter mb-3 uppercase">Sua Sorte Começa Aqui</h3>
             <p className="text-sm text-white/40 font-bold mb-8 leading-relaxed">
               Milhares de kwanzas são distribuídos diariamente. Não fique de fora da próxima mesa!
             </p>

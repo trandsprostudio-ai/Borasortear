@@ -58,15 +58,15 @@ const Wallet = () => {
         currentBalance={profile?.balance || 0}
       />
 
-      <main className="max-w-6xl mx-auto px-4 pt-28">
+      <main className="max-w-6xl mx-auto px-4 pt-24 md:pt-28">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
           {/* Card de Saldo Principal */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="lg:col-span-2 bg-gradient-to-br from-purple-600 to-blue-700 p-8 rounded-[2.5rem] relative overflow-hidden shadow-2xl shadow-purple-500/20"
+            className="lg:col-span-2 bg-gradient-to-br from-purple-600 to-blue-700 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] relative overflow-hidden shadow-2xl shadow-purple-500/20"
           >
-            <div className="absolute -bottom-10 -right-10 opacity-10 rotate-12">
+            <div className="absolute -bottom-10 -right-10 opacity-10 rotate-12 hidden md:block">
               <WalletIcon size={240} />
             </div>
             
@@ -78,21 +78,21 @@ const Wallet = () => {
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Saldo Total Disponível</span>
               </div>
               
-              <h1 className="text-6xl font-black text-white mb-10 italic tracking-tighter">
-                {profile?.balance?.toLocaleString() || '0'} <span className="text-2xl opacity-60 not-italic">Kz</span>
+              <h1 className="text-4xl md:text-6xl font-black text-white mb-8 md:mb-10 italic tracking-tighter">
+                {profile?.balance?.toLocaleString() || '0'} <span className="text-xl md:text-2xl opacity-60 not-italic">Kz</span>
               </h1>
               
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
                   onClick={() => setModalConfig({ open: true, type: 'deposit' })}
-                  className="bg-white text-purple-600 hover:bg-white/90 h-14 px-8 rounded-2xl font-black text-sm shadow-xl"
+                  className="bg-white text-purple-600 hover:bg-white/90 h-12 md:h-14 px-8 rounded-2xl font-black text-sm shadow-xl"
                 >
                   <Plus size={20} className="mr-2" /> DEPOSITAR
                 </Button>
                 <Button 
                   variant="ghost" 
                   onClick={() => setModalConfig({ open: true, type: 'withdrawal' })}
-                  className="bg-black/20 text-white hover:bg-black/30 h-14 px-8 rounded-2xl font-black text-sm border border-white/10"
+                  className="bg-black/20 text-white hover:bg-black/30 h-12 md:h-14 px-8 rounded-2xl font-black text-sm border border-white/10"
                 >
                   <ArrowDownLeft size={20} className="mr-2" /> SOLICITAR SAQUE
                 </Button>
@@ -135,36 +135,36 @@ const Wallet = () => {
         {/* Histórico */}
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
+            <h2 className="text-lg md:text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
               <History className="text-purple-500" /> Histórico de Atividade
             </h2>
           </div>
           
-          <div className="glass-card rounded-[2rem] overflow-hidden border-white/5">
+          <div className="glass-card rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border-white/5">
             {history.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead className="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/30">
                     <tr>
-                      <th className="p-6">Data</th>
-                      <th className="p-6">Mesa / Módulo</th>
-                      <th className="p-6">Valor</th>
-                      <th className="p-6">Status</th>
+                      <th className="p-4 md:p-6">Data</th>
+                      <th className="p-4 md:p-6">Mesa / Módulo</th>
+                      <th className="p-4 md:p-6">Valor</th>
+                      <th className="p-4 md:p-6">Status</th>
                     </tr>
                   </thead>
                   <tbody className="text-xs font-bold">
                     {history.map((item) => (
                       <tr key={item.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
-                        <td className="p-6 text-white/40">{new Date(item.created_at).toLocaleDateString()}</td>
-                        <td className="p-6">
+                        <td className="p-4 md:p-6 text-white/40">{new Date(item.created_at).toLocaleDateString()}</td>
+                        <td className="p-4 md:p-6">
                           <div className="flex flex-col">
                             <span className="text-purple-400 font-black">#{item.rooms?.id.slice(0, 8)}</span>
                             <span className="text-[10px] text-white/20 uppercase">{item.rooms?.modules?.name}</span>
                           </div>
                         </td>
-                        <td className="p-6 font-black">{item.rooms?.modules?.price.toLocaleString()} Kz</td>
-                        <td className="p-6">
-                          <span className={`px-3 py-1 rounded-lg text-[9px] uppercase font-black ${
+                        <td className="p-4 md:p-6 font-black">{item.rooms?.modules?.price.toLocaleString()} Kz</td>
+                        <td className="p-4 md:p-6">
+                          <span className={`px-2 md:px-3 py-1 rounded-lg text-[8px] md:text-[9px] uppercase font-black ${
                             item.rooms?.status === 'open' ? 'bg-blue-500/10 text-blue-400' : 
                             item.rooms?.status === 'finished' ? 'bg-green-500/10 text-green-400' : 'bg-white/10 text-white/40'
                           }`}>

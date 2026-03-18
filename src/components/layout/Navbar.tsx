@@ -79,9 +79,9 @@ const Navbar = ({ user }: NavbarProps) => {
 
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F111A]/80 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-4">
         <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-8">
             <Link to="/" className="hover:opacity-80 transition-opacity">
-              <Logo />
+              <Logo className="scale-90 md:scale-100" />
             </Link>
             
             <Link to="/consult-draw" className="hidden md:flex items-center gap-2 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">
@@ -89,33 +89,33 @@ const Navbar = ({ user }: NavbarProps) => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             {user ? (
               <>
-                <div className="hidden sm:flex items-center bg-[#1A1D29] rounded-xl p-1 border border-white/5 hover:border-purple-500/30 transition-all group">
-                  <Link to="/wallet" className="px-4 py-1 flex flex-col items-end">
-                    <span className="text-[9px] text-white/30 font-black leading-none uppercase tracking-tighter">Saldo Disponível</span>
-                    <span className="text-sm font-black text-green-400 leading-tight">
-                      {profile?.balance?.toLocaleString() || '0'} <span className="text-[10px]">Kz</span>
+                <div className="flex items-center bg-[#1A1D29] rounded-xl p-1 border border-white/5 hover:border-purple-500/30 transition-all group">
+                  <Link to="/wallet" className="px-2 md:px-4 py-1 flex flex-col items-end">
+                    <span className="text-[8px] md:text-[9px] text-white/30 font-black leading-none uppercase tracking-tighter">Saldo</span>
+                    <span className="text-xs md:text-sm font-black text-green-400 leading-tight">
+                      {profile?.balance?.toLocaleString() || '0'} <span className="text-[9px] md:text-[10px]">Kz</span>
                     </span>
                   </Link>
                   <Button 
                     size="sm" 
                     onClick={() => setIsDepositOpen(true)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-black h-9 px-4 rounded-lg shadow-lg shadow-purple-900/20"
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-black h-8 md:h-9 px-2 md:px-4 rounded-lg shadow-lg shadow-purple-900/20 text-[10px] md:text-xs"
                   >
-                    DEPOSITAR
+                    +
                   </Button>
                 </div>
                 
-                <div className="h-8 w-px bg-white/5 mx-1" />
+                <div className="hidden sm:block h-8 w-px bg-white/5 mx-1" />
                 
-                <div className="flex items-center gap-3 bg-[#1A1D29] px-3 py-1.5 rounded-xl border border-white/5 group relative cursor-pointer">
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
-                    <User size={18} />
+                <div className="flex items-center gap-2 md:gap-3 bg-[#1A1D29] px-2 md:px-3 py-1.5 rounded-xl border border-white/5 group relative cursor-pointer">
+                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+                    <User size={16} />
                   </div>
                   
-                  <div className="flex flex-col">
+                  <div className="hidden md:flex flex-col">
                     <span className="text-xs font-black text-white leading-none">
                       {profile?.first_name || 'Jogador'}
                     </span>
@@ -173,19 +173,19 @@ const Navbar = ({ user }: NavbarProps) => {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <Link to="/consult-draw" className="mr-4 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">
+                <Link to="/consult-draw" className="hidden xs:block mr-2 md:mr-4 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">
                   Consultar
                 </Link>
                 <Button 
                   variant="ghost" 
                   onClick={() => navigate('/auth?mode=login')} 
-                  className="text-white/60 font-black text-xs uppercase tracking-widest hover:text-white hover:bg-white/5"
+                  className="text-white/60 font-black text-[10px] md:text-xs uppercase tracking-widest hover:text-white hover:bg-white/5 h-9 px-2 md:px-4"
                 >
                   Entrar
                 </Button>
                 <Button 
                   onClick={() => navigate('/auth?mode=signup')} 
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-black px-6 rounded-xl shadow-lg shadow-purple-900/20 text-xs uppercase tracking-widest h-10"
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-black px-3 md:px-6 rounded-xl shadow-lg shadow-purple-900/20 text-[10px] md:text-xs uppercase tracking-widest h-9 md:h-10"
                 >
                   CRIAR CONTA
                 </Button>
