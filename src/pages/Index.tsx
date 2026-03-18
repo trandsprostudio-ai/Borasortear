@@ -11,7 +11,7 @@ import Footer from '@/components/layout/Footer';
 import MobileNav from '@/components/layout/MobileNav';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, History, Trophy } from 'lucide-react';
+import { Zap, LayoutGrid, History, Trophy, Ticket, ArrowRight } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 
@@ -21,6 +21,7 @@ const Index = () => {
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [myParticipations, setMyParticipations] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
   const [finishedDraw, setFinishedDraw] = useState<{ winners: any[], info: string } | null>(null);
   const [recentWinners, setRecentWinners] = useState<any[]>([]);
@@ -49,24 +50,18 @@ const Index = () => {
     fetchModules();
     fetchRecentWinners();
 
-    const onlineInterval = setInterval(() => {
-      setOnlinePlayers(prev => {
-        const change = Math.floor(Math.random() * 300) - 150;
-        const next = prev + change;
-        return next < 1000 ? 1000 + Math.floor(Math.random() * 200) : next;
-      });
-    }, 180000);
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-    });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+        fetchMyParticipations(session.user.id);
+      } else {
+        setProfile(null);
+        setMyParticipations([]);
+      }
     });
 
+    // Real-time para resultados de sorteio
     const channel = supabase.channel('draw-results')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'status=eq.finished' }, 
       async (payload) => {
@@ -85,19 +80,29 @@ const Index = () => {
             info: `MESA #${payload.new.id.slice(0,4)} FINALIZADA`
           });
           fetchRecentWinners();
+          if (user) fetchMyParticipations(user.id);
         }
       }).subscribe();
 
     return () => {
       subscription.unsubscribe();
       supabase.removeChannel(channel);
-      clearInterval(onlineInterval);
     };
-  }, []);
+  }, [user?.id]);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (data) setProfile(data);
+  };
+
+  const fetchMyParticipations = async (userId: string) => {
+    const { data } = await supabase
+      .from('participants')
+      .select('*, rooms(*, modules(*))')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(3);
+    if (data) setMyParticipations(data);
   };
 
   const handleParticipateClick = (room: Room, module: Module) => {
@@ -123,7 +128,10 @@ const Index = () => {
           isOpen={!!selectedRoom} onClose={() => setSelectedRoom(null)}
           room={selectedRoom.room} module={selectedRoom.module}
           userBalance={profile.balance} userId={user.id}
-          onSuccess={() => fetchProfile(user.id)}
+          onSuccess={() => {
+            fetchProfile(user.id);
+            fetchMyParticipations(user.id);
+          }}
         />
       )}
 
@@ -148,6 +156,41 @@ const Index = () => {
             </span>
           </div>
         </div>
+
+        {/* My Active Participations (Only for logged users) */}
+        {user && myParticipations.length > 0 && (
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Ticket size={18} className="text-purple-500" />
+                <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">Minhas Participações Recentes</h2>
+              </div>
+              <Button variant="ghost" onClick={() => navigate('/wallet')} className="text-[10px] font-black text-purple-400 uppercase tracking-widest h-auto p-0">Ver Todas</Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {myParticipations.map((p) => (
+                <div key={p.id} className="glass-card p-4 rounded-2xl border-white/5 flex items-center justify-between group hover:border-purple-500/30 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 font-black text-xs">
+                      {p.rooms?.modules?.name}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Mesa #{p.rooms?.id.slice(0,4)}</p>
+                      <p className="text-sm font-black text-white">{p.ticket_code}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-md ${
+                      p.rooms?.status === 'open' ? 'bg-blue-500/10 text-blue-400' : 'bg-green-500/10 text-green-400'
+                    }`}>
+                      {p.rooms?.status === 'open' ? 'Em Aberto' : 'Finalizado'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Module Selector */}
         <div className="mb-10">
@@ -181,10 +224,6 @@ const Index = () => {
               <h2 className="text-xl md:text-2xl font-black italic tracking-tighter uppercase">
                 Mesas {activeModule?.name} <span className="text-purple-500">—</span> {activeModule?.price.toLocaleString()} Kz
               </h2>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 text-[10px] font-black text-white/20 uppercase tracking-widest bg-white/5 px-3 py-1.5 rounded-lg">
-              <Trophy size={12} className="text-amber-500" />
-              Sorteio Automático
             </div>
           </div>
 
