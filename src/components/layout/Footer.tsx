@@ -1,10 +1,37 @@
 "use client";
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Shield } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Footer = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Não mostra o footer se:
+  // 1. O usuário não estiver logado
+  // 2. A rota atual for administrativa (começa com /admin)
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  if (!isAuthenticated || isAdminRoute) {
+    return null;
+  }
+
   return (
     <footer className="py-10 border-t border-white/5 mt-20 bg-[#0A0B12] relative z-10 pb-28 sm:pb-10">
       <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
