@@ -18,26 +18,36 @@ interface RoomCardProps {
 
 const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) => {
   const [timeLeft, setTimeLeft] = useState("");
-  const [isExpired, setIsExpired] = useState(false);
   const [isUrgent, setIsUrgent] = useState(false);
   
-  const progress = (room.currentParticipants / room.maxParticipants) * 100;
+  const progress = room.maxParticipants > 0 ? (room.currentParticipants / room.maxParticipants) * 100 : 0;
   const isAlmostFull = progress > 80;
+  
+  const isRoomOpen = room.status === 'open';
+  const isRoomProcessing = room.status === 'processing';
+  const isRoomFinished = room.status === 'finished';
 
   useEffect(() => {
     const calculateTime = () => {
+      if (!isRoomOpen) {
+        if (isRoomProcessing) return "SORTEANDO...";
+        if (isRoomFinished) return "ENCERRADO";
+        return "FINALIZADO";
+      }
+
       const expiry = new Date(room.expiresAt).getTime();
       const now = new Date().getTime();
       const diff = expiry - now;
       
       if (diff <= 0) {
-        setIsExpired(true);
-        return "SORTEANDO...";
+        return "FINALIZANDO...";
       }
 
       // Marcar como urgente se faltar menos de 30 minutos
       if (diff < 30 * 60 * 1000) {
         setIsUrgent(true);
+      } else {
+        setIsUrgent(false);
       }
       
       const h = Math.floor(diff / (1000 * 60 * 60));
@@ -49,13 +59,13 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
     const timer = setInterval(() => setTimeLeft(calculateTime()), 1000);
     setTimeLeft(calculateTime());
     return () => clearInterval(timer);
-  }, [room.expiresAt]);
+  }, [room.expiresAt, isRoomOpen, isRoomProcessing, isRoomFinished]);
 
   return (
     <motion.div 
       whileHover={{ y: -8 }}
       className={`bg-[#151823] border-2 rounded-[2.5rem] p-6 flex flex-col justify-between transition-all relative overflow-hidden ${
-        isAlmostFull ? 'border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.15)]' : 'border-white/5 hover:border-purple-500/40'
+        isAlmostFull && isRoomOpen ? 'border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.15)]' : 'border-white/5 hover:border-purple-500/40'
       }`}
     >
       {/* Badge de Status */}
@@ -64,11 +74,23 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
       </div>
 
       <div className="absolute top-0 right-0 flex items-center gap-2 px-4 py-1.5 rounded-bl-2xl z-10">
-        <div className="flex items-center gap-1.5 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
-          <Radio size={10} className="text-red-500 animate-pulse" />
-          <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">LIVE</span>
-        </div>
-        {isAlmostFull && (
+        {isRoomOpen && (
+          <div className="flex items-center gap-1.5 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
+            <Radio size={10} className="text-red-500 animate-pulse" />
+            <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">LIVE</span>
+          </div>
+        )}
+        {isRoomProcessing && (
+          <div className="bg-purple-600/10 px-2 py-0.5 rounded-lg border border-purple-500/20">
+            <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">SORTEANDO</span>
+          </div>
+        )}
+        {isRoomFinished && (
+          <div className="bg-green-500/10 px-2 py-0.5 rounded-lg border border-green-500/20">
+            <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">ENCERRADO</span>
+          </div>
+        )}
+        {isAlmostFull && isRoomOpen && (
           <div className="bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
             <TrendingUp size={10} /> QUENTE
           </div>
@@ -95,7 +117,8 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             <span>{room.currentParticipants} / {room.maxParticipants}</span>
           </div>
           <div className={`flex items-center gap-2 transition-colors duration-300 ${
-            isExpired ? 'text-purple-500' : 
+            isRoomFinished ? 'text-green-500' : 
+            isRoomProcessing ? 'text-purple-500' : 
             isUrgent ? 'text-red-500 animate-pulse' : 'text-amber-500'
           }`}>
             <Clock size={14} />
@@ -118,21 +141,23 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             className={`h-full rounded-full transition-all duration-1000 ${
-              isAlmostFull ? 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-r from-purple-600 to-blue-500'
+              isAlmostFull && isRoomOpen ? 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-r from-purple-600 to-blue-500'
             }`}
           />
         </div>
 
         <Button 
           onClick={() => onParticipate(room, module)}
-          disabled={isExpired}
+          disabled={!isRoomOpen}
           className={`w-full h-14 rounded-2xl font-black text-lg uppercase tracking-tighter italic transition-all active:scale-95 ${
-            isAlmostFull 
-              ? 'bg-amber-500 hover:bg-amber-600 text-black shadow-lg shadow-amber-500/20' 
-              : 'premium-gradient text-white shadow-lg shadow-purple-500/20'
+            isRoomOpen 
+              ? isAlmostFull 
+                ? 'bg-amber-500 hover:bg-amber-600 text-black shadow-lg shadow-amber-500/20' 
+                : 'premium-gradient text-white shadow-lg shadow-purple-500/20'
+              : 'bg-gray-600 text-gray-300 cursor-not-allowed'
           }`}
         >
-          {isExpired ? 'SORTEANDO...' : 'SORTEAR'}
+          {isRoomProcessing ? 'SORTEANDO...' : isRoomFinished ? 'ENCERRADO' : 'SORTEAR'}
         </Button>
       </div>
     </motion.div>

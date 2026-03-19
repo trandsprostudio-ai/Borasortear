@@ -60,7 +60,7 @@ const Profile = () => {
           first_name: profile.first_name,
           last_name: profile.last_name,
           bank_info: profile.bank_info,
-          express_number: profile.express_number // Novo campo
+          express_number: profile.express_number
         })
         .eq('id', user.id);
 
@@ -77,6 +77,20 @@ const Profile = () => {
     const link = `${window.location.origin}/auth?mode=signup&ref=${user.id}`;
     navigator.clipboard.writeText(link);
     toast.success("Link de convite copiado!");
+  };
+
+  const copyBankInfo = () => {
+    if (profile?.bank_info) {
+      navigator.clipboard.writeText(profile.bank_info);
+      toast.success("IBAN copiado!");
+    }
+  };
+
+  const copyExpressNumber = () => {
+    if (profile?.express_number) {
+      navigator.clipboard.writeText(profile.express_number);
+      toast.success("Número Express copiado!");
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
@@ -162,8 +176,18 @@ const Profile = () => {
                         value={profile?.bank_info || ''} 
                         onChange={(e) => setProfile({...profile, bank_info: e.target.value})}
                         placeholder="AO06..." 
-                        className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 w-full focus:outline-none focus:border-purple-500/50" 
+                        className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 pr-10 w-full focus:outline-none focus:border-purple-500/50" 
                       />
+                      {profile?.bank_info && (
+                        <button 
+                          type="button"
+                          onClick={copyBankInfo}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                          title="Copiar IBAN"
+                        >
+                          <Copy size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -174,8 +198,18 @@ const Profile = () => {
                         value={profile?.express_number || ''} 
                         onChange={(e) => setProfile({...profile, express_number: e.target.value})}
                         placeholder="9XXXXXXXX" 
-                        className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 w-full focus:outline-none focus:border-purple-500/50" 
+                        className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 pr-10 w-full focus:outline-none focus:border-purple-500/50" 
                       />
+                      {profile?.express_number && (
+                        <button 
+                          type="button"
+                          onClick={copyExpressNumber}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                          title="Copiar número Express"
+                        >
+                          <Copy size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

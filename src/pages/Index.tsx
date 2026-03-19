@@ -12,7 +12,7 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, Trophy, Star, Lock, Unlock, Share2, Copy, HelpCircle } from 'lucide-react';
+import { Zap, LayoutGrid, Trophy, Star, Lock, Unlock, Share2, Copy, HelpCircle, Loader2 } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -34,6 +34,8 @@ const Index = () => {
     winners: [],
     roomInfo: ""
   });
+
+  const [shownDrawRooms, setShownDrawRooms] = useState<Set<string>>(new Set());
 
   const navigate = useNavigate();
 
@@ -59,6 +61,54 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    // Check for newly finished rooms to show draw overlay
+    const finishedRooms = rooms.filter(r => r.status === 'finished');
+    const newFinished = finishedRooms.filter(r => !shownDrawRooms.has(r.id));
+
+    if (newFinished.length > 0) {
+      // Show the most recent finished room
+      const roomToShow = newFinished.sort((a, b) => 
+        new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
+      )[0];
+      fetchWinnersForRoom(roomToShow);
+    }
+  }, [rooms, shownDrawRooms]);
+
+  const fetchWinnersForRoom = async (room: Room) => {
+    const { data: winners } = await supabase
+      .from('winners')
+      .select('*, profiles(first_name)')
+      .eq('draw_id', room.id)
+      .order('position', { ascending: true });
+
+    if (winners && winners.length > 0) {
+      setDrawResult({
+        isOpen: true,
+        winners: winners.map(w => ({
+          name: w.profiles?.first_name || 'Jogador',
+          prize: w.prize_amount.toLocaleString() + ' Kz',
+          position: w.position,
+          userId: w.user_id,
+          amount: w.prize_amount
+        })),
+        roomInfo: `MESA ${room.id.slice(0, 8)}`
+      });
+      setShownDrawRooms(prev => new Set(prev).add(room.id));
+    }
+  };
+
+  const handleDrawClose = () => {
+    setDrawResult(prev => ({ ...prev, isOpen: false }));
+    // Check if there are more finished rooms to show
+    const remainingFinished = rooms.filter(r => 
+      r.status === 'finished' && !shownDrawRooms.has(r.id)
+    );
+    if (remainingFinished.length > 0) {
+      fetchWinnersForRoom(remainingFinished[0]);
+    }
+  };
 
   const fetchTopWinners = async () => {
     const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('prize_amount', { ascending: false }).limit(10);
@@ -96,7 +146,7 @@ const Index = () => {
       
       <DrawOverlay 
         isOpen={drawResult.isOpen} 
-        onClose={() => setDrawResult(prev => ({ ...prev, isOpen: false }))}
+        onClose={handleDrawClose}
         winners={drawResult.winners}
         roomInfo={drawResult.roomInfo}
       />
@@ -199,21 +249,44 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {activeModuleRooms.map((room, index) => (
-                  <RoomCard 
-                    key={room.id} 
-                    roomNumber={index + 1}
-                    room={{
-                      id: room.id, moduleId: room.module_id, status: room.status,
-                      currentParticipants: room.current_participants, maxParticipants: room.max_participants,
-                      expiresAt: room.expires_at, createdAt: room.created_at
-                    }} 
-                    module={activeModule} 
-                    onParticipate={handleParticipateClick}
-                  />
-                ))}
-              </div>
+              {roomsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="glass-card p-6 rounded-[2rem] border-white/5 animate-pulse">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="h-6 bg-white/5 rounded w-1/3 mb-2"></div>
+                        <div className="w-12 h-12 bg-white/5 rounded-2xl"></div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="h-4 bg-white/5 rounded w-1/2"></div>
+                        <div className="h-4 bg-white/5 rounded w-3/4"></div>
+                        <div className="h-12 bg-white/5 rounded"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : activeModuleRooms.length === 0 ? (
+                <div className="text-center py-20 bg-white/5 rounded-[2rem] border border-dashed border-white/10">
+                  <p className="text-white/20 font-black uppercase tracking-widest">Nenhuma mesa disponível no momento.</p>
+                  <p className="text-white/10 text-sm mt-2">Tente outro módulo ou volte mais tarde.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {activeModuleRooms.map((room, index) => (
+                    <RoomCard 
+                      key={room.id} 
+                      roomNumber={index + 1}
+                      room={{
+                        id: room.id, moduleId: room.module_id, status: room.status,
+                        currentParticipants: room.current_participants, maxParticipants: room.max_participants,
+                        expiresAt: room.expires_at, createdAt: room.created_at
+                      }} 
+                      module={activeModule} 
+                      onParticipate={handleParticipateClick}
+                    />
+                  ))}
+                </div>
+              )}
             </motion.section>
           )}
         </AnimatePresence>
