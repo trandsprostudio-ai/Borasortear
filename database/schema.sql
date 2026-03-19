@@ -2,13 +2,12 @@
 -- BORA SORTEIAR - Schema Completo de Produção
 -- ============================================
 
--- Habilitar extensões necessárias
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Habilitar extensões necessáriasCREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Tabela de módulos (valores de entrada)
 CREATE TABLE IF NOT EXISTS modules (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name VARCHAR(10) NOT NULL UNIQUE, -- M1, M2, M3, etc.
+  name VARCHAR(10) NOT NULL, -- M1, M2, M3, etc.
   price INTEGER NOT NULL CHECK (price > 0),
   max_participants INTEGER NOT NULL CHECK (max_participants > 0),
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -143,8 +142,7 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER set_ticket_code_before_insert
 BEFORE INSERT ON participants
-FOR EACH ROW
-EXECUTE FUNCTION set_ticket_code();
+FOR EACH ROWEXECUTE FUNCTION set_ticket_code();
 
 -- Função para criar 3 salas por módulo automaticamente
 CREATE OR REPLACE FUNCTION create_rooms_for_module()
@@ -207,17 +205,14 @@ DECLARE
   random_offset INTEGER;
 BEGIN  -- Buscar dados da sala
   SELECT r.*, m.price, m.name   INTO room_record 
-  FROM rooms r 
-  JOIN modules m ON r.module_id = m.id 
+  FROM rooms r   JOIN modules m ON r.module_id = m.id 
   WHERE r.id = p_room_id 
   AND r.status = 'closed';
   
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Sala não encontrada ou não está fechada';
+  IF NOT FOUND THEN    RAISE EXCEPTION 'Sala não encontrada ou não está fechada';
   END IF;
   
-  -- Contar participantes
-  SELECT COUNT(*) INTO participants_count   FROM participants 
+  -- Contar participantes  SELECT COUNT(*) INTO participants_count   FROM participants 
   WHERE room_id = p_room_id;
   
   IF participants_count < 2 THEN
@@ -258,18 +253,15 @@ BEGIN  -- Buscar dados da sala
   WHERE id = winner1_id;
   
   UPDATE profiles 
-  SET balance = balance + second_prize 
-  WHERE id = winner2_id;
-  
-  -- Registrar transações de prêmios  INSERT INTO transactions (user_id, type, amount, status, payment_method)
+  SET balance = balance + second_prize   WHERE id = winner2_id;
+    -- Registrar transações de prêmios  INSERT INTO transactions (user_id, type, amount, status, payment_method)
   VALUES 
     (winner1_id, 'deposit', first_prize, 'completed', 'Prêmio de Sorteio'),
     (winner2_id, 'deposit', second_prize, 'completed', 'Prêmio de Sorteio');
   
   -- Notificar vencedores
   INSERT INTO notifications (user_id, title, message, type)
-  VALUES     (winner1_id, 'VOCÊ GANHOU! 🎉', 
-     format('Parabéns! Você ganhou %s Kz no módulo %s!', first_prize, room_record.name), 
+  VALUES     (winner1_id, 'VOCÊ GANHOU! 🎉',      format('Parabéns! Você ganhou %s Kz no módulo %s!', first_prize, room_record.name), 
      'success'),
     (winner2_id, 'VOCÊ GANHOU! 🎉',      format('Parabéns! Você ganhou %s Kz no módulo %s!', second_prize, room_record.name), 
      'success');
@@ -282,21 +274,17 @@ BEGIN  -- Buscar dados da sala
     format('O sorteio da sala %s foi concluído. Boa sorte na próxima!', room_record.name),
     'info'
   FROM participants p 
-  WHERE p.room_id = p_room_id 
-    AND p.user_id NOT IN (winner1_id, winner2_id);
+  WHERE p.room_id = p_room_id     AND p.user_id NOT IN (winner1_id, winner2_id);
   
 END;
 $$ LANGUAGE plpgsql;
 
 -- Função para verificar salas expiradas periodicamente
 CREATE OR REPLACE FUNCTION check_and_draw_expired_rooms()
-RETURNS VOID AS $$
-DECLARE
+RETURNS VOID AS $$DECLARE
   room_record RECORD;
-BEGIN
-  -- Buscar salas fechadas que ainda não foram sorteadas
-  FOR room_record IN
-    SELECT r.id, r.module_id, m.name, r.current_participants
+BEGIN  -- Buscar salas fechadas que ainda não foram sorteadas
+  FOR room_record IN    SELECT r.id, r.module_id, m.name, r.current_participants
     FROM rooms r
     JOIN modules m ON r.module_id = m.id
     WHERE r.status = 'closed'
@@ -320,8 +308,7 @@ CREATE OR REPLACE FUNCTION reopen_rooms_for_module()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Quando uma sala é finalizada, criar uma nova sala para o mesmo módulo
-  IF NEW.status = 'finished' AND OLD.status != 'finished' THEN
-    INSERT INTO rooms (
+  IF NEW.status = 'finished' AND OLD.status != 'finished' THEN    INSERT INTO rooms (
       module_id,
       status,
       max_participants,
@@ -335,8 +322,7 @@ BEGIN
       NOW() + INTERVAL '3 hours'
     );
   END IF;
-  
-  RETURN NEW;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -346,15 +332,25 @@ CREATE TRIGGER reopen_rooms_trigger   AFTER UPDATE ON rooms
   WHEN (OLD.status = 'finished' AND NEW.status = 'finished')
   EXECUTE FUNCTION reopen_rooms_for_module();
 
--- Inserir módulos iniciais (M1 a M6)
+-- Inserir módulos iniciais (M1 a M6) - recriar para garantir consistência
+DELETE FROM modules WHERE name IN ('M1','M2','M3','M4','M5','M6');
+
 INSERT INTO modules (name, price, max_participants) VALUES
   ('M1', 100, 1000),
   ('M2', 200, 800),
   ('M3', 500, 600),
   ('M4', 1000, 400),
   ('M5', 2000, 300),
-  ('M6', 5000, 300)
-ON CONFLICT (name) DO NOTHING;
+  ('M6', 5000, 300);
+
+-- Garantir que a restrição de unicidade exista no nome do módulo
+DO $$
+BEGIN  BEGIN
+    EXECUTE 'ALTER TABLE modules ADD CONSTRAINT modules_name_unique UNIQUE (name)';
+  EXCEPTION
+    WHEN duplicate_object THEN NULL;
+  END;
+END $$;
 
 -- Função para resetar todas as salas (useful for testing)
 CREATE OR REPLACE FUNCTION reset_all_rooms()
@@ -372,15 +368,13 @@ BEGIN
     0,
     NOW() + INTERVAL '3 hours'
   FROM modules m;
-  
-  RAISE NOTICE 'Todas as salas foram resetadas. Criadas 3 salas por módulo.';
+    RAISE NOTICE 'Todas as salas foram resetadas. Criadas 3 salas por módulo.';
 END;
 $$ LANGUAGE plpgsql;
 
 -- Função para obter estatísticas do sistema
 CREATE OR REPLACE FUNCTION get_system_stats()
-RETURNS JSON AS $$
-DECLARE
+RETURNS JSON AS $$DECLARE
   stats JSON;
 BEGIN
   SELECT json_build_object(
