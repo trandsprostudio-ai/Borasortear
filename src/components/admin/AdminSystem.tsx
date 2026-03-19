@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Plus, Zap, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2 } from 'lucide-react';
+import { Plus, Zap, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminSystem = () => {
@@ -15,7 +15,6 @@ const AdminSystem = () => {
   useEffect(() => {
     fetchSystemData();
     
-    // Real-time para atualizar a lista de mesas quando o sorteio automático acontecer
     const channel = supabase.channel('admin-system-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => fetchSystemData())
       .subscribe();
@@ -31,6 +30,26 @@ const AdminSystem = () => {
     if (modData) setModules(modData);
     if (roomData) setRooms(roomData);
     setLoading(false);
+  };
+
+  const handleForceDraw = async (roomId: string) => {
+    if (!confirm("Deseja forçar o sorteio desta mesa agora?")) return;
+    
+    const { error } = await supabase.rpc('perform_automatic_draw', { p_room_id: roomId });
+    if (error) toast.error("Erro ao forçar sorteio");
+    else {
+      toast.success("Sorteio realizado com sucesso!");
+      fetchSystemData();
+    }
+  };
+
+  const handleCleanExpired = async () => {
+    const { error } = await supabase.rpc('check_and_draw_expired_rooms');
+    if (error) toast.error("Erro ao processar expirações");
+    else {
+      toast.success("Mesas expiradas processadas!");
+      fetchSystemData();
+    }
   };
 
   const handleCreateRoom = async (moduleId: string, maxParticipants: number) => {
@@ -55,6 +74,9 @@ const AdminSystem = () => {
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
             <LayoutGrid className="text-purple-500" /> Módulos de Jogo
           </h3>
+          <Button onClick={handleCleanExpired} variant="outline" className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
+            Processar Expiradas
+          </Button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {modules.map((mod) => (
@@ -89,40 +111,44 @@ const AdminSystem = () => {
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">ID Mesa</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Módulo</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Progresso</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Status</TableHead>
+                <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Expira em</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rooms.filter(r => r.status !== 'finished').map((room) => (
-                <TableRow key={room.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                  <TableCell className="p-6 font-black text-purple-400">#{room.id.slice(0, 8)}</TableCell>
-                  <TableCell className="p-6 font-bold">{room.modules?.name} ({room.modules?.price.toLocaleString()} Kz)</TableCell>
-                  <TableCell className="p-6">
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold">{room.current_participants}/{room.max_participants}</span>
-                      <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-purple-500" 
-                          style={{ width: `${(room.current_participants / room.max_participants) * 100}%` }} 
-                        />
+              {rooms.filter(r => r.status !== 'finished').map((room) => {
+                const isExpired = new Date(room.expires_at) <= new Date();
+                return (
+                  <TableRow key={room.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                    <TableCell className="p-6 font-black text-purple-400">#{room.id.slice(0, 8)}</TableCell>
+                    <TableCell className="p-6 font-bold">{room.modules?.name} ({room.modules?.price.toLocaleString()} Kz)</TableCell>
+                    <TableCell className="p-6">
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold">{room.current_participants}/{room.max_participants}</span>
+                        <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-purple-500" 
+                            style={{ width: `${(room.current_participants / room.max_participants) * 100}%` }} 
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="p-6">
-                    <span className={`px-3 py-1 rounded-lg text-[10px] uppercase font-black ${
-                      room.status === 'open' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'
-                    }`}>
-                      {room.status === 'open' ? 'Em Aberto' : 'Sorteando...'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="p-6 text-right">
-                    <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/20 uppercase">
-                      <Clock size={12} /> Automático
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell className="p-6">
+                      <span className={`text-[10px] font-black uppercase ${isExpired ? 'text-red-500' : 'text-white/40'}`}>
+                        {isExpired ? 'Expirada' : new Date(room.expires_at).toLocaleTimeString()}
+                      </span>
+                    </TableCell>
+                    <TableCell className="p-6 text-right">
+                      <Button 
+                        onClick={() => handleForceDraw(room.id)}
+                        className="h-8 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-[9px] font-black uppercase px-3 rounded-lg"
+                      >
+                        Sortear Agora
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

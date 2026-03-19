@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, Share2 } from 'lucide-react';
+import { Users, Clock, Share2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
@@ -17,22 +17,28 @@ interface RoomCardProps {
 
 const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) => {
   const [timeLeft, setTimeLeft] = useState("");
+  const [isExpired, setIsExpired] = useState(false);
+  
   const progress = (room.currentParticipants / room.maxParticipants) * 100;
   const isAlmostFull = progress > 90;
-
-  const currentPrizePool = module.price * room.currentParticipants * 0.9;
 
   useEffect(() => {
     const calculateTime = () => {
       const expiry = new Date(room.expiresAt).getTime();
       const now = new Date().getTime();
       const diff = expiry - now;
-      if (diff <= 0) return "SORTEANDO...";
+      
+      if (diff <= 0) {
+        setIsExpired(true);
+        return "SORTEANDO...";
+      }
+      
       const h = Math.floor(diff / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((diff % (1000 * 60)) / 1000);
       return `${h}h ${m}m ${s}s`;
     };
+
     const timer = setInterval(() => setTimeLeft(calculateTime()), 1000);
     return () => clearInterval(timer);
   }, [room.expiresAt]);
@@ -41,14 +47,12 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
     e.stopPropagation();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      toast.error("Faça login para convidar amigos para esta sala!");
+      toast.error("Faça login para convidar!");
       return;
     }
-    
-    // Link específico da sala
     const inviteUrl = `${window.location.origin}/auth?mode=signup&ref=${session.user.id}&room=${room.id}`;
     navigator.clipboard.writeText(inviteUrl);
-    toast.success("Link da SALA copiado! Ganhe 15% se o seu convidado vencer nesta mesa.");
+    toast.success("Link da SALA copiado!");
   };
 
   return (
@@ -71,7 +75,6 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
         <button 
           onClick={handleInvite}
           className="p-2 bg-white/5 rounded-lg text-white/40 hover:text-purple-400 hover:bg-purple-500/10 transition-all"
-          title="Convidar para esta sala (15% bônus)"
         >
           <Share2 size={16} />
         </button>
@@ -83,7 +86,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             <Users size={12} />
             <span>{room.currentParticipants}/{room.maxParticipants}</span>
           </div>
-          <div className="flex items-center gap-1 text-amber-500">
+          <div className={`flex items-center gap-1 ${isExpired ? 'text-purple-500 animate-pulse' : 'text-amber-500'}`}>
             <Clock size={10} />
             <span>{timeLeft}</span>
           </div>
@@ -98,19 +101,13 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
         </div>
 
         <div className="flex flex-col gap-2 pt-2">
-          <div className="flex items-center justify-between text-[9px] font-black text-white/20 uppercase">
-            <span>Prêmio Acumulado:</span>
-            <span className="text-green-400 font-black">
-              {currentPrizePool > 0 ? currentPrizePool.toLocaleString() : "0"} Kz
-            </span>
-          </div>
-          
           <Button 
             size="sm" 
+            disabled={isExpired}
             onClick={() => onParticipate(room, module)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[11px] uppercase tracking-widest h-10 w-full rounded-lg shadow-lg"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[11px] uppercase tracking-widest h-10 w-full rounded-lg shadow-lg disabled:opacity-50"
           >
-            ENTRAR NA MESA
+            {isExpired ? 'SORTEANDO...' : 'ENTRAR NA MESA'}
           </Button>
         </div>
       </div>
