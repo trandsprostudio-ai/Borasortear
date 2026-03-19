@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, Users, Settings, LogOut, RefreshCw, 
-  DollarSign, TrendingUp, Wallet, ArrowDownLeft, ArrowUpRight,
+  DollarSign, Wallet, ArrowDownLeft, ArrowUpRight,
   ShieldAlert, Activity
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +34,6 @@ const AdminDashboard = () => {
     const channel = supabase.channel('admin-stats-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchGlobalStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchGlobalStats())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'winners' }, () => fetchGlobalStats())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -48,7 +47,6 @@ const AdminDashboard = () => {
 
       const { data: txs } = await supabase.from('transactions').select('amount, type, status');
       
-      // Lucro da Plataforma = Soma de todos os prêmios na posição 3 (Publicidade/Plataforma)
       const { data: platformEarnings } = await supabase
         .from('winners')
         .select('prize_amount')

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, FileText, Zap, AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, FileText, Loader2, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminFinanceProps {
@@ -28,11 +28,12 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
+      // Busca transações e perfis. Se profiles vier nulo, a transação ainda aparece.
       const { data, error } = await supabase
         .from('transactions')
         .select(`
           *,
-          profiles (
+          profiles:user_id (
             first_name,
             last_name,
             balance,
@@ -43,11 +44,15 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro Supabase:", error);
+        throw error;
+      }
+      
       setTransactions(data || []);
     } catch (err: any) {
-      console.error("Erro ao buscar transações:", err.message);
-      toast.error("Erro ao carregar transações");
+      console.error("Erro detalhado:", err);
+      toast.error("Erro ao carregar transações. Verifique o console.");
     } finally {
       setLoading(false);
     }
@@ -63,7 +68,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         
         const { error: balanceError } = await supabase
           .from('profiles')
-          .update({ balance: currentBalance + Number(tx.amount) })
+          .update({ balance: Number(currentBalance) + Number(tx.amount) })
           .eq('id', tx.user_id);
         
         if (balanceError) throw balanceError;
@@ -76,52 +81,43 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         });
       }
 
-      await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
+      const { error: txError } = await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
+      if (txError) throw txError;
+
       toast.success("Transação aprovada!");
       fetchTransactions();
       onUpdate();
-    } catch (error) {
-      toast.error("Erro ao processar aprovação");
+    } catch (error: any) {
+      toast.error("Erro ao processar: " + error.message);
     }
   };
 
   const handleReject = async (tx: any, isFalse: boolean = false) => {
-    const reason = isFalse ? "COMPROVATIVO FALSO DETECTADO" : prompt("Motivo da rejeição:", "Comprovativo inválido.");
+    const reason = isFalse ? "COMPROVATIVO FALSO" : prompt("Motivo da rejeição:", "Comprovativo inválido.");
     if (reason === null) return;
 
     try {
       if (isFalse) {
         const currentCount = tx.profiles?.false_proof_count || 0;
         const newCount = currentCount + 1;
-        const shouldBan = newCount >= 3;
-
         await supabase.from('profiles').update({ 
           false_proof_count: newCount,
-          is_banned: shouldBan
+          is_banned: newCount >= 3
         }).eq('id', tx.user_id);
-
-        await supabase.from('notifications').insert({
-          user_id: tx.user_id,
-          title: 'ALERTA DE SEGURANÇA ⚠️',
-          message: shouldBan 
-            ? 'Sua conta foi banida permanentemente por envio de comprovativos falsos.' 
-            : `Detectamos um comprovativo falso. Você tem ${newCount}/3 alertas. No 3º sua conta será banida.`,
-          type: 'error'
-        });
       }
 
       if (tx.type === 'withdrawal') {
         const { data: profile } = await supabase.from('profiles').select('balance').eq('id', tx.user_id).single();
         const currentBalance = profile?.balance || 0;
-        await supabase.from('profiles').update({ balance: currentBalance + Number(tx.amount) }).eq('id', tx.user_id);
+        await supabase.from('profiles').update({ balance: Number(currentBalance) + Number(tx.amount) }).eq('id', tx.user_id);
       }
 
       await supabase.from('transactions').update({ status: 'rejected' }).eq('id', tx.id);
-      toast.success(isFalse ? "Fraude registrada!" : "Transação rejeitada.");
+      toast.success("Transação rejeitada.");
       fetchTransactions();
       onUpdate();
-    } catch (error) {
-      toast.error("Erro ao processar");
+    } catch (error: any) {
+      toast.error("Erro ao rejeitar: " + error.message);
     }
   };
 
@@ -129,7 +125,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     return (
       <div className="py-20 flex flex-col items-center justify-center text-white/20">
         <Loader2 className="animate-spin mb-4" size={32} />
-        <p className="text-[10px] font-black uppercase tracking-widest">Carregando transações...</p>
+        <p className="text-[10px] font-black uppercase tracking-widest">Buscando registros...</p>
       </div>
     );
   }
@@ -153,7 +149,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                 <TableCell className="p-6">
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold">{tx.profiles?.first_name || 'Usuário'}</span>
+                      <span className="font-bold">{tx.profiles?.first_name || 'Usuário Desconhecido'}</span>
                       {tx.profiles?.is_banned && <ShieldAlert size={12} className="text-red-500" />}
                     </div>
                     <span className="text-[10px] text-white/20">{new Date(tx.created_at).toLocaleString()}</span>
@@ -162,7 +158,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                 <TableCell className="p-6">
                   <div className="flex items-center gap-2">
                     {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
-                    <span className="font-black text-lg">{tx.amount.toLocaleString()} Kz</span>
+                    <span className="font-black text-lg">{Number(tx.amount).toLocaleString()} Kz</span>
                   </div>
                 </TableCell>
                 <TableCell className="p-6">
@@ -199,7 +195,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           ) : (
             <TableRow>
               <TableCell colSpan={5} className="p-20 text-center text-white/10 font-black uppercase tracking-widest text-xs">
-                Nenhuma transação encontrada.
+                Nenhuma transação encontrada. Certifique-se de que os usuários enviaram comprovativos.
               </TableCell>
             </TableRow>
           )}
