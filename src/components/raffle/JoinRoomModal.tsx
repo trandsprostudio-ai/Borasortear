@@ -7,7 +7,6 @@ import { Wallet, ShieldCheck, AlertCircle, Loader2, Ticket, CheckCircle2, Copy, 
 import { Module, Room } from '@/types/raffle';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useSearchParams } from 'react-router-dom';
 
 interface JoinRoomModalProps {
   isOpen: boolean;
@@ -33,7 +32,6 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
 
   const checkPendingTransactions = async () => {
     const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-    
     const { data } = await supabase
       .from('transactions')
       .select('created_at')
@@ -62,7 +60,6 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
 
     setIsJoining(true);
     try {
-      // Primeiro, deduz o saldo do usuário
       const { error: balanceError } = await supabase
         .from('profiles')
         .update({ balance: userBalance - module.price })
@@ -70,13 +67,9 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
 
       if (balanceError) throw balanceError;
 
-      // Insere a participação (removida a coluna referred_by que causava erro)
       const { data, error: participantError } = await supabase
         .from('participants')
-        .insert({
-          user_id: userId,
-          room_id: room.id
-        })
+        .insert({ user_id: userId, room_id: room.id })
         .select('ticket_code')
         .single();
 
@@ -87,10 +80,15 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
       onSuccess();
     } catch (error: any) {
       toast.error("Erro ao entrar na sala: " + error.message);
-      // Em caso de erro na inserção, o ideal seria estornar o saldo, 
-      // mas para manter a simplicidade e foco no erro de coluna, corrigimos a query.
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const copyTicket = () => {
+    if (ticketCode) {
+      navigator.clipboard.writeText(ticketCode);
+      toast.success("Código do bilhete copiado!");
     }
   };
 
@@ -149,9 +147,12 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
               <CheckCircle2 size={48} />
             </div>
             <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase">ENTRADA CONFIRMADA!</h3>
-            <div className="bg-white/5 p-6 rounded-3xl border border-purple-500/20 mb-8">
-              <p className="text-[9px] font-black text-white/20 uppercase mb-2">Código do Bilhete</p>
+            <div className="bg-white/5 p-6 rounded-3xl border border-purple-500/20 mb-8 relative group cursor-pointer" onClick={copyTicket}>
+              <p className="text-[9px] font-black text-white/20 uppercase mb-2">Código do Bilhete (Toque para copiar)</p>
               <p className="text-3xl font-black text-purple-400 tracking-[0.3em]">{ticketCode}</p>
+              <div className="absolute top-2 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Copy size={14} className="text-purple-500" />
+              </div>
             </div>
             <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-white text-black font-black">FECHAR</Button>
           </div>

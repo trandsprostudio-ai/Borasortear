@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, Zap, Users, Clock, Trophy, Ticket, Loader2, ChevronRight } from 'lucide-react';
+import { LayoutGrid, Zap, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const MyParticipations = () => {
   const [participations, setParticipations] = useState<any[]>([]);
@@ -26,7 +27,6 @@ const MyParticipations = () => {
     };
     getSession();
 
-    // Real-time para atualizações de progresso nas mesas
     const channel = supabase.channel('my-rooms-progress')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms' }, 
       () => {
@@ -49,6 +49,12 @@ const MyParticipations = () => {
     setLoading(false);
   };
 
+  const copyCode = (e: React.MouseEvent, code: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(code);
+    toast.success("Código copiado!");
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
   const activeRooms = participations.filter(p => p.rooms.status === 'open');
@@ -64,7 +70,6 @@ const MyParticipations = () => {
           <p className="text-white/40 font-bold text-xs uppercase tracking-widest">Acompanhe o progresso dos seus sorteios em tempo real</p>
         </header>
 
-        {/* Mesas Ativas */}
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 border border-amber-500/20">
@@ -114,8 +119,10 @@ const MyParticipations = () => {
                         </div>
 
                         <div className="pt-4 flex items-center justify-between border-t border-white/5">
-                          <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">Seu Bilhete</span>
+                          <div className="flex flex-col cursor-pointer group/code" onClick={(e) => copyCode(e, p.ticket_code)}>
+                            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest flex items-center gap-1">
+                              Seu Bilhete <Copy size={8} className="opacity-0 group-hover/code:opacity-100 transition-opacity" />
+                            </span>
                             <span className="text-sm font-black text-white tracking-widest">{p.ticket_code}</span>
                           </div>
                           <div className="flex items-center gap-2 text-[10px] font-black text-amber-500 uppercase">
@@ -138,7 +145,6 @@ const MyParticipations = () => {
           </div>
         </section>
 
-        {/* Histórico de Participações */}
         <section>
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-white/20 border border-white/10">
@@ -161,7 +167,12 @@ const MyParticipations = () => {
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Mesa #{p.rooms.id.slice(0,8)}</p>
-                      <p className="text-sm font-black text-white">{p.ticket_code}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-black text-white">{p.ticket_code}</p>
+                        <button onClick={(e) => copyCode(e, p.ticket_code)} className="text-white/10 hover:text-purple-500 transition-colors">
+                          <Copy size={12} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">

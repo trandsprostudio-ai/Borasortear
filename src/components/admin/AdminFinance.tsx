@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Loader2, ShieldAlert, RefreshCw, CreditCard, History, Phone, ExternalLink } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Loader2, ShieldAlert, RefreshCw, CreditCard, History, Phone, ExternalLink, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -44,6 +44,12 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyIban = (iban: string) => {
+    if (!iban) return;
+    navigator.clipboard.writeText(iban);
+    toast.success("IBAN copiado para transferência!");
   };
 
   const handleApprove = async (tx: any) => {
@@ -197,7 +203,10 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                       <TableCell className="p-6">
                         <div className="flex flex-col">
                           <span className="font-black uppercase text-xs">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
-                          <span className="text-[10px] text-amber-500 font-bold tracking-wider">{tx.profiles?.bank_info || 'Sem IBAN'}</span>
+                          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => copyIban(tx.profiles?.bank_info)}>
+                            <span className="text-[10px] text-amber-500 font-bold tracking-wider">{tx.profiles?.bank_info || 'Sem IBAN'}</span>
+                            <Copy size={10} className="text-amber-500/40 group-hover:text-amber-500 transition-colors" />
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="p-6 font-black text-amber-500 text-lg">{tx.amount.toLocaleString()} Kz</TableCell>
