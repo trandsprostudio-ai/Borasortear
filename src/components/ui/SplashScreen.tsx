@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import Logo from '@/components/layout/Logo';
+import BoraIcon from '../layout/BoraIcon';
 
 interface SplashScreenProps {
   message?: string;
@@ -10,30 +10,41 @@ interface SplashScreenProps {
 
 const SplashScreen = ({ message = "Carregando..." }: SplashScreenProps) => {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[999] bg-[#0A0B12] flex flex-col items-center justify-center"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0A0B12] backdrop-blur-xl"
     >
+      <div className="relative">
+        <motion.div
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, 5, -5, 0]
+          }}
+          transition={{ 
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <BoraIcon className="w-24 h-24" />
+        </motion.div>
+        
+        {/* Efeito de Pulso ao Redor */}
+        <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-2xl animate-pulse -z-10" />
+      </div>
+
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="flex flex-col items-center"
+        initial={{ y: 10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mt-8 text-center"
       >
-        <Logo className="scale-150 mb-8" />
-        
-        <div className="relative w-48 h-1 bg-white/5 rounded-full overflow-hidden">
-          <motion.div 
-            initial={{ x: "-100%" }}
-            animate={{ x: "100%" }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500 to-transparent"
-          />
-        </div>
-        
-        <p className="mt-6 text-white/40 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">
+        <h2 className="text-xl font-black italic tracking-tighter text-white uppercase mb-2">
+          BORA SORTEIAR
+        </h2>
+        <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] animate-pulse">
           {message}
         </p>
       </motion.div>
