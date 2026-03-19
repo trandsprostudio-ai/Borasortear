@@ -42,8 +42,10 @@ const Index = () => {
     const fetchModules = async () => {
       const { data } = await supabase.from('modules').select('*').order('price', { ascending: true });
       if (data) {
-        const uniqueModules = Array.from(new Map(data.map(m => [m.id, m])).values());
+        // Garantir unicidade absoluta por preço para evitar duplicação visual
+        const uniqueModules = Array.from(new Map(data.map(m => [m.price, m])).values());
         setModules(uniqueModules);
+        if (uniqueModules.length > 0) setActiveModuleId(uniqueModules[0].id);
       }
     };
 
