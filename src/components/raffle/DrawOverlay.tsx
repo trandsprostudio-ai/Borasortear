@@ -59,8 +59,7 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
       
       const { data: profile } = await supabase.from('profiles').select('balance').eq('id', currentUser.id).single();
       await supabase.from('profiles').update({ balance: (profile?.balance || 0) + bonusAmount }).eq('id', currentUser.id);
-      
-      await supabase.from('transactions').insert({
+            await supabase.from('transactions').insert({
         user_id: currentUser.id,
         type: 'deposit',
         amount: bonusAmount,
@@ -133,8 +132,7 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                 className="space-y-6"
               >
                 <div className="relative">
-                  <motion.div
-                    initial={{ scale: 0 }}
+                  <motion.div                    initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", damping: 12 }}
                     className="w-28 h-28 gold-gradient rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-amber-500/40 mb-4"
@@ -144,8 +142,7 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                 </div>
 
                 <h2 className="text-4xl font-black text-white tracking-tighter italic">
-                  RESULTADO DA MESA
-                </h2>
+                  RESULTADO DA MESA                </h2>
                 
                 <div className="space-y-3 mt-6">
                   {displayWinners.map((winner, idx) => (

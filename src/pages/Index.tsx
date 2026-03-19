@@ -59,8 +59,9 @@ const Index = () => {
     const finishedRooms = rooms.filter(r => r.status === 'finished');
     const newFinished = finishedRooms.filter(r => !shownDrawRooms.has(r.id));
     if (newFinished.length > 0) {
+      // Show the most recent finished room
       const roomToShow = newFinished.sort((a, b) => 
-        new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )[0];
       fetchWinnersForRoom(roomToShow);
     }
@@ -72,7 +73,6 @@ const Index = () => {
       .select('*, profiles(first_name)')
       .eq('draw_id', room.id)
       .order('position', { ascending: true });
-
     if (winners && winners.length > 0) {
       setDrawResult({
         isOpen: true,
@@ -91,6 +91,7 @@ const Index = () => {
 
   const handleDrawClose = () => {
     setDrawResult(prev => ({ ...prev, isOpen: false }));
+    // Check if there are more finished rooms to show
     const remainingFinished = rooms.filter(r => r.status === 'finished' && !shownDrawRooms.has(r.id));
     if (remainingFinished.length > 0) {
       fetchWinnersForRoom(remainingFinished[0]);
@@ -121,8 +122,8 @@ const Index = () => {
   };
 
   const activeModuleRooms = rooms
-    .filter(r => r.module_id === activeModuleId && r.status === 'open')
-    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .filter(r => r.moduleId === activeModuleId && r.status === 'open')
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .slice(0, 3);
 
   const activeModule = modules.find(m => m.id === activeModuleId);
@@ -268,12 +269,12 @@ const Index = () => {
                       roomNumber={index + 1}
                       room={{
                         id: room.id,
-                        moduleId: room.module_id,
+                        moduleId: room.moduleId,
                         status: room.status,
-                        currentParticipants: room.current_participants,
-                        maxParticipants: room.max_participants,
-                        expiresAt: room.expires_at,
-                        createdAt: room.created_at
+                        currentParticipants: room.currentParticipants,
+                        maxParticipants: room.maxParticipants,
+                        expiresAt: room.expiresAt,
+                        createdAt: room.createdAt
                       }}
                       module={activeModule}
                       onParticipate={handleParticipateClick}
