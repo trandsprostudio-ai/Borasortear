@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Smartphone, Banknote, CreditCard, ExternalLink, FileText } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Smartphone, Banknote, CreditCard, ExternalLink, FileText, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminFinanceProps {
@@ -23,7 +23,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     setLoading(true);
     const { data, error } = await supabase
       .from('transactions')
-      .select('*, profiles(first_name, last_name, balance, bank_info)')
+      .select('*, profiles(first_name, last_name, balance, bank_info, false_proof_count, is_banned)')
       .order('created_at', { ascending: false });
     
     if (!error && data) setTransactions(data);
@@ -53,9 +53,25 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     if (reason === null) return;
 
     try {
+      // Se for saque, devolve o valor ao saldo confirmado
       if (tx.type === 'withdrawal') {
         const newBalance = (tx.profiles?.balance || 0) + Number(tx.amount);
         await supabase.from('profiles').update({ balance: newBalance }).eq('id', tx.user_id);
+      }
+
+      // Lógica de banimento para depósitos falsos
+      if (tx.type === 'deposit') {
+        const newCount = (tx.profiles?.false_proof_count || 0) + 1;
+        const isBanned = newCount >= 3;
+        
+        await supabase.from('profiles').update({ 
+          false_proof_count: newCount,
+          is_banned: isBanned
+        }).eq('id', tx.user_id);
+
+        if (isBanned) {
+          toast.error(`Usuário ${tx.profiles?.first_name} foi BANIDO automaticamente.`);
+        }
       }
 
       await supabase.from('transactions').update({ status: 'rejected' }).eq('id', tx.id);
@@ -64,14 +80,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       onUpdate();
     } catch (error) {
       toast.error("Erro ao rejeitar transação");
-    }
-  };
-
-  const getMethodIcon = (method: string) => {
-    switch (method) {
-      case 'iban': return <Banknote size={14} className="text-blue-400" />;
-      case 'express': return <CreditCard size={14} className="text-purple-400" />;
-      default: return <Smartphone size={14} className="text-amber-400" />;
     }
   };
 
@@ -89,10 +97,13 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         </TableHeader>
         <TableBody>
           {transactions.map((tx) => (
-            <TableRow key={tx.id} className="border-white/5 hover:bg-white/5 transition-colors">
+            <TableRow key={tx.id} className={`border-white/5 hover:bg-white/5 transition-colors ${tx.acceleration_requested && tx.status === 'pending' ? 'bg-purple-500/5' : ''}`}>
               <TableCell className="p-6">
                 <div className="flex flex-col">
-                  <span className="font-bold">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
+                    {tx.profiles?.is_banned && <span className="bg-red-500 text-[8px] px-1.5 py-0.5 rounded font-black">BANIDO</span>}
+                  </div>
                   <span className="text-[10px] text-white/20">{new Date(tx.created_at).toLocaleString()}</span>
                 </div>
               </TableCell>
@@ -104,33 +115,31 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
               </TableCell>
               <TableCell className="p-6">
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    {getMethodIcon(tx.payment_method)}
-                    <span className="text-[10px] font-black uppercase text-white/60">{tx.payment_method || 'N/A'}</span>
-                  </div>
-                  {tx.proof_url ? (
-                    <a 
-                      href={tx.proof_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[10px] font-black text-purple-400 hover:text-purple-300 uppercase tracking-widest"
-                    >
-                      <FileText size={12} /> Ver Comprovativo <ExternalLink size={10} />
+                  <span className="text-[10px] font-black uppercase text-white/60">{tx.payment_method || 'N/A'}</span>
+                  {tx.proof_url && (
+                    <a href={tx.proof_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] font-black text-purple-400 uppercase">
+                      <FileText size={12} /> Ver Comprovativo
                     </a>
-                  ) : (
-                    <span className="text-[9px] text-white/10 uppercase font-bold">Sem anexo</span>
                   )}
                 </div>
               </TableCell>
               <TableCell className="p-6">
-                <div className="flex items-center gap-2">
-                  {tx.status === 'pending' ? <Clock size={14} className="text-amber-500" /> : 
-                   tx.status === 'completed' ? <CheckCircle2 size={14} className="text-green-500" /> : 
-                   <XCircle size={14} className="text-red-500" />}
-                  <span className={`text-[10px] uppercase font-black ${
-                    tx.status === 'pending' ? 'text-amber-500' : 
-                    tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
-                  }`}>{tx.status}</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    {tx.status === 'pending' ? <Clock size={14} className="text-amber-500" /> : 
+                     tx.status === 'completed' ? <CheckCircle2 size={14} className="text-green-500" /> : 
+                     <XCircle size={14} className="text-red-500" />}
+                    <span className={`text-[10px] uppercase font-black ${
+                      tx.status === 'pending' ? 'text-amber-500' : 
+                      tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
+                    }`}>{tx.status}</span>
+                  </div>
+                  {tx.acceleration_requested && tx.status === 'pending' && (
+                    <div className="flex items-center gap-1 text-purple-400 animate-pulse">
+                      <Zap size={10} />
+                      <span className="text-[8px] font-black uppercase">Urgência Solicitada</span>
+                    </div>
+                  )}
                 </div>
               </TableCell>
               <TableCell className="p-6 text-right">

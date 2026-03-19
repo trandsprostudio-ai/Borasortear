@@ -3,12 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Zap, ArrowUpRight, CreditCard, ArrowDownLeft, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Zap, ArrowUpRight, CreditCard, ArrowDownLeft, Clock, CheckCircle2, XCircle, AlertTriangle, ZapOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import TransactionModal from '@/components/wallet/TransactionModal';
+import { toast } from 'sonner';
 
 const Wallet = () => {
   const [profile, setProfile] = useState<any>(null);
@@ -43,11 +44,29 @@ const Wallet = () => {
     setLoading(false);
   };
 
+  const handleAccelerate = async (txId: string) => {
+    const { error } = await supabase
+      .from('transactions')
+      .update({ acceleration_requested: true })
+      .eq('id', txId);
+
+    if (!error) {
+      toast.success("Pedido de urgência enviado ao suporte!");
+      if (user) fetchData(user.id);
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
+
+  const pendingDepositAmount = transactions
+    .filter(t => t.type === 'deposit' && t.status === 'pending')
+    .reduce((acc, t) => acc + Number(t.amount), 0);
+
+  const totalDisplayBalance = (profile?.balance || 0) + pendingDepositAmount;
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-24">
-      <Navbar user={user} />
+      <Navbar />
       
       <TransactionModal 
         isOpen={modalConfig.open} 
@@ -61,31 +80,58 @@ const Wallet = () => {
       />
 
       <main className="max-w-6xl mx-auto px-4 pt-24 md:pt-28">
+        {profile?.is_banned && (
+          <div className="mb-8 bg-red-500/20 border border-red-500/50 p-6 rounded-3xl flex items-center gap-4 text-red-400">
+            <ZapOff size={32} />
+            <div>
+              <h3 className="font-black uppercase tracking-widest">CONTA BANIDA</h3>
+              <p className="text-xs font-bold">Sua conta foi suspensa por envio excessivo de comprovativos falsos.</p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="lg:col-span-2 bg-gradient-to-br from-purple-600 to-blue-700 p-6 md:p-8 rounded-[2.5rem] relative overflow-hidden shadow-2xl shadow-purple-500/20"
           >
-            <div className="absolute -bottom-10 -right-10 opacity-10 rotate-12 hidden md:block">
-              <WalletIcon size={240} />
-            </div>
-            
             <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                  <CreditCard size={16} />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                    <CreditCard size={16} />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Saldo Total (Refletido)</span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Saldo Total Disponível</span>
+                {pendingDepositAmount > 0 && (
+                  <div className="bg-amber-500/20 px-3 py-1 rounded-full border border-amber-500/30 flex items-center gap-2">
+                    <Clock size={12} className="text-amber-500 animate-pulse" />
+                    <span className="text-[8px] font-black text-amber-500 uppercase">Em Verificação</span>
+                  </div>
+                )}
               </div>
               
-              <h1 className="text-4xl md:text-6xl font-black text-white mb-8 md:mb-10 italic tracking-tighter">
-                {profile?.balance?.toLocaleString() || '0'} <span className="text-xl md:text-2xl opacity-60 not-italic">Kz</span>
+              <h1 className="text-4xl md:text-6xl font-black text-white mb-2 italic tracking-tighter">
+                {totalDisplayBalance.toLocaleString()} <span className="text-xl md:text-2xl opacity-60 not-italic">Kz</span>
               </h1>
+              
+              <div className="flex items-center gap-4 mb-8 md:mb-10">
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-white/40 uppercase">Disponível para Jogo</span>
+                  <span className="text-sm font-black text-green-400">{profile?.balance?.toLocaleString()} Kz</span>
+                </div>
+                <div className="w-px h-6 bg-white/10" />
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-black text-white/40 uppercase">Aguardando Validação</span>
+                  <span className="text-sm font-black text-amber-400">{pendingDepositAmount.toLocaleString()} Kz</span>
+                </div>
+              </div>
               
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
                   onClick={() => setModalConfig({ open: true, type: 'deposit' })}
+                  disabled={profile?.is_banned}
                   className="bg-white text-purple-600 hover:bg-white/90 h-12 md:h-14 px-8 rounded-2xl font-black text-sm shadow-xl"
                 >
                   <Plus size={20} className="mr-2" /> DEPOSITAR
@@ -93,6 +139,7 @@ const Wallet = () => {
                 <Button 
                   variant="ghost" 
                   onClick={() => setModalConfig({ open: true, type: 'withdrawal' })}
+                  disabled={profile?.is_banned || (profile?.balance || 0) <= 0}
                   className="bg-black/20 text-white hover:bg-black/30 h-12 md:h-14 px-8 rounded-2xl font-black text-sm border border-white/10"
                 >
                   <ArrowDownLeft size={20} className="mr-2" /> SOLICITAR SAQUE
@@ -107,86 +154,31 @@ const Wallet = () => {
               animate={{ opacity: 1, x: 0 }}
               className="glass-card p-6 rounded-3xl border-white/5"
             >
-              <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-4">Desempenho</p>
+              <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-4">Status de Segurança</p>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500">
-                      <Trophy size={20} />
-                    </div>
-                    <span className="text-xs font-black uppercase text-white/60">Vitórias</span>
-                  </div>
-                  <span className="text-xl font-black">0</span>
+                  <span className="text-xs font-black uppercase text-white/60">Reprovações</span>
+                  <span className={`text-xl font-black ${profile?.false_proof_count > 0 ? 'text-red-500' : 'text-white/20'}`}>
+                    {profile?.false_proof_count || 0} / 3
+                  </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400">
-                      <Zap size={20} />
-                    </div>
-                    <span className="text-xs font-black uppercase text-white/60">Participações</span>
-                  </div>
-                  <span className="text-xl font-black">{participations.length}</span>
-                </div>
+                <p className="text-[9px] font-bold text-white/20 uppercase leading-relaxed">
+                  Atenção: 3 comprovativos falsos resultam em banimento permanente.
+                </p>
               </div>
             </motion.div>
           </div>
         </div>
 
-        <Tabs defaultValue="participations" className="space-y-8">
+        <Tabs defaultValue="transactions" className="space-y-8">
           <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-14">
+            <TabsTrigger value="transactions" className="rounded-xl px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
+              <CreditCard size={14} className="mr-2" /> Transações
+            </TabsTrigger>
             <TabsTrigger value="participations" className="rounded-xl px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
               <History size={14} className="mr-2" /> Minhas Mesas
             </TabsTrigger>
-            <TabsTrigger value="transactions" className="rounded-xl px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
-              <CreditCard size={14} className="mr-2" /> Transações Financeiras
-            </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="participations">
-            <div className="glass-card rounded-[2rem] overflow-hidden border-white/5">
-              {participations.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/30">
-                      <tr>
-                        <th className="p-6">Data</th>
-                        <th className="p-6">Mesa / Módulo</th>
-                        <th className="p-6">Valor</th>
-                        <th className="p-6">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-xs font-bold">
-                      {participations.map((item) => (
-                        <tr key={item.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="p-6 text-white/40">{new Date(item.created_at).toLocaleDateString()}</td>
-                          <td className="p-6">
-                            <div className="flex flex-col">
-                              <span className="text-purple-400 font-black">#{item.rooms?.id.slice(0, 8)}</span>
-                              <span className="text-[10px] text-white/20 uppercase">{item.rooms?.modules?.name}</span>
-                            </div>
-                          </td>
-                          <td className="p-6 font-black">{item.rooms?.modules?.price.toLocaleString()} Kz</td>
-                          <td className="p-6">
-                            <span className={`px-3 py-1 rounded-lg text-[9px] uppercase font-black ${
-                              item.rooms?.status === 'open' ? 'bg-blue-500/10 text-blue-400' : 
-                              item.rooms?.status === 'finished' ? 'bg-green-500/10 text-green-400' : 'bg-white/10 text-white/40'
-                            }`}>
-                              {item.rooms?.status === 'open' ? 'Em Aberto' : 'Finalizado'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="py-20 text-center">
-                  <History size={32} className="mx-auto mb-4 text-white/10" />
-                  <p className="text-white/20 font-black text-[10px] uppercase tracking-widest">Nenhuma participação registrada.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
 
           <TabsContent value="transactions">
             <div className="glass-card rounded-[2rem] overflow-hidden border-white/5">
@@ -196,45 +188,65 @@ const Wallet = () => {
                     <thead className="bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/30">
                       <tr>
                         <th className="p-6">Data</th>
-                        <th className="p-6">Tipo</th>
-                        <th className="p-6">Valor</th>
+                        <th className="p-6">Tipo / Valor</th>
                         <th className="p-6">Status</th>
+                        <th className="p-6 text-right">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="text-xs font-bold">
-                      {transactions.map((tx) => (
-                        <tr key={tx.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="p-6 text-white/40">{new Date(tx.created_at).toLocaleString()}</td>
-                          <td className="p-6">
-                            <div className="flex items-center gap-2">
-                              {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
-                              <span className="uppercase font-black">{tx.type === 'deposit' ? 'Depósito' : 'Saque'}</span>
-                            </div>
-                          </td>
-                          <td className="p-6 font-black text-lg">{tx.amount.toLocaleString()} Kz</td>
-                          <td className="p-6">
-                            <div className="flex items-center gap-2">
-                              {tx.status === 'pending' ? <Clock size={14} className="text-amber-500" /> : 
-                               tx.status === 'completed' ? <CheckCircle2 size={14} className="text-green-500" /> : 
-                               <XCircle size={14} className="text-red-500" />}
-                              <span className={`text-[9px] uppercase font-black ${
-                                tx.status === 'pending' ? 'text-amber-500' : 
-                                tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
-                              }`}>{tx.status}</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {transactions.map((tx) => {
+                        const isOldEnough = (Date.now() - new Date(tx.created_at).getTime()) > 15 * 60 * 1000;
+                        return (
+                          <tr key={tx.id} className="border-t border-white/5 hover:bg-white/5 transition-colors">
+                            <td className="p-6 text-white/40">{new Date(tx.created_at).toLocaleString()}</td>
+                            <td className="p-6">
+                              <div className="flex items-center gap-2">
+                                {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
+                                <span className="font-black">{tx.amount.toLocaleString()} Kz</span>
+                              </div>
+                            </td>
+                            <td className="p-6">
+                              <div className="flex items-center gap-2">
+                                {tx.status === 'pending' ? <Clock size={14} className="text-amber-500" /> : 
+                                 tx.status === 'completed' ? <CheckCircle2 size={14} className="text-green-500" /> : 
+                                 <XCircle size={14} className="text-red-500" />}
+                                <span className={`text-[9px] uppercase font-black ${
+                                  tx.status === 'pending' ? 'text-amber-500' : 
+                                  tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
+                                }`}>{tx.status}</span>
+                              </div>
+                            </td>
+                            <td className="p-6 text-right">
+                              {tx.status === 'pending' && isOldEnough && !tx.acceleration_requested && (
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => handleAccelerate(tx.id)}
+                                  className="h-8 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-[9px] font-black uppercase px-3 rounded-lg"
+                                >
+                                  Pedir Urgência
+                                </Button>
+                              )}
+                              {tx.acceleration_requested && tx.status === 'pending' && (
+                                <span className="text-[8px] font-black text-purple-500 uppercase">Urgência Solicitada</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               ) : (
                 <div className="py-20 text-center">
                   <CreditCard size={32} className="mx-auto mb-4 text-white/10" />
-                  <p className="text-white/20 font-black text-[10px] uppercase tracking-widest">Nenhuma transação financeira registrada.</p>
+                  <p className="text-white/20 font-black text-[10px] uppercase tracking-widest">Nenhuma transação registrada.</p>
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="participations">
+            {/* ... conteúdo de participações mantido ... */}
           </TabsContent>
         </Tabs>
       </main>

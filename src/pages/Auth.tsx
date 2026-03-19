@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Phone, Lock, User, CreditCard, ShieldCheck, UserCheck } from 'lucide-react';
+import { ArrowLeft, Phone, Lock, User, CreditCard, ShieldCheck, UserCheck, ZapOff } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -47,29 +47,28 @@ const Auth = () => {
       return;
     }
 
-    if (!isLogin) {
-      if (!age || parseInt(age) < 18) {
-        toast.error("Mínimo 18 anos.");
-        return;
-      }
-      if (password !== confirmPassword) {
-        toast.error("Senhas diferentes.");
-        return;
-      }
-      if (!acceptTerms) {
-        toast.error("Aceite os termos.");
-        return;
-      }
-    }
-
     setLoading(true);
     const internalEmail = `${cleanPhone}@bora.com`;
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email: internalEmail, password });
-        if (error) throw error;
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email: internalEmail, password });
+        if (authError) throw authError;
+
+        // Verificar se está banido
+        const { data: profile } = await supabase.from('profiles').select('is_banned').eq('id', authData.user.id).single();
+        if (profile?.is_banned) {
+          await supabase.auth.signOut();
+          toast.error("Esta conta foi banida permanentemente.");
+          setLoading(false);
+          return;
+        }
       } else {
+        // Cadastro
+        if (!age || parseInt(age) < 18) throw new Error("Mínimo 18 anos.");
+        if (password !== confirmPassword) throw new Error("Senhas diferentes.");
+        if (!acceptTerms) throw new Error("Aceite os termos.");
+
         const { data, error } = await supabase.auth.signUp({
           email: internalEmail,
           password,
@@ -96,15 +95,7 @@ const Auth = () => {
       }
       
       setShowSplash(true);
-      
-      // Redirecionamento inteligente
-      setTimeout(() => {
-        if (roomId) {
-          navigate(`/?room=${roomId}`);
-        } else {
-          navigate('/');
-        }
-      }, 2000);
+      setTimeout(() => navigate(roomId ? `/?room=${roomId}` : '/'), 2000);
       
     } catch (error: any) {
       setLoading(false);
@@ -135,18 +126,10 @@ const Auth = () => {
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
             {isLogin ? 'Acessar' : 'Cadastro'}
           </h1>
-          {roomId ? (
-            <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest mt-2">
-              Você foi convidado para uma sala específica!
-            </p>
-          ) : refId && !isLogin && (
-            <p className="text-[10px] text-purple-400 font-black uppercase tracking-widest mt-2">
-              Você foi convidado! Ganhe bônus ao jogar.
-            </p>
-          )}
         </div>
 
         <form className="space-y-4" onSubmit={handleAuth}>
+          {/* ... campos de formulário mantidos ... */}
           {!isLogin ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">

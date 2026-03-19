@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Wallet, User, LogOut, ChevronDown, Search, Settings, Plus } from 'lucide-react';
+import { Wallet, User, LogOut, ChevronDown, Search, Settings, Plus, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -24,27 +24,31 @@ import TransactionModal from '@/components/wallet/TransactionModal';
 const Navbar = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [pendingAmount, setPendingAmount] = useState(0);
   const [showExitSplash, setShowExitSplash] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Verificar sessão inicial
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+        fetchPendingAmount(session.user.id);
+      }
     };
     checkSession();
 
-    // Ouvir mudanças na autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
         fetchProfile(currentUser.id);
+        fetchPendingAmount(currentUser.id);
       } else {
         setProfile(null);
+        setPendingAmount(0);
       }
     });
 
@@ -55,16 +59,33 @@ const Navbar = () => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (data) setProfile(data);
 
-    // Real-time para o saldo
     const channel = supabase.channel(`nav-profile-${userId}`)
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'profiles', 
-        filter: `id=eq.${userId}` 
-      }, (payload) => setProfile(payload.new))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, 
+      (payload) => setProfile(payload.new))
       .subscribe();
       
+    return () => { supabase.removeChannel(channel); };
+  };
+
+  const fetchPendingAmount = async (userId: string) => {
+    const { data } = await supabase
+      .from('transactions')
+      .select('amount')
+      .eq('user_id', userId)
+      .eq('type', 'deposit')
+      .eq('status', 'pending');
+    
+    if (data) {
+      const total = data.reduce((acc, t) => acc + Number(t.amount), 0);
+      setPendingAmount(total);
+    }
+
+    // Real-time para transações
+    const channel = supabase.channel(`nav-txs-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, 
+      () => fetchPendingAmount(userId))
+      .subscribe();
+
     return () => { supabase.removeChannel(channel); };
   };
 
@@ -76,6 +97,8 @@ const Navbar = () => {
       navigate('/');
     }, 1500);
   };
+
+  const totalDisplayBalance = (profile?.balance || 0) + pendingAmount;
 
   return (
     <>
@@ -99,12 +122,6 @@ const Navbar = () => {
             <Link to="/" className="hover:opacity-80 transition-opacity">
               <Logo className="scale-[0.7] md:scale-100 origin-left" />
             </Link>
-            
-            {user && (
-              <Link to="/consult-draw" className="hidden lg:flex items-center gap-2 text-[10px] font-black text-white/40 hover:text-white uppercase tracking-widest transition-colors">
-                <Search size={14} className="text-purple-500" /> Consultar Bilhete
-              </Link>
-            )}
           </div>
 
           <div className="flex items-center gap-1.5 md:gap-2">
@@ -112,14 +129,18 @@ const Navbar = () => {
               <>
                 <div className="flex items-center bg-[#1A1D29] rounded-xl p-0.5 md:p-1 border border-white/5">
                   <Link to="/wallet" className="px-1.5 md:px-4 py-1 flex flex-col items-end">
-                    <span className="text-[6px] md:text-[9px] text-white/30 font-black uppercase tracking-tighter">Saldo</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[6px] md:text-[9px] text-white/30 font-black uppercase tracking-tighter">Saldo Total</span>
+                      {pendingAmount > 0 && <Clock size={8} className="text-amber-500 animate-pulse" />}
+                    </div>
                     <span className="text-[10px] md:text-sm font-black text-green-400 whitespace-nowrap">
-                      {profile?.balance?.toLocaleString() || '0'} <span className="text-[7px] md:text-[10px]">Kz</span>
+                      {totalDisplayBalance.toLocaleString()} <span className="text-[7px] md:text-[10px]">Kz</span>
                     </span>
                   </Link>
                   <Button 
                     size="icon" 
                     onClick={() => setIsDepositOpen(true)}
+                    disabled={profile?.is_banned}
                     className="bg-purple-600 hover:bg-purple-700 text-white h-6 w-6 md:h-9 md:w-9 rounded-lg shadow-lg shrink-0"
                   >
                     <Plus size={12} className="md:size-14" />
@@ -163,19 +184,8 @@ const Navbar = () => {
               </>
             ) : (
               <div className="flex items-center gap-1 md:gap-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => navigate('/auth?mode=login')} 
-                  className="text-white/60 font-black text-[9px] md:text-[10px] uppercase tracking-widest h-7 md:h-8 px-2 md:px-3"
-                >
-                  Entrar
-                </Button>
-                <Button 
-                  onClick={() => navigate('/auth?mode=signup')} 
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-black px-2.5 md:px-4 rounded-lg md:rounded-xl text-[9px] md:text-[10px] uppercase tracking-widest h-7 md:h-8 whitespace-nowrap"
-                >
-                  CRIAR CONTA
-                </Button>
+                <Button variant="ghost" onClick={() => navigate('/auth?mode=login')} className="text-white/60 font-black text-[9px] md:text-[10px] uppercase tracking-widest h-7 md:h-8 px-2 md:px-3">Entrar</Button>
+                <Button onClick={() => navigate('/auth?mode=signup')} className="bg-purple-600 hover:bg-purple-700 text-white font-black px-2.5 md:px-4 rounded-lg md:rounded-xl text-[9px] md:text-[10px] uppercase tracking-widest h-7 md:h-8 whitespace-nowrap">CRIAR CONTA</Button>
               </div>
             )}
           </div>
