@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import TermosDeUso from "./pages/TermosDeUso";
 import Privacidade from "./pages/Privacidade";
 import CentralDeAjuda from "./pages/CentralDeAjuda";
+import AdminRoomsStatus from "./pages/AdminRoomsStatus";
 import FloatingNav from "./components/layout/FloatingNav";
 import ScrollToTop from "./components/layout/ScrollToTop";
 
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/affiliates" element={<Affiliates />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-rooms-status" element={<AdminRoomsStatus />} />
           <Route path="/termos-de-uso" element={<TermosDeUso />} />
           <Route path="/privacidade" element={<Privacidade />} />
           <Route path="/central-de-ajuda" element={<CentralDeAjuda />} />
