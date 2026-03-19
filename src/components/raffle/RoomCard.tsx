@@ -41,13 +41,14 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
     e.stopPropagation();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      toast.error("Faça login para convidar amigos e ganhar bônus!");
+      toast.error("Faça login para convidar amigos para esta sala!");
       return;
     }
     
+    // Link específico da sala
     const inviteUrl = `${window.location.origin}/auth?mode=signup&ref=${session.user.id}&room=${room.id}`;
     navigator.clipboard.writeText(inviteUrl);
-    toast.success("Link de convite copiado! Ganhe 5% dos prêmios do seu amigo.");
+    toast.success("Link da SALA copiado! Ganhe 15% se o seu convidado vencer nesta mesa.");
   };
 
   return (
@@ -70,7 +71,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
         <button 
           onClick={handleInvite}
           className="p-2 bg-white/5 rounded-lg text-white/40 hover:text-purple-400 hover:bg-purple-500/10 transition-all"
-          title="Convidar e ganhar bônus"
+          title="Convidar para esta sala (15% bônus)"
         >
           <Share2 size={16} />
         </button>

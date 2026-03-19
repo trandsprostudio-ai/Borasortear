@@ -17,6 +17,7 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
   const refId = searchParams.get('ref');
+  const roomId = searchParams.get('room');
   
   const [isLogin, setIsLogin] = useState(mode === 'login');
   const [loading, setLoading] = useState(false);
@@ -89,13 +90,21 @@ const Auth = () => {
             first_name: fullName.split(' ')[0],
             last_name: fullName.split(' ').slice(1).join(' '),
             balance: 0,
-            referred_by: refId || null // Salva quem indicou
+            referred_by: refId || null
           });
         }
       }
       
       setShowSplash(true);
-      setTimeout(() => navigate('/'), 2000);
+      
+      // Redirecionamento inteligente
+      setTimeout(() => {
+        if (roomId) {
+          navigate(`/?room=${roomId}`);
+        } else {
+          navigate('/');
+        }
+      }, 2000);
       
     } catch (error: any) {
       setLoading(false);
@@ -126,7 +135,11 @@ const Auth = () => {
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
             {isLogin ? 'Acessar' : 'Cadastro'}
           </h1>
-          {refId && !isLogin && (
+          {roomId ? (
+            <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest mt-2">
+              Você foi convidado para uma sala específica!
+            </p>
+          ) : refId && !isLogin && (
             <p className="text-[10px] text-purple-400 font-black uppercase tracking-widest mt-2">
               Você foi convidado! Ganhe bônus ao jogar.
             </p>

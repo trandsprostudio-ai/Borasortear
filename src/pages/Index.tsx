@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import RoomCard from '@/components/raffle/RoomCard';
 import JoinRoomModal from '@/components/raffle/JoinRoomModal';
@@ -12,13 +12,14 @@ import LiveActivity from '@/components/raffle/LiveActivity';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, History, Trophy, Ticket, Share2, Copy } from 'lucide-react';
+import { Zap, LayoutGrid, History, Trophy, Ticket, Share2, Copy, HelpCircle } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 const Index = () => {
   const { rooms, loading } = useRooms();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [modules, setModules] = useState<any[]>([]);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -57,9 +58,6 @@ const Index = () => {
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchMyParticipations(session.user.id);
-      } else {
-        setProfile(null);
-        setMyParticipations([]);
       }
     });
 
@@ -92,6 +90,32 @@ const Index = () => {
     };
   }, [user?.id]);
 
+  // Lógica para abrir sala específica via convite
+  useEffect(() => {
+    const roomId = searchParams.get('room');
+    if (roomId && rooms.length > 0 && modules.length > 0 && user) {
+      const room = rooms.find(r => r.id === roomId);
+      if (room && room.status === 'open') {
+        const module = modules.find(m => m.id === room.module_id);
+        if (module) {
+          setSelectedRoom({ 
+            room: {
+              id: room.id, moduleId: room.module_id, status: room.status,
+              currentParticipants: room.current_participants, maxParticipants: room.max_participants,
+              expiresAt: room.expires_at, createdAt: room.created_at
+            }, 
+            module 
+          });
+          // Limpar o parâmetro da URL para não reabrir ao atualizar
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete('room');
+          setSearchParams(newParams);
+          toast.success("Você entrou pelo convite da sala! Bônus de 15% ativo para o seu convidante.");
+        }
+      }
+    }
+  }, [searchParams, rooms, modules, user]);
+
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (data) setProfile(data);
@@ -109,7 +133,7 @@ const Index = () => {
 
   const handleParticipateClick = (room: Room, module: Module) => {
     if (!user) { 
-      navigate('/auth?mode=login'); 
+      navigate(`/auth?mode=login&room=${room.id}`); 
       return; 
     }
     setSelectedRoom({ room, module });
@@ -122,7 +146,7 @@ const Index = () => {
     }
     const link = `${window.location.origin}/auth?mode=signup&ref=${user.id}`;
     navigator.clipboard.writeText(link);
-    toast.success("Link de convite copiado! Ganhe 5% de bônus.");
+    toast.success("Link de convite da plataforma copiado! Ganhe 5% de bônus vitalício.");
   };
 
   const activeModuleRooms = rooms
@@ -161,11 +185,21 @@ const Index = () => {
             <PrizeCarousel />
           </div>
           
-          <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/5 w-full md:w-auto justify-center">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
-              {onlinePlayers.toLocaleString()} Jogadores Online
-            </span>
+          <div className="flex items-center gap-3 w-full md:w-auto justify-center">
+            <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-xl border border-white/5">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                {onlinePlayers.toLocaleString()} Jogadores Online
+              </span>
+            </div>
+            
+            <Button 
+              onClick={() => navigate('/support')}
+              variant="ghost"
+              className="bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-500/20 h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
+            >
+              <HelpCircle size={14} /> Como Funciona
+            </Button>
           </div>
         </div>
 
@@ -176,15 +210,15 @@ const Index = () => {
               <Share2 className="text-white" size={24} />
             </div>
             <div>
-              <h3 className="text-lg font-black italic tracking-tighter uppercase">Ganhe 5% de Bônus Vitalício</h3>
-              <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Convide amigos e ganhe sobre cada prêmio que eles faturarem.</p>
+              <h3 className="text-lg font-black italic tracking-tighter uppercase">Convite Geral (5% Bônus)</h3>
+              <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Ganhe 5% sobre todos os prêmios de quem aderir à plataforma pelo seu link.</p>
             </div>
           </div>
           <Button 
             onClick={copyInviteLink}
             className="bg-white text-black hover:bg-gray-200 font-black px-6 rounded-xl h-12 flex items-center gap-2"
           >
-            <Copy size={16} /> COPIAR MEU LINK
+            <Copy size={16} /> COPIAR LINK GERAL
           </Button>
         </div>
 
