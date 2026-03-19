@@ -4,17 +4,23 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Plus, Zap, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2 } from 'lucide-react';
+import { Plus, Zap, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminSystem = () => {
   const [modules, setModules] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [drawingId, setDrawingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSystemData();
+    
+    // Real-time para atualizar a lista de mesas quando o sorteio automático acontecer
+    const channel = supabase.channel('admin-system-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => fetchSystemData())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchSystemData = async () => {
@@ -42,91 +48,12 @@ const AdminSystem = () => {
     }
   };
 
-  const handlePerformDraw = async (room: any) => {
-    if (room.current_participants < 1) {
-      toast.error("Não há participantes nesta mesa.");
-      return;
-    }
-
-    if (!confirm(`Deseja realizar o sorteio da Mesa #${room.id.slice(0,8)}?`)) return;
-
-    setDrawingId(room.id);
-    try {
-      // 1. Buscar participantes
-      const { data: participants } = await supabase
-        .from('participants')
-        .select('*, profiles(id, balance, referred_by)')
-        .eq('room_id', room.id);
-
-      if (!participants || participants.length === 0) throw new Error("Sem participantes");
-
-      // 2. Embaralhar e escolher vencedor (Lógica simples: 1 vencedor leva 90% do pool)
-      const winner = participants[Math.floor(Math.random() * participants.length)];
-      const totalPool = room.modules.price * room.current_participants;
-      const prizeAmount = totalPool * 0.9;
-
-      // 3. Registrar Vencedor
-      await supabase.from('winners').insert({
-        draw_id: room.id,
-        user_id: winner.user_id,
-        prize_amount: prizeAmount,
-        position: 1
-      });
-
-      // 4. Pagar Vencedor
-      const newWinnerBalance = (winner.profiles.balance || 0) + prizeAmount;
-      await supabase.from('profiles').update({ balance: newWinnerBalance }).eq('id', winner.user_id);
-
-      // 5. Lógica de Bônus de Indicação
-      // Bônus de 15% (Indicação específica da sala)
-      if (winner.referred_by) {
-        const bonus15 = prizeAmount * 0.15;
-        const { data: refProfile } = await supabase.from('profiles').select('balance').eq('id', winner.referred_by).single();
-        if (refProfile) {
-          await supabase.from('profiles').update({ balance: refProfile.balance + bonus15 }).eq('id', winner.referred_by);
-          await supabase.from('transactions').insert({
-            user_id: winner.referred_by,
-            type: 'deposit',
-            amount: bonus15,
-            status: 'completed',
-            payment_method: 'Bônus de Indicação (15%)'
-          });
-        }
-      } 
-      // Bônus de 5% (Indicação geral da plataforma - se não houver a de 15%)
-      else if (winner.profiles.referred_by) {
-        const bonus5 = prizeAmount * 0.05;
-        const { data: refProfile } = await supabase.from('profiles').select('balance').eq('id', winner.profiles.referred_by).single();
-        if (refProfile) {
-          await supabase.from('profiles').update({ balance: refProfile.balance + bonus5 }).eq('id', winner.profiles.referred_by);
-          await supabase.from('transactions').insert({
-            user_id: winner.profiles.referred_by,
-            type: 'deposit',
-            amount: bonus5,
-            status: 'completed',
-            payment_method: 'Bônus de Indicação (5%)'
-          });
-        }
-      }
-
-      // 6. Finalizar Mesa
-      await supabase.from('rooms').update({ status: 'finished' }).eq('id', room.id);
-
-      toast.success(`Sorteio realizado! Vencedor: ${winner.profiles.first_name}`);
-      fetchSystemData();
-    } catch (error: any) {
-      toast.error("Erro no sorteio: " + error.message);
-    } finally {
-      setDrawingId(null);
-    }
-  };
-
   return (
     <div className="space-y-10">
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-            <LayoutGrid className="text-purple-500" /> Módulos
+            <LayoutGrid className="text-purple-500" /> Módulos de Jogo
           </h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -149,7 +76,7 @@ const AdminSystem = () => {
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-            <Zap className="text-amber-500" /> Mesas Ativas
+            <Zap className="text-amber-500" /> Monitoramento de Mesas
           </h3>
           <Button variant="ghost" onClick={fetchSystemData} className="text-white/20 hover:text-white">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -183,18 +110,16 @@ const AdminSystem = () => {
                     </div>
                   </TableCell>
                   <TableCell className="p-6">
-                    <span className="px-3 py-1 rounded-lg text-[10px] uppercase font-black bg-green-500/10 text-green-400">
-                      {room.status}
+                    <span className={`px-3 py-1 rounded-lg text-[10px] uppercase font-black ${
+                      room.status === 'open' ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'
+                    }`}>
+                      {room.status === 'open' ? 'Em Aberto' : 'Sorteando...'}
                     </span>
                   </TableCell>
                   <TableCell className="p-6 text-right">
-                    <Button 
-                      onClick={() => handlePerformDraw(room)}
-                      disabled={drawingId === room.id}
-                      className="bg-amber-500 hover:bg-amber-600 text-black font-black text-[10px] uppercase px-4 h-9 rounded-xl"
-                    >
-                      {drawingId === room.id ? <Loader2 className="animate-spin" /> : <><Trophy size={14} className="mr-2" /> SORTEAR</>}
-                    </Button>
+                    <div className="flex items-center justify-end gap-2 text-[10px] font-black text-white/20 uppercase">
+                      <Clock size={12} /> Automático
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
