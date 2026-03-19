@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, FileText, Loader2, ShieldAlert, ExternalLink, CreditCard } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, FileText, Loader2, ShieldAlert, ExternalLink, CreditCard, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminFinanceProps {
@@ -28,37 +28,37 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      // Usando a sintaxe !inner ou especificando a coluna para garantir a junção
-      const { data, error } = await supabase
+      // Passo 1: Buscar as transações
+      const { data: txData, error: txError } = await supabase
         .from('transactions')
-        .select(`
-          id,
-          user_id,
-          type,
-          amount,
-          status,
-          payment_method,
-          proof_url,
-          created_at,
-          profiles!user_id (
-            first_name,
-            last_name,
-            bank_info,
-            false_proof_count,
-            is_banned
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error("Erro detalhado do Supabase:", error);
-        throw error;
+      if (txError) throw txError;
+
+      if (txData && txData.length > 0) {
+        // Passo 2: Buscar os perfis dos usuários dessas transações
+        const userIds = [...new Set(txData.map(t => t.user_id))];
+        const { data: profileData, error: profError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, bank_info, false_proof_count, is_banned')
+          .in('id', userIds);
+
+        if (profError) throw profError;
+
+        // Passo 3: Mesclar os dados manualmente para evitar erro de join do Supabase
+        const mergedData = txData.map(tx => ({
+          ...tx,
+          profiles: profileData?.find(p => p.id === tx.user_id) || null
+        }));
+
+        setTransactions(mergedData);
+      } else {
+        setTransactions([]);
       }
-      
-      setTransactions(data || []);
     } catch (err: any) {
-      console.error("Erro na função fetchTransactions:", err);
-      toast.error("Erro de sincronização. Verifique o console do navegador.");
+      console.error("Erro ao carregar dados financeiros:", err);
+      toast.error("Erro ao sincronizar dados. Tente atualizar a página.");
     } finally {
       setLoading(false);
     }
@@ -130,13 +130,20 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     return (
       <div className="py-20 flex flex-col items-center justify-center text-white/20">
         <Loader2 className="animate-spin mb-4" size={32} />
-        <p className="text-[10px] font-black uppercase tracking-widest">Conectando ao Banco de Dados...</p>
+        <p className="text-[10px] font-black uppercase tracking-widest">Carregando Centro Financeiro...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center gap-3 mb-4">
+        <ShieldAlert className="text-amber-500" size={20} />
+        <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">
+          Validação Manual: Compare o comprovativo com o seu extrato bancário antes de aprovar.
+        </p>
+      </div>
+
       <div className="glass-card rounded-[2rem] overflow-hidden border-white/5">
         <Table>
           <TableHeader className="bg-white/5">
@@ -151,7 +158,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           <TableBody>
             {transactions.length > 0 ? (
               transactions.map((tx) => (
-                <TableRow key={tx.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                <TableRow key={tx.id} className={`border-white/5 hover:bg-white/5 transition-colors ${tx.status === 'pending' ? 'bg-purple-500/5' : ''}`}>
                   <TableCell className="p-6">
                     <div className="flex flex-col gap-1">
                       <span className="font-black text-white uppercase">
@@ -161,6 +168,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                         <CreditCard size={12} />
                         <span>IBAN: {tx.profiles?.bank_info || 'Não informado'}</span>
                       </div>
+                      <span className="text-[9px] text-white/20 uppercase">{new Date(tx.created_at).toLocaleString()}</span>
                     </div>
                   </TableCell>
                   <TableCell className="p-6">
@@ -168,7 +176,9 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                       {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
                       <span className="font-black text-xl">{Number(tx.amount).toLocaleString()} Kz</span>
                     </div>
-                    <span className="text-[9px] font-black text-purple-400 uppercase">{tx.payment_method}</span>
+                    <span className="text-[9px] font-black text-purple-400 uppercase bg-purple-500/10 px-2 py-0.5 rounded w-fit">
+                      {tx.payment_method}
+                    </span>
                   </TableCell>
                   <TableCell className="p-6">
                     {tx.proof_url ? (
@@ -189,7 +199,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                       <span className={`text-[10px] uppercase font-black ${
                         tx.status === 'pending' ? 'text-amber-500' : 
                         tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
-                      }`}>{tx.status}</span>
+                      }`}>{tx.status === 'pending' ? 'Pendente' : tx.status}</span>
                     </div>
                   </TableCell>
                   <TableCell className="p-6 text-right">
@@ -206,7 +216,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="p-20 text-center text-white/10 font-black uppercase tracking-widest text-xs">
-                  Nenhuma transação pendente.
+                  Nenhuma transação registrada.
                 </TableCell>
               </TableRow>
             )}
