@@ -15,6 +15,9 @@ import Affiliates from "./pages/Affiliates";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import TermosDeUso from "./pages/TermosDeUso";
+import Privacidade from "./pages/Privacidade";
+import CentralDeAjuda from "./pages/CentralDeAjuda";
 import FloatingNav from "./components/layout/FloatingNav";
 import ScrollToTop from "./components/layout/ScrollToTop";
 
@@ -39,6 +42,9 @@ const App = () => (
           <Route path="/affiliates" element={<Affiliates />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/termos-de-uso" element={<TermosDeUso />} />
+          <Route path="/privacidade" element={<Privacidade />} />
+          <Route path="/central-de-ajuda" element={<CentralDeAjuda />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <FloatingNav />

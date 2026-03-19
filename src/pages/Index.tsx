@@ -44,27 +44,9 @@ const Index = () => {
         const uniqueModules = Array.from(new Map(modData.map(m => [m.price, m])).values());
         setModules(uniqueModules);
         if (uniqueModules.length > 0) setActiveModuleId(uniqueModules[0].id);
-        ensureRoomsExist(uniqueModules);
       }
       fetchTopWinners();
       fetchRecentWins();
-    };
-
-    const ensureRoomsExist = async (availableModules: any[]) => {
-      for (const mod of availableModules) {
-        const activeRooms = rooms.filter(r => r.module_id === mod.id && r.status === 'open');
-        if (activeRooms.length < 3) {
-          const needed = 3 - activeRooms.length;
-          const newRooms = Array(needed).fill(null).map(() => ({
-            module_id: mod.id,
-            max_participants: mod.max_participants,
-            current_participants: Math.floor(Math.random() * (mod.max_participants * 0.2)),
-            status: 'open',
-            expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString()
-          }));
-          await supabase.from('rooms').insert(newRooms);
-        }
-      }
     };
 
     initializeData();
@@ -76,7 +58,7 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [rooms.length]);
+  }, []);
 
   const fetchTopWinners = async () => {
     const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('prize_amount', { ascending: false }).limit(10);
@@ -158,7 +140,7 @@ const Index = () => {
                 {onlinePlayers.toLocaleString()} ONLINE
               </span>
             </div>
-            <Button onClick={() => navigate('/support')} variant="ghost" className="text-white/40 hover:text-white font-black text-[10px] uppercase tracking-widest">
+            <Button onClick={() => navigate('/central-de-ajuda')} variant="ghost" className="text-white/40 hover:text-white font-black text-[10px] uppercase tracking-widest">
               <HelpCircle size={14} className="mr-2" /> AJUDA
             </Button>
           </div>
@@ -171,7 +153,7 @@ const Index = () => {
             </div>
             <div>
               <h2 className="text-3xl font-black italic tracking-tighter uppercase">Módulos</h2>
-              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Selecione o módulo para liberar as mesas</p>
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Escolha o valor da sua mesa</p>
             </div>
           </div>
 

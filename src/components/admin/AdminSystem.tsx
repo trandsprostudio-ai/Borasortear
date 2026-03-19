@@ -57,7 +57,7 @@ const AdminSystem = () => {
       module_id: moduleId,
       max_participants: maxParticipants,
       status: 'open',
-      expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // Alterado para 3 horas
+      expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // 3 horas
     });
 
     if (error) toast.error("Erro ao criar mesa");
@@ -81,7 +81,7 @@ const AdminSystem = () => {
             module_id: mod.id,
             max_participants: mod.max_participants,
             status: 'open',
-            expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // Alterado para 3 horas
+            expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // 3 horas
           });
           await supabase.from('rooms').insert(newRooms);
         }

@@ -57,10 +57,9 @@ const Footer = () => {
         </div>
         
         <div className="flex flex-wrap justify-center gap-6 text-white/40 text-[10px] font-black uppercase tracking-widest">
-          <Link to="/support" className="hover:text-purple-400 transition-colors">Termos de Uso</Link>
-          <Link to="/support" className="hover:text-purple-400 transition-colors">Privacidade</Link>
-          <Link to="/support" className="hover:text-purple-400 transition-colors">Central de Ajuda</Link>
-          <Link to="/affiliates" className="hover:text-purple-400 transition-colors">Afiliados</Link>
+          <Link to="/termos-de-uso" className="hover:text-purple-400 transition-colors">Termos de Uso</Link>
+          <Link to="/privacidade" className="hover:text-purple-400 transition-colors">Privacidade</Link>
+          <Link to="/central-de-ajuda" className="hover:text-purple-400 transition-colors">Central de Ajuda</Link>
         </div>
       </div>
     </footer>
