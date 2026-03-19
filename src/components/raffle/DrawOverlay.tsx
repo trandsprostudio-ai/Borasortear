@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Star, Zap, X, Megaphone, Share2, Loader2 } from 'lucide-react';
+import { Trophy, Star, Zap, X, Megaphone, Share2, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -197,7 +197,17 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                         shared ? 'bg-green-600' : 'premium-gradient'
                       }`}
                     >
-                      {sharing ? <Loader2 className="animate-spin" /> : shared ? <><CheckCircle2 size={16} /> BÔNUS RECEBIDO</> : <><Share2 size={16} /> PARTILHAR VITÓRIA (+2%)</>}
+                      {sharing ? <Loader2 className="animate-spin" /> : shared ? (
+                        <>
+                          <CheckCircle2 size={16} className="mr-2" />
+                          BÔNUS RECEBIDO
+                        </>
+                      ) : (
+                        <>
+                          <Share2 size={16} className="mr-2" />
+                          PARTILHAR VITÓRIA (+2%)
+                        </>
+                      )}
                     </Button>
                   </motion.div>
                 )}
