@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap, Trash2, AlertTriangle, Share2, Copy, Users } from 'lucide-react';
+import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap, Trash2, AlertTriangle, Share2, Copy, Users, CheckCircle2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,9 +26,9 @@ import {
 const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
+  const [referrals, setReferrals] = useState<any[]>([]);
   const [referralStats, setReferralStats] = useState({ count: 0, totalEarned: 0 });
   const navigate = useNavigate();
 
@@ -39,7 +39,7 @@ const Profile = () => {
         setUser(session.user);
         const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
         setProfile(data);
-        fetchReferralStats(session.user.id);
+        fetchReferralData(session.user.id);
       } else {
         navigate('/auth?mode=login');
       }
@@ -48,14 +48,15 @@ const Profile = () => {
     fetchUser();
   }, [navigate]);
 
-  const fetchReferralStats = async (userId: string) => {
-    const [refCount, refEarnings] = await Promise.all([
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('referred_by', userId),
+  const fetchReferralData = async (userId: string) => {
+    const [refList, refEarnings] = await Promise.all([
+      supabase.from('profiles').select('first_name, created_at').eq('referred_by', userId).order('created_at', { ascending: false }),
       supabase.from('transactions').select('amount').eq('user_id', userId).eq('payment_method', 'Bônus de Indicação').eq('status', 'completed')
     ]);
 
+    if (refList.data) setReferrals(refList.data);
     setReferralStats({
-      count: refCount.count || 0,
+      count: refList.data?.length || 0,
       totalEarned: refEarnings.data?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0
     });
   };
@@ -85,21 +86,7 @@ const Profile = () => {
   const copyInviteLink = () => {
     const link = `${window.location.origin}/auth?mode=signup&ref=${user.id}`;
     navigator.clipboard.writeText(link);
-    toast.success("Link de convite copiado! Ganhe 5% de bônus.");
-  };
-
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    try {
-      const { error: profileError } = await supabase.from('profiles').delete().eq('id', user.id);
-      if (profileError) throw profileError;
-      await supabase.auth.signOut();
-      toast.success("Conta excluída permanentemente.");
-      navigate('/');
-    } catch (error: any) {
-      toast.error("Erro ao excluir conta: " + error.message);
-      setDeleting(false);
-    }
+    toast.success("Link de convite copiado!");
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
@@ -108,15 +95,16 @@ const Profile = () => {
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
       <Navbar user={user} />
       
-      <main className="max-w-4xl mx-auto px-4 pt-28">
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-1/3 space-y-6">
+      <main className="max-w-5xl mx-auto px-4 pt-28">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Sidebar Info */}
+          <div className="space-y-6">
             <div className="glass-card p-8 rounded-[2.5rem] text-center border-white/5">
               <div className="w-24 h-24 bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-purple-500/20">
                 <User size={48} />
               </div>
               <h2 className="text-2xl font-black italic tracking-tighter uppercase">{profile?.first_name || 'Jogador'}</h2>
-              <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mb-6">Membro desde {new Date(user?.created_at).getFullYear()}</p>
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mb-6">ID: {user?.id.slice(0,8)}</p>
               
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white/5 p-3 rounded-2xl">
@@ -132,53 +120,24 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Referral Card */}
             <div className="glass-card p-6 rounded-[2rem] border-purple-500/20 bg-purple-500/5">
               <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Share2 size={14} /> Programa de Bônus
+                <Share2 size={14} /> Link de Convite
               </h4>
-              <div className="mb-4">
-                <p className="text-[9px] font-black text-white/20 uppercase mb-1">Total Ganho em Bônus</p>
-                <p className="text-xl font-black text-green-400">{referralStats.totalEarned.toLocaleString()} Kz</p>
-              </div>
               <p className="text-[11px] font-bold text-white/40 mb-4 leading-relaxed">
-                Convide amigos e ganhe <span className="text-green-400">5% de bônus</span> sobre todos os prêmios que eles ganharem!
+                Ganhe <span className="text-green-400">5% de bônus</span> sobre todos os prêmios que seus amigos ganharem!
               </p>
               <Button 
                 onClick={copyInviteLink}
                 className="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 font-black text-[10px] uppercase tracking-widest"
               >
-                <Copy size={14} className="mr-2" /> COPIAR MEU LINK
+                <Copy size={14} className="mr-2" /> COPIAR LINK
               </Button>
-            </div>
-
-            <div className="glass-card p-6 rounded-[2rem] border-red-500/10 bg-red-500/5">
-              <h4 className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <AlertTriangle size={14} /> Zona de Perigo
-              </h4>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" className="w-full h-12 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 font-black text-[10px] uppercase tracking-widest">
-                    <Trash2 size={16} className="mr-2" /> APAGAR MINHA CONTA
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="glass-card border-white/10 rounded-3xl">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-xl font-black italic tracking-tighter text-red-500">EXCLUIR TUDO DEFINITIVAMENTE?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-white/40 font-bold">
-                      Esta ação é irreversível. Seu saldo e histórico serão apagados.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-xl border-white/10 bg-transparent font-bold">CANCELAR</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteAccount} className="rounded-xl bg-red-500 font-black">SIM, APAGAR</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </div>
           </div>
 
-          <div className="flex-1">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
             <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
               <h3 className="text-xl font-black italic tracking-tighter uppercase mb-8 flex items-center gap-3">
                 <ShieldCheck className="text-purple-500" /> Dados da Conta
@@ -205,18 +164,6 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone (Não editável)</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/10" size={18} />
-                    <input 
-                      value={user?.email?.split('@')[0] || ''} 
-                      disabled 
-                      className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 w-full opacity-50 cursor-not-allowed" 
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Dados para Saque (IBAN / Conta)</Label>
                   <div className="relative">
                     <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
@@ -232,11 +179,47 @@ const Profile = () => {
                 <Button 
                   type="submit" 
                   disabled={saving}
-                  className="w-full premium-gradient h-14 rounded-2xl font-black text-lg shadow-xl shadow-purple-900/20"
+                  className="w-full premium-gradient h-14 rounded-2xl font-black text-lg"
                 >
-                  {saving ? <Loader2 className="animate-spin" /> : <><Save className="mr-2" /> SALVAR ALTERAÇÕES</>}
+                  {saving ? <Loader2 className="animate-spin" /> : 'SALVAR ALTERAÇÕES'}
                 </Button>
               </form>
+            </div>
+
+            {/* Referral List */}
+            <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
+                  <Users className="text-purple-500" /> Amigos Indicados
+                </h3>
+                <span className="bg-purple-600/20 text-purple-400 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                  {referrals.length} Total
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {referrals.length > 0 ? (
+                  referrals.map((ref, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 font-black">
+                          {ref.first_name?.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-black uppercase">@{ref.first_name}</p>
+                          <p className="text-[9px] font-bold text-white/20 uppercase">Entrou em {new Date(ref.created_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <CheckCircle2 size={18} className="text-green-500/40" />
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10">
+                    <Users size={32} className="mx-auto mb-4 text-white/5" />
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Você ainda não indicou ninguém.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
