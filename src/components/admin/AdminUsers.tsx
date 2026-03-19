@@ -70,6 +70,22 @@ const AdminUsers = () => {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("⚠️ ATENÇÃO: Esta ação excluirá permanentemente a conta e todo o histórico do jogador. Continuar?")) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (error) {
+      toast.error("Erro ao excluir conta");
+    } else {
+      toast.success("Conta excluída com sucesso!");
+      fetchUsers();
+    }
+  };
+
   const filteredUsers = users.filter(u => 
     u.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.id.includes(searchTerm)
@@ -162,15 +178,25 @@ const AdminUsers = () => {
                     </div>
                   </TableCell>
                   <TableCell className="p-6 text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => toggleBan(u.id, u.is_banned)}
-                      className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest ${u.is_banned ? 'text-green-400 hover:bg-green-400/10' : 'text-red-400 hover:bg-red-400/10'}`}
-                    >
-                      {u.is_banned ? <ShieldCheck size={14} className="mr-2" /> : <ShieldAlert size={14} className="mr-2" />}
-                      {u.is_banned ? 'Desbanir' : 'Banir'}
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => toggleBan(u.id, u.is_banned)}
+                        className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest ${u.is_banned ? 'text-green-400 hover:bg-green-400/10' : 'text-red-400 hover:bg-red-400/10'}`}
+                      >
+                        {u.is_banned ? <ShieldCheck size={14} className="mr-2" /> : <ShieldAlert size={14} className="mr-2" />}
+                        {u.is_banned ? 'Desbanir' : 'Banir'}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDeleteUser(u.id)}
+                        className="h-9 w-9 rounded-xl text-white/10 hover:text-red-500 hover:bg-red-500/10"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

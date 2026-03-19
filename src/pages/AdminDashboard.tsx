@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, Users, Settings, LogOut, RefreshCw, 
   DollarSign, Wallet, ArrowDownLeft, ArrowUpRight,
-  ShieldAlert, Activity
+  ShieldAlert, Activity, Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,11 +42,14 @@ const AdminDashboard = () => {
   const fetchGlobalStats = async () => {
     setLoading(true);
     try {
+      // Contagem de usuários
       const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
       setTotalUsers(count || 0);
 
+      // Transações para depósitos e saques
       const { data: txs } = await supabase.from('transactions').select('amount, type, status');
       
+      // Lucro da plataforma (vagas de publicidade/taxas)
       const { data: platformEarnings } = await supabase
         .from('winners')
         .select('prize_amount')
@@ -79,43 +82,20 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0B12] flex text-white font-sans">
-      <aside className="w-72 border-r border-white/5 bg-[#0F111A] p-8 flex flex-col hidden lg:flex">
-        <div className="flex items-center gap-3 mb-12">
-          <div className="w-10 h-10 premium-gradient rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <Activity className="text-white" size={20} />
-          </div>
-          <div>
-            <h2 className="font-black italic tracking-tighter leading-none">COMANDO</h2>
-            <p className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Bora Sorteiar</p>
-          </div>
-        </div>
-
-        <nav className="space-y-2 flex-1">
-          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-4">Gestão</p>
-          <Button variant="ghost" className="w-full justify-start gap-4 h-12 rounded-xl bg-white/5 text-white border border-white/5">
-            <LayoutDashboard size={18} className="text-purple-500" /> Dashboard
-          </Button>
-        </nav>
-
-        <div className="pt-8 border-t border-white/5">
-          <Button 
-            onClick={handleLogout} 
-            variant="ghost" 
-            className="w-full justify-start gap-4 h-12 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-400/10"
-          >
-            <LogOut size={18} /> Terminar Sessão
-          </Button>
-        </div>
-      </aside>
-
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+    <div className="min-h-screen bg-[#0A0B12] text-white font-sans">
+      <main className="max-w-[1600px] mx-auto p-6 md:p-10">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase">Painel de Controle</h1>
-            <p className="text-white/40 text-sm font-bold">Monitoramento global e validação de ativos.</p>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <Activity className="text-white" size={24} />
+            </div>
+            <div>
+              <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase">Painel Admin</h1>
+              <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Controle Total da Plataforma</p>
+            </div>
           </div>
-          <div className="flex gap-3">
+          
+          <div className="flex items-center gap-3">
             {stats.pendingTxs > 0 && (
               <div className="bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-xl flex items-center gap-2 text-amber-500 animate-pulse">
                 <ShieldAlert size={16} />
@@ -129,52 +109,59 @@ const AdminDashboard = () => {
             >
               <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Atualizar
             </Button>
+            <Button 
+              onClick={handleLogout} 
+              variant="ghost" 
+              className="h-12 px-6 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white font-black text-xs uppercase tracking-widest border border-red-500/20"
+            >
+              <LogOut size={16} className="mr-2" /> Terminar Sessão
+            </Button>
           </div>
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-          <div className="glass-card p-6 rounded-3xl border-purple-500/20 relative overflow-hidden group">
+          <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 relative overflow-hidden group">
             <div className="absolute -right-4 -bottom-4 text-purple-500/10 group-hover:scale-110 transition-transform">
-              <Users size={100} />
+              <Users size={120} />
             </div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Jogadores</p>
-            <p className="text-4xl font-black italic">{totalUsers}</p>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Jogadores Ativos</p>
+            <p className="text-5xl font-black italic tracking-tighter">{totalUsers}</p>
           </div>
 
-          <div className="glass-card p-6 rounded-3xl border-green-500/20 relative overflow-hidden group">
+          <div className="glass-card p-8 rounded-[2.5rem] border-green-500/20 relative overflow-hidden group">
             <div className="absolute -right-4 -bottom-4 text-green-500/10 group-hover:scale-110 transition-transform">
-              <ArrowDownLeft size={100} />
+              <ArrowDownLeft size={120} />
             </div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Depósitos</p>
-            <p className="text-4xl font-black italic text-green-400">{stats.totalDeposits.toLocaleString()} <span className="text-xs not-italic opacity-60">Kz</span></p>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Total Depósitos</p>
+            <p className="text-5xl font-black italic tracking-tighter text-green-400">{stats.totalDeposits.toLocaleString()} <span className="text-sm not-italic opacity-60">Kz</span></p>
           </div>
 
-          <div className="glass-card p-6 rounded-3xl border-amber-500/20 relative overflow-hidden group">
+          <div className="glass-card p-8 rounded-[2.5rem] border-amber-500/20 relative overflow-hidden group">
             <div className="absolute -right-4 -bottom-4 text-amber-500/10 group-hover:scale-110 transition-transform">
-              <ArrowUpRight size={100} />
+              <ArrowUpRight size={120} />
             </div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Saques</p>
-            <p className="text-4xl font-black italic text-amber-500">{stats.totalWithdrawals.toLocaleString()} <span className="text-xs not-italic opacity-60">Kz</span></p>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Total Saques</p>
+            <p className="text-5xl font-black italic tracking-tighter text-amber-500">{stats.totalWithdrawals.toLocaleString()} <span className="text-sm not-italic opacity-60">Kz</span></p>
           </div>
 
-          <div className="glass-card p-6 rounded-3xl border-blue-500/20 relative overflow-hidden group">
+          <div className="glass-card p-8 rounded-[2.5rem] border-blue-500/20 relative overflow-hidden group">
             <div className="absolute -right-4 -bottom-4 text-blue-500/10 group-hover:scale-110 transition-transform">
-              <DollarSign size={100} />
+              <DollarSign size={120} />
             </div>
             <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Lucro Plataforma</p>
-            <p className="text-4xl font-black italic text-blue-400">{stats.platformBalance.toLocaleString()} <span className="text-xs not-italic opacity-60">Kz</span></p>
+            <p className="text-5xl font-black italic tracking-tighter text-blue-400">{stats.platformBalance.toLocaleString()} <span className="text-sm not-italic opacity-60">Kz</span></p>
           </div>
         </div>
 
         <Tabs defaultValue="finance" className="space-y-8">
           <TabsList className="bg-white/5 border border-white/10 p-1.5 rounded-2xl h-14">
-            <TabsTrigger value="finance" className="rounded-xl px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
+            <TabsTrigger value="finance" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
               <Wallet size={14} className="mr-2" /> Financeiro
             </TabsTrigger>
-            <TabsTrigger value="users" className="rounded-xl px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
-              <Users size={14} className="mr-2" /> Usuários
+            <TabsTrigger value="users" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
+              <Users size={14} className="mr-2" /> Jogadores
             </TabsTrigger>
-            <TabsTrigger value="system" className="rounded-xl px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
+            <TabsTrigger value="system" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
               <Settings size={14} className="mr-2" /> Sistema
             </TabsTrigger>
           </TabsList>
