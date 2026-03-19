@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, Users, Settings, LogOut, RefreshCw, 
   DollarSign, Wallet, ArrowDownLeft, ArrowUpRight,
-  ShieldAlert, Activity, Trash2
+  ShieldAlert, Activity
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,7 +46,7 @@ const AdminDashboard = () => {
       const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
       setTotalUsers(count || 0);
 
-      // Transações para depósitos e saques
+      // Transações
       const { data: txs } = await supabase.from('transactions').select('amount, type, status');
       
       // Lucro da plataforma (vagas de publicidade/taxas)
