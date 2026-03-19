@@ -57,7 +57,7 @@ const AdminSystem = () => {
       module_id: moduleId,
       max_participants: maxParticipants,
       status: 'open',
-      expires_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()
+      expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString() // Alterado para 2 horas
     });
 
     if (error) toast.error("Erro ao criar mesa");

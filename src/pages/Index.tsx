@@ -120,7 +120,9 @@ const Index = () => {
             const formattedWinners = winners.map(w => ({
               name: w.profiles?.first_name || 'Jogador',
               prize: `${w.prize_amount.toLocaleString()} Kz`,
-              position: w.position
+              position: w.position,
+              userId: w.user_id,
+              amount: w.prize_amount
             }));
 
             setDrawResult({

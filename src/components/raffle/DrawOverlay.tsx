@@ -2,29 +2,90 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Star, Zap, X, Megaphone } from 'lucide-react';
+import { Trophy, Star, Zap, X, Megaphone, Share2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface DrawOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  winners: { name: string; prize: string; position: number }[];
+  winners: { name: string; prize: string; position: number; userId?: string; amount?: number }[];
   roomInfo?: string;
 }
 
 const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) => {
   const [stage, setStage] = useState<'suspense' | 'reveal'>('suspense');
+  const [sharing, setSharing] = useState(false);
+  const [shared, setShared] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     if (isOpen) {
       setStage('suspense');
+      setShared(false);
       const timer = setTimeout(() => setStage('reveal'), 4000);
+      
+      const checkUser = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        setCurrentUser(session?.user || null);
+      };
+      checkUser();
+      
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-  // Garantir que sempre mostramos 3 posições
+  const handleShare = async (winner: any) => {
+    if (shared) return;
+    setSharing(true);
+    
+    try {
+      const shareText = `ACABEI DE GANHAR ${winner.prize} NO BORA SORTEIAR! 🚀🔥 Venha ganhar também: ${window.location.origin}`;
+      
+      if (navigator.share) {
+        await navigator.share({
+          title: 'BORA SORTEIAR',
+          text: shareText,
+          url: window.location.origin,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        toast.success("Texto de vitória copiado! Partilhe para ganhar o bônus.");
+      }
+
+      // Aplicar Bônus de 2%
+      const bonusAmount = Math.floor(winner.amount * 0.02);
+      
+      const { data: profile } = await supabase.from('profiles').select('balance').eq('id', currentUser.id).single();
+      await supabase.from('profiles').update({ balance: (profile?.balance || 0) + bonusAmount }).eq('id', currentUser.id);
+      
+      await supabase.from('transactions').insert({
+        user_id: currentUser.id,
+        type: 'deposit',
+        amount: bonusAmount,
+        status: 'completed',
+        payment_method: 'Bônus de Partilha (2%)'
+      });
+
+      await supabase.from('notifications').insert({
+        user_id: currentUser.id,
+        title: 'Bônus de Partilha! 🎁',
+        message: `Você recebeu ${bonusAmount.toLocaleString()} Kz por partilhar sua vitória!`,
+        type: 'success'
+      });
+
+      setShared(true);
+      toast.success(`Bônus de ${bonusAmount} Kz creditado!`);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const displayWinners = [...winners].sort((a, b) => a.position - b.position);
+  const userWinner = currentUser ? displayWinners.find(w => w.userId === currentUser.id) : null;
 
   return (
     <AnimatePresence>
@@ -123,9 +184,30 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                   ))}
                 </div>
 
+                {userWinner && (
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 1.5 }}
+                    className="bg-purple-600/20 border border-purple-500/30 p-6 rounded-3xl mt-4"
+                  >
+                    <h4 className="text-sm font-black uppercase tracking-widest text-purple-400 mb-2">VOCÊ GANHOU! 🎉</h4>
+                    <p className="text-[10px] font-bold text-white/40 mb-4 uppercase tracking-widest">Partilhe sua vitória e ganhe +2% de bônus extra!</p>
+                    <Button 
+                      onClick={() => handleShare(userWinner)}
+                      disabled={sharing || shared}
+                      className={`w-full h-12 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 ${
+                        shared ? 'bg-green-600' : 'premium-gradient'
+                      }`}
+                    >
+                      {sharing ? <Loader2 className="animate-spin" /> : shared ? <><CheckCircle2 size={16} /> BÔNUS RECEBIDO</> : <><Share2 size={16} /> PARTILHAR VITÓRIA (+2%)</>}
+                    </Button>
+                  </motion.div>
+                )}
+
                 <Button 
                   onClick={onClose}
-                  className="mt-8 w-full h-14 rounded-xl bg-purple-600 hover:bg-purple-700 font-black text-lg shadow-xl shadow-purple-900/40"
+                  className="mt-4 w-full h-14 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 font-black text-lg"
                 >
                   CONTINUAR JOGANDO
                 </Button>
