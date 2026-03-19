@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Plus, Zap, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { Plus, Zap, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminSystem = () => {
@@ -57,13 +57,41 @@ const AdminSystem = () => {
       module_id: moduleId,
       max_participants: maxParticipants,
       status: 'open',
-      expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // Alterado para 3 horas
+      expires_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()
     });
 
     if (error) toast.error("Erro ao criar mesa");
     else {
       toast.success("Mesa criada com sucesso!");
       fetchSystemData();
+    }
+  };
+
+  const handleAutoFillRooms = async () => {
+    if (!confirm("Isso criará salas até que cada módulo tenha 3 salas ativas. Continuar?")) return;
+    
+    setLoading(true);
+    try {
+      for (const mod of modules) {
+        const activeRoomsCount = rooms.filter(r => r.module_id === mod.id && r.status === 'open').length;
+        const needed = 3 - activeRoomsCount;
+        
+        if (needed > 0) {
+          const newRooms = Array(needed).fill({
+            module_id: mod.id,
+            max_participants: mod.max_participants,
+            status: 'open',
+            expires_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()
+          });
+          await supabase.from('rooms').insert(newRooms);
+        }
+      }
+      toast.success("Salas geradas com sucesso!");
+      fetchSystemData();
+    } catch (err) {
+      toast.error("Erro ao gerar salas automáticas");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,24 +102,36 @@ const AdminSystem = () => {
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
             <LayoutGrid className="text-purple-500" /> Módulos de Jogo
           </h3>
-          <Button onClick={handleCleanExpired} variant="outline" className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
-            Processar Expiradas
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleAutoFillRooms} variant="outline" className="border-purple-500/20 text-purple-400 hover:bg-purple-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
+              <Layers size={14} className="mr-2" /> Gerar 3 Salas/Módulo
+            </Button>
+            <Button onClick={handleCleanExpired} variant="outline" className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
+              Processar Expiradas
+            </Button>
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {modules.map((mod) => (
-            <div key={mod.id} className="glass-card p-4 rounded-2xl border-white/5 text-center">
-              <p className="text-[10px] font-black text-white/20 uppercase mb-1">{mod.name}</p>
-              <p className="text-lg font-black italic mb-3">{mod.price.toLocaleString()} Kz</p>
-              <Button 
-                size="sm"
-                onClick={() => handleCreateRoom(mod.id, mod.max_participants)}
-                className="w-full h-8 bg-white/5 hover:bg-purple-600 text-[9px] font-black uppercase rounded-lg"
-              >
-                Nova Mesa
-              </Button>
-            </div>
-          ))}
+          {modules.map((mod) => {
+            const activeCount = rooms.filter(r => r.module_id === mod.id && r.status === 'open').length;
+            return (
+              <div key={mod.id} className="glass-card p-4 rounded-2xl border-white/5 text-center">
+                <p className="text-[10px] font-black text-white/20 uppercase mb-1">{mod.name}</p>
+                <p className="text-lg font-black italic mb-1">{mod.price.toLocaleString()} Kz</p>
+                <p className={`text-[9px] font-bold mb-3 ${activeCount >= 3 ? 'text-green-400' : 'text-amber-500'}`}>
+                  {activeCount}/3 Salas Ativas
+                </p>
+                <Button 
+                  size="sm"
+                  disabled={activeCount >= 3}
+                  onClick={() => handleCreateRoom(mod.id, mod.max_participants)}
+                  className="w-full h-8 bg-white/5 hover:bg-purple-600 text-[9px] font-black uppercase rounded-lg"
+                >
+                  {activeCount >= 3 ? 'Limite Atingido' : 'Nova Mesa'}
+                </Button>
+              </div>
+            );
+          })}
         </div>
       </section>
 
