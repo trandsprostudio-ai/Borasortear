@@ -329,7 +329,7 @@ const Index = () => {
               <LiveActivity />
               
               <div className="glass-card p-6 rounded-3xl border-white/5 bg-gradient-to-br from-purple-600/10 to-transparent">
-                <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4">Dica Premium</h4>
+                <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Dica Premium</h4>
                 <p className="text-[11px] font-bold text-white/40 leading-relaxed">
                   Quanto maior o valor da mesa, maior o prêmio acumulado. Mesas de 5.000 Kz podem render prêmios gigantescos!
                 </p>

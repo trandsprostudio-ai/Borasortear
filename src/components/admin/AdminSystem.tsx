@@ -4,13 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Plus, Zap, Trash2, RefreshCw, LayoutGrid, ShieldCheck, Cpu } from 'lucide-react';
+import { Plus, Zap, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminSystem = () => {
   const [modules, setModules] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [drawingId, setDrawingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSystemData();
@@ -34,61 +35,121 @@ const AdminSystem = () => {
       expires_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()
     });
 
-    if (error) {
-      toast.error("Erro ao criar mesa manual");
-    } else {
-      toast.success("Mesa manual criada com sucesso!");
+    if (error) toast.error("Erro ao criar mesa");
+    else {
+      toast.success("Mesa criada com sucesso!");
       fetchSystemData();
+    }
+  };
+
+  const handlePerformDraw = async (room: any) => {
+    if (room.current_participants < 1) {
+      toast.error("Não há participantes nesta mesa.");
+      return;
+    }
+
+    if (!confirm(`Deseja realizar o sorteio da Mesa #${room.id.slice(0,8)}?`)) return;
+
+    setDrawingId(room.id);
+    try {
+      // 1. Buscar participantes
+      const { data: participants } = await supabase
+        .from('participants')
+        .select('*, profiles(id, balance, referred_by)')
+        .eq('room_id', room.id);
+
+      if (!participants || participants.length === 0) throw new Error("Sem participantes");
+
+      // 2. Embaralhar e escolher vencedor (Lógica simples: 1 vencedor leva 90% do pool)
+      const winner = participants[Math.floor(Math.random() * participants.length)];
+      const totalPool = room.modules.price * room.current_participants;
+      const prizeAmount = totalPool * 0.9;
+
+      // 3. Registrar Vencedor
+      await supabase.from('winners').insert({
+        draw_id: room.id,
+        user_id: winner.user_id,
+        prize_amount: prizeAmount,
+        position: 1
+      });
+
+      // 4. Pagar Vencedor
+      const newWinnerBalance = (winner.profiles.balance || 0) + prizeAmount;
+      await supabase.from('profiles').update({ balance: newWinnerBalance }).eq('id', winner.user_id);
+
+      // 5. Lógica de Bônus de Indicação
+      // Bônus de 15% (Indicação específica da sala)
+      if (winner.referred_by) {
+        const bonus15 = prizeAmount * 0.15;
+        const { data: refProfile } = await supabase.from('profiles').select('balance').eq('id', winner.referred_by).single();
+        if (refProfile) {
+          await supabase.from('profiles').update({ balance: refProfile.balance + bonus15 }).eq('id', winner.referred_by);
+          await supabase.from('transactions').insert({
+            user_id: winner.referred_by,
+            type: 'deposit',
+            amount: bonus15,
+            status: 'completed',
+            payment_method: 'Bônus de Indicação (15%)'
+          });
+        }
+      } 
+      // Bônus de 5% (Indicação geral da plataforma - se não houver a de 15%)
+      else if (winner.profiles.referred_by) {
+        const bonus5 = prizeAmount * 0.05;
+        const { data: refProfile } = await supabase.from('profiles').select('balance').eq('id', winner.profiles.referred_by).single();
+        if (refProfile) {
+          await supabase.from('profiles').update({ balance: refProfile.balance + bonus5 }).eq('id', winner.profiles.referred_by);
+          await supabase.from('transactions').insert({
+            user_id: winner.profiles.referred_by,
+            type: 'deposit',
+            amount: bonus5,
+            status: 'completed',
+            payment_method: 'Bônus de Indicação (5%)'
+          });
+        }
+      }
+
+      // 6. Finalizar Mesa
+      await supabase.from('rooms').update({ status: 'finished' }).eq('id', room.id);
+
+      toast.success(`Sorteio realizado! Vencedor: ${winner.profiles.first_name}`);
+      fetchSystemData();
+    } catch (error: any) {
+      toast.error("Erro no sorteio: " + error.message);
+    } finally {
+      setDrawingId(null);
     }
   };
 
   return (
     <div className="space-y-10">
-      {/* Status do Motor Automático */}
-      <div className="bg-purple-600/10 border border-purple-500/20 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <Cpu className="text-white animate-pulse" size={28} />
-          </div>
-          <div>
-            <h3 className="text-xl font-black italic tracking-tighter uppercase">Motor de Sorteio Ativo</h3>
-            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">As mesas são geradas e finalizadas automaticamente pelo sistema.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 bg-green-500/20 px-4 py-2 rounded-xl border border-green-500/30">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-          <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Sincronizado com Supabase</span>
-        </div>
-      </div>
-
-      {/* Módulos */}
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-            <LayoutGrid className="text-purple-500" /> Configuração de Módulos
+            <LayoutGrid className="text-purple-500" /> Módulos
           </h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {modules.map((mod) => (
-            <div key={mod.id} className="glass-card p-6 rounded-2xl border-white/5 text-center group hover:border-purple-500/30 transition-all">
-              <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-2">{mod.name}</p>
-              <p className="text-xl font-black italic mb-4">{mod.price.toLocaleString()} Kz</p>
+            <div key={mod.id} className="glass-card p-4 rounded-2xl border-white/5 text-center">
+              <p className="text-[10px] font-black text-white/20 uppercase mb-1">{mod.name}</p>
+              <p className="text-lg font-black italic mb-3">{mod.price.toLocaleString()} Kz</p>
               <Button 
+                size="sm"
                 onClick={() => handleCreateRoom(mod.id, mod.max_participants)}
-                className="w-full h-10 bg-white/5 hover:bg-purple-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-white/5 transition-all"
+                className="w-full h-8 bg-white/5 hover:bg-purple-600 text-[9px] font-black uppercase rounded-lg"
               >
-                Forçar Mesa
+                Nova Mesa
               </Button>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Mesas Ativas */}
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-            <Zap className="text-amber-500" /> Monitoramento de Mesas
+            <Zap className="text-amber-500" /> Mesas Ativas
           </h3>
           <Button variant="ghost" onClick={fetchSystemData} className="text-white/20 hover:text-white">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -100,13 +161,13 @@ const AdminSystem = () => {
               <TableRow className="border-white/5 hover:bg-transparent">
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">ID Mesa</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Módulo</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Participantes</TableHead>
+                <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Progresso</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Status</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rooms.map((room) => (
+              {rooms.filter(r => r.status !== 'finished').map((room) => (
                 <TableRow key={room.id} className="border-white/5 hover:bg-white/5 transition-colors">
                   <TableCell className="p-6 font-black text-purple-400">#{room.id.slice(0, 8)}</TableCell>
                   <TableCell className="p-6 font-bold">{room.modules?.name} ({room.modules?.price.toLocaleString()} Kz)</TableCell>
@@ -115,23 +176,24 @@ const AdminSystem = () => {
                       <span className="font-bold">{room.current_participants}/{room.max_participants}</span>
                       <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-purple-500 shadow-[0_0_10px_rgba(124,58,237,0.5)]" 
+                          className="h-full bg-purple-500" 
                           style={{ width: `${(room.current_participants / room.max_participants) * 100}%` }} 
                         />
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="p-6">
-                    <span className={`px-3 py-1 rounded-lg text-[10px] uppercase font-black ${
-                      room.status === 'open' ? 'bg-green-500/10 text-green-400' : 
-                      room.status === 'finished' ? 'bg-blue-500/10 text-blue-400' : 'bg-red-500/10 text-red-400'
-                    }`}>
+                    <span className="px-3 py-1 rounded-lg text-[10px] uppercase font-black bg-green-500/10 text-green-400">
                       {room.status}
                     </span>
                   </TableCell>
                   <TableCell className="p-6 text-right">
-                    <Button variant="ghost" size="icon" className="text-red-400 hover:bg-red-400/10 rounded-xl">
-                      <Trash2 size={16} />
+                    <Button 
+                      onClick={() => handlePerformDraw(room)}
+                      disabled={drawingId === room.id}
+                      className="bg-amber-500 hover:bg-amber-600 text-black font-black text-[10px] uppercase px-4 h-9 rounded-xl"
+                    >
+                      {drawingId === room.id ? <Loader2 className="animate-spin" /> : <><Trophy size={14} className="mr-2" /> SORTEAR</>}
                     </Button>
                   </TableCell>
                 </TableRow>
