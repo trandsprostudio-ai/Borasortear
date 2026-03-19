@@ -23,12 +23,11 @@ const Footer = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Não mostra o footer se:
-  // 1. O usuário não estiver logado
-  // 2. A rota atual for administrativa (começa com /admin)
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  // Lógica rigorosa para ocultar o footer em qualquer página de administração
+  const isAdminPath = location.pathname.toLowerCase().includes('admin');
   
-  if (!isAuthenticated || isAdminRoute) {
+  // O footer só aparece se o usuário estiver logado E não estiver em uma rota admin
+  if (!isAuthenticated || isAdminPath) {
     return null;
   }
 

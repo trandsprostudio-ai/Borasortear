@@ -43,24 +43,16 @@ const AdminDashboard = () => {
   const fetchGlobalStats = async () => {
     setLoading(true);
     try {
-      // Contagem de usuários cadastrados
       const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
       setTotalUsers(count || 0);
 
-      // Transações
       const { data: txs } = await supabase.from('transactions').select('amount, type, status');
-      
-      // Lucro da plataforma (vagas de publicidade/taxas)
-      const { data: platformEarnings } = await supabase
-        .from('winners')
-        .select('prize_amount')
-        .eq('position', 3);
+      const { data: platformEarnings } = await supabase.from('winners').select('prize_amount').eq('position', 3);
 
       if (txs) {
         const deposits = txs.filter(t => t.type === 'deposit' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
         const withdrawals = txs.filter(t => t.type === 'withdrawal' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
         const pending = txs.filter(t => t.status === 'pending').length;
-        
         const totalPlatformProfit = platformEarnings?.reduce((acc, curr) => acc + Number(curr.prize_amount), 0) || 0;
 
         setStats({
@@ -125,37 +117,44 @@ const AdminDashboard = () => {
           </div>
         </header>
 
+        {/* Cards de Estatísticas com fontes responsivas para evitar cortes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-10">
-          <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border-purple-500/20 relative overflow-hidden group">
+          <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border-purple-500/20 relative overflow-hidden group min-h-[160px] flex flex-col justify-center">
             <div className="absolute -right-4 -bottom-4 text-purple-500/10 group-hover:scale-110 transition-transform">
-              <Users size={120} />
+              <Users size={100} />
             </div>
             <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Jogadores Cadastrados</p>
-            <p className="text-4xl md:text-5xl font-black italic tracking-tighter">{totalUsers}</p>
+            <p className="text-3xl sm:text-4xl lg:text-5xl font-black italic tracking-tighter break-all">{totalUsers}</p>
           </div>
 
-          <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border-green-500/20 relative overflow-hidden group">
+          <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border-green-500/20 relative overflow-hidden group min-h-[160px] flex flex-col justify-center">
             <div className="absolute -right-4 -bottom-4 text-green-500/10 group-hover:scale-110 transition-transform">
-              <ArrowDownLeft size={120} />
+              <ArrowDownLeft size={100} />
             </div>
             <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Total Depósitos</p>
-            <p className="text-4xl md:text-5xl font-black italic tracking-tighter text-green-400">{stats.totalDeposits.toLocaleString()} <span className="text-sm not-italic opacity-60">Kz</span></p>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-black italic tracking-tighter text-green-400 break-all">
+              {stats.totalDeposits.toLocaleString()} <span className="text-xs sm:text-sm not-italic opacity-60">Kz</span>
+            </p>
           </div>
 
-          <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border-amber-500/20 relative overflow-hidden group">
+          <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border-amber-500/20 relative overflow-hidden group min-h-[160px] flex flex-col justify-center">
             <div className="absolute -right-4 -bottom-4 text-amber-500/10 group-hover:scale-110 transition-transform">
-              <ArrowUpRight size={120} />
+              <ArrowUpRight size={100} />
             </div>
             <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Total Saques</p>
-            <p className="text-4xl md:text-5xl font-black italic tracking-tighter text-amber-500">{stats.totalWithdrawals.toLocaleString()} <span className="text-sm not-italic opacity-60">Kz</span></p>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-black italic tracking-tighter text-amber-500 break-all">
+              {stats.totalWithdrawals.toLocaleString()} <span className="text-xs sm:text-sm not-italic opacity-60">Kz</span>
+            </p>
           </div>
 
-          <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border-blue-500/20 relative overflow-hidden group">
+          <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border-blue-500/20 relative overflow-hidden group min-h-[160px] flex flex-col justify-center">
             <div className="absolute -right-4 -bottom-4 text-blue-500/10 group-hover:scale-110 transition-transform">
-              <DollarSign size={120} />
+              <DollarSign size={100} />
             </div>
             <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Lucro Plataforma</p>
-            <p className="text-4xl md:text-5xl font-black italic tracking-tighter text-blue-400">{stats.platformBalance.toLocaleString()} <span className="text-sm not-italic opacity-60">Kz</span></p>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-black italic tracking-tighter text-blue-400 break-all">
+              {stats.platformBalance.toLocaleString()} <span className="text-xs sm:text-sm not-italic opacity-60">Kz</span>
+            </p>
           </div>
         </div>
 
