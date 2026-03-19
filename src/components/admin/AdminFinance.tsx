@@ -37,6 +37,22 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       if (tx.type === 'deposit') {
         const newBalance = (tx.profiles?.balance || 0) + Number(tx.amount);
         await supabase.from('profiles').update({ balance: newBalance }).eq('id', tx.user_id);
+        
+        // Notificação de Depósito
+        await supabase.from('notifications').insert({
+          user_id: tx.user_id,
+          title: 'Recarga Confirmada! 💰',
+          message: `Seu depósito de ${tx.amount.toLocaleString()} Kz foi validado. Boa sorte nas mesas!`,
+          type: 'success'
+        });
+      } else {
+        // Notificação de Saque
+        await supabase.from('notifications').insert({
+          user_id: tx.user_id,
+          title: 'Saque Processado! ✅',
+          message: `Seu pedido de saque de ${tx.amount.toLocaleString()} Kz foi enviado para sua conta bancária.`,
+          type: 'success'
+        });
       }
 
       await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
@@ -53,13 +69,11 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     if (reason === null) return;
 
     try {
-      // Se for saque, devolve o valor ao saldo confirmado
       if (tx.type === 'withdrawal') {
         const newBalance = (tx.profiles?.balance || 0) + Number(tx.amount);
         await supabase.from('profiles').update({ balance: newBalance }).eq('id', tx.user_id);
       }
 
-      // Lógica de banimento para depósitos falsos
       if (tx.type === 'deposit') {
         const newCount = (tx.profiles?.false_proof_count || 0) + 1;
         const isBanned = newCount >= 3;
@@ -68,6 +82,16 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           false_proof_count: newCount,
           is_banned: isBanned
         }).eq('id', tx.user_id);
+
+        // Notificação de Rejeição
+        await supabase.from('notifications').insert({
+          user_id: tx.user_id,
+          title: isBanned ? 'CONTA BANIDA 🚫' : 'Recarga Rejeitada ❌',
+          message: isBanned 
+            ? 'Sua conta foi banida permanentemente por envio excessivo de comprovativos falsos.'
+            : `Sua recarga de ${tx.amount.toLocaleString()} Kz foi rejeitada. Motivo: ${reason}`,
+          type: 'error'
+        });
 
         if (isBanned) {
           toast.error(`Usuário ${tx.profiles?.first_name} foi BANIDO automaticamente.`);

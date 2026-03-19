@@ -20,6 +20,7 @@ import {
 import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '@/components/ui/SplashScreen';
 import TransactionModal from '@/components/wallet/TransactionModal';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const [user, setUser] = useState<any>(null);
@@ -127,6 +128,8 @@ const Navbar = () => {
           <div className="flex items-center gap-1.5 md:gap-2">
             {user ? (
               <>
+                <NotificationBell userId={user.id} />
+                
                 <div className="flex items-center bg-[#1A1D29] rounded-xl p-0.5 md:p-1 border border-white/5">
                   <Link to="/wallet" className="px-1.5 md:px-4 py-1 flex flex-col items-end">
                     <div className="flex items-center gap-1">
