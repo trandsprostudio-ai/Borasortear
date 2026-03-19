@@ -12,10 +12,9 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, Trophy, Star, Lock, Unlock, Share2, Copy, HelpCircle, Loader2 } from 'lucide-react';
+import { Zap, LayoutGrid, Trophy, Star, Lock, Unlock, HelpCircle } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Index = () => {
@@ -27,7 +26,7 @@ const Index = () => {
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
   const [topWinners, setTopWinners] = useState<any[]>([]);
   const [recentWins, setRecentWins] = useState<any[]>([]);
-  const [onlinePlayers, setOnlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
+  const [onlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   const [drawResult, setDrawResult] = useState<{ isOpen: boolean, winners: any[], roomInfo: string }>({ isOpen: false, winners: [], roomInfo: "" });
   const [shownDrawRooms, setShownDrawRooms] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
@@ -40,15 +39,17 @@ const Index = () => {
         setModules(uniqueModules);
         if (uniqueModules.length > 0) setActiveModuleId(uniqueModules[0].id);
       }
-      fetchTopWinners();
-      fetchRecentWins();
+      await fetchTopWinners();
+      await fetchRecentWins();
     };
     initializeData();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) fetchProfile(currentUser.id);
+      if (currentUser) {
+        fetchProfile(currentUser.id);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -71,6 +72,7 @@ const Index = () => {
       .select('*, profiles(first_name)')
       .eq('draw_id', room.id)
       .order('position', { ascending: true });
+
     if (winners && winners.length > 0) {
       setDrawResult({
         isOpen: true,
@@ -118,7 +120,8 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
-  const activeModuleRooms = rooms    .filter(r => r.module_id === activeModuleId && r.status === 'open')
+  const activeModuleRooms = rooms
+    .filter(r => r.module_id === activeModuleId && r.status === 'open')
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .slice(0, 3);
 
@@ -127,7 +130,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white font-sans pb-24">
       <Navbar />
-            <DrawOverlay 
+      
+      <DrawOverlay 
         isOpen={drawResult.isOpen} 
         onClose={handleDrawClose}
         winners={drawResult.winners}
@@ -147,7 +151,8 @@ const Index = () => {
       )}
 
       <div className="pt-16 bg-purple-600/5 border-b border-white/5 overflow-hidden whitespace-nowrap py-2">
-        <motion.div           animate={{ x: [0, -1000] }}
+        <motion.div 
+          animate={{ x: [0, -1000] }}
           transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
           className="inline-flex gap-12 items-center"
         >
@@ -258,7 +263,8 @@ const Index = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {activeModuleRooms.map((room, index) => (
-                    <RoomCard                       key={room.id} 
+                    <RoomCard 
+                      key={room.id} 
                       roomNumber={index + 1}
                       room={{
                         id: room.id,
@@ -286,7 +292,9 @@ const Index = () => {
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
                   <Trophy size={16} className="text-amber-500" /> Hall da Fama
                 </h3>
-                <Button variant="ghost" onClick={() => navigate('/leaderboard')} className="text-[10px] font-black text-purple-400 uppercase">Ver Ranking</Button>
+                <Button variant="ghost" onClick={() => navigate('/leaderboard')} className="text-[10px] font-black text-purple-400 uppercase">
+                  Ver Ranking
+                </Button>
               </div>
               <WinnersCarousel winners={topWinners} />
             </div>
@@ -297,7 +305,9 @@ const Index = () => {
             <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 bg-purple-500/5">
               <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4">Afiliados</h4>
               <p className="text-[11px] font-bold text-white/40 mb-6">Convide amigos e ganhe 5% sobre cada prêmio que eles ganharem!</p>
-              <Button onClick={() => navigate('/affiliates')} className="w-full h-12 rounded-xl bg-purple-600 font-black text-[10px] uppercase">SABER MAIS</Button>
+              <Button onClick={() => navigate('/affiliates')} className="w-full h-12 rounded-xl bg-purple-600 font-black text-[10px] uppercase">
+                SABER MAIS
+              </Button>
             </div>
           </div>
         </div>

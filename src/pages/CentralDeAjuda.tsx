@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { HelpCircle, Search, MessageCircle, Phone, Mail, FileText, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { HelpCircle, Search, MessageCircle, Phone, Mail, FileText, Shield } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +82,6 @@ const CentralDeAjuda = () => {
           <p className="text-white/40 font-bold text-xs uppercase tracking-widest">Encontre respostas para suas dúvidas</p>
         </div>
 
-        {/* Barra de Pesquisa */}
         <div className="relative max-w-2xl mx-auto mb-12">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={20} />
           <Input 
@@ -94,7 +93,6 @@ const CentralDeAjuda = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* FAQs */}
           <div className="lg:col-span-2">
             <div className="glass-card rounded-[2rem] p-4 border-white/5">
               <Accordion type="single" collapsible className="w-full">
@@ -118,7 +116,6 @@ const CentralDeAjuda = () => {
             </div>
           </div>
 
-          {/* Sidebar de Contato */}
           <div className="space-y-6">
             <div className="glass-card p-8 rounded-[2.5rem] border-green-500/20 bg-green-500/5">
               <div className="flex items-center gap-3 mb-6">
