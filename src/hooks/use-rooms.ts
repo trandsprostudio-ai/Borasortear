@@ -12,7 +12,15 @@ export function useRooms() {
     const fetchRooms = async () => {
       const { data, error } = await supabase
         .from('rooms')
-        .select('*')
+        .select(
+          `id,
+           module_id as moduleId,
+           status,
+           current_participants as currentParticipants,
+           max_participants as maxParticipants,
+           expires_at as expiresAt,
+           created_at as createdAt`
+        )
         .order('created_at', { ascending: false });
 
       if (!error && data) {
@@ -31,13 +39,34 @@ export function useRooms() {
         (payload) => {
           if (payload.eventType === 'INSERT') {
             setRooms((prev) => {
-              if (prev.some(r => r.id === payload.new.id)) return prev;
-              return [payload.new as Room, ...prev];
+              if (prev.some((r) => r.id === payload.new.id)) return prev;
+              return [
+                {
+                  id: payload.new.id,
+                  moduleId: payload.new.module_id,
+                  status: payload.new.status,
+                  currentParticipants: payload.new.current_participants,
+                  maxParticipants: payload.new.max_participants,
+                  expiresAt: payload.new.expires_at,
+                  createdAt: payload.new.created_at,
+                } as Room,
+                ...prev,
+              ];
             });
           } else if (payload.eventType === 'UPDATE') {
             setRooms((prev) =>
               prev.map((room) =>
-                room.id === payload.new.id ? (payload.new as Room) : room
+                room.id === payload.new.id
+                  ? {
+                      id: payload.new.id,
+                      moduleId: payload.new.module_id,
+                      status: payload.new.status,
+                      currentParticipants: payload.new.current_participants,
+                      maxParticipants: payload.new.max_participants,
+                      expiresAt: payload.new.expires_at,
+                      createdAt: payload.new.created_at,
+                    }
+                  : room
               )
             );
           } else if (payload.eventType === 'DELETE') {

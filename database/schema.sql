@@ -102,7 +102,8 @@ CREATE INDEX IF NOT EXISTS idx_winners_draw_id ON winners(draw_id);
 CREATE INDEX IF NOT EXISTS idx_winners_user_id ON winners(user_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_referred_by ON profiles(referred_by);
 
--- Trigger para atualizar updated_at automaticamenteCREATE OR REPLACE FUNCTION update_updated_at_column()
+-- Trigger para atualizar updated_at automaticamente
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -132,6 +133,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Função de trigger para definir ticket_code antes do insert
+CREATE OR REPLACE FUNCTION set_ticket_code()
+RETURNS TRIGGER AS $$
+BEGIN  NEW.ticket_code := generate_ticket_code();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_ticket_code_before_insert
+BEFORE INSERT ON participants
+FOR EACH ROW
+EXECUTE FUNCTION set_ticket_code();
+
 -- Função para criar 3 salas por módulo automaticamente
 CREATE OR REPLACE FUNCTION create_rooms_for_module()
 RETURNS TRIGGER AS $$
@@ -159,16 +173,15 @@ $$ LANGUAGE plpgsql;
 
 -- Trigger para criar salas automaticamente quando um módulo é inserido
 CREATE TRIGGER create_rooms_for_module_trigger   AFTER INSERT ON modules 
-  FOR EACH ROW 
-  EXECUTE FUNCTION create_rooms_for_module();
+  FOR EACH ROW   EXECUTE FUNCTION create_rooms_for_module();
 
 -- Função para verificar e fechar salas expiradas ou cheias
 CREATE OR REPLACE FUNCTION check_room_closure()
-RETURNS TRIGGER AS $$BEGIN
+RETURNS TRIGGER AS $$
+BEGIN
   -- Se a sala está aberta e (expirada OU cheia)
   IF NEW.status = 'open' AND 
-     (NEW.expires_at <= NOW() OR NEW.current_participants >= NEW.max_participants) THEN
-    NEW.status = 'closed';
+     (NEW.expires_at <= NOW() OR NEW.current_participants >= NEW.max_participants) THEN    NEW.status = 'closed';
   END IF;
   
   RETURN NEW;
@@ -176,8 +189,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para verificar fechamento automático de salas
-CREATE TRIGGER check_room_closure_trigger 
-  BEFORE UPDATE ON rooms 
+CREATE TRIGGER check_room_closure_trigger   BEFORE UPDATE ON rooms 
   FOR EACH ROW   EXECUTE FUNCTION check_room_closure();
 
 -- Função para executar sorteio automático
@@ -194,8 +206,7 @@ DECLARE
   winner2_id;
   random_offset INTEGER;
 BEGIN  -- Buscar dados da sala
-  SELECT r.*, m.price, m.name 
-  INTO room_record 
+  SELECT r.*, m.price, m.name   INTO room_record 
   FROM rooms r 
   JOIN modules m ON r.module_id = m.id 
   WHERE r.id = p_room_id 
@@ -212,8 +223,7 @@ BEGIN  -- Buscar dados da sala
   IF participants_count < 2 THEN
     RAISE EXCEPTION 'Sala precisa de pelo menos 2 participantes para sorteio';
   END IF;
-  
-  -- Calcular premiação (33.3% para cada)
+    -- Calcular premiação (33.3% para cada)
   prize_pool := room_record.price * participants_count;
   first_prize := FLOOR(prize_pool * 0.333);
   second_prize := FLOOR(prize_pool * 0.333);
