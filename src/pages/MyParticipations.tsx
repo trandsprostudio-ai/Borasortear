@@ -9,6 +9,26 @@ import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
+const CountdownItem = ({ expiresAt }: { expiresAt: string }) => {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const calculate = () => {
+      const diff = new Date(expiresAt).getTime() - new Date().getTime();
+      if (diff <= 0) return "SORTEANDO...";
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      return `${h}h ${m}m ${s}s`;
+    };
+    const timer = setInterval(() => setTimeLeft(calculate()), 1000);
+    setTimeLeft(calculate());
+    return () => clearInterval(timer);
+  }, [expiresAt]);
+
+  return <span>{timeLeft}</span>;
+};
+
 const MyParticipations = () => {
   const [participations, setParticipations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +82,7 @@ const MyParticipations = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
-      <Navbar user={user} />
+      <Navbar />
       
       <main className="max-w-5xl mx-auto px-4 pt-28">
         <header className="mb-12">
@@ -127,7 +147,7 @@ const MyParticipations = () => {
                           </div>
                           <div className="flex items-center gap-2 text-[10px] font-black text-amber-500 uppercase">
                             <Clock size={12} />
-                            <span>Aguardando...</span>
+                            <CountdownItem expiresAt={p.rooms.expires_at} />
                           </div>
                         </div>
                       </div>
