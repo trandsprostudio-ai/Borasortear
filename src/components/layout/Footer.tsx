@@ -36,7 +36,7 @@ const Footer = () => {
         <div className="flex flex-col items-center md:items-start gap-2">
           <div className="flex items-center gap-2">
             <p className="text-white/20 text-[10px] font-black uppercase tracking-widest">
-              © 2024 BORA SORTEIAR • PLATAFORMA PREMIUM
+              © 2026 BORA SORTEIAR • PLATAFORMA PREMIUM
             </p>
             <Link 
               to="/admin-login" 
