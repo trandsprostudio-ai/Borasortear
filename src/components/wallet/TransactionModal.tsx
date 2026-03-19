@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,9 +21,21 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'method' | 'form' | 'details' | 'confirm'>(type === 'deposit' ? 'method' : 'form');
+  const [step, setStep] = useState<'method' | 'form' | 'details' | 'confirm'>(type === 'deposit' ? 'method' : 'method');
   const [file, setFile] = useState<File | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen && user) {
+      fetchProfile();
+    }
+  }, [isOpen, user]);
+
+  const fetchProfile = async () => {
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    setProfile(data);
+  };
 
   const depositMethods = [
     { id: 'iban', name: 'Transferência (IBAN)', icon: Banknote, color: 'text-blue-400', details: { label: 'IBAN (BANCO BAI)', value: 'AO06 0040 0000 1234 5678 9012 3', owner: 'BORA SORTEIAR SERVIÇOS LTDA' } },
@@ -33,12 +45,17 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
   ];
 
   const withdrawalMethods = [
-    { id: 'iban', name: 'Transferência Bancária', icon: Banknote },
-    { id: 'express', name: 'Multicaixa Express', icon: CreditCard },
+    { id: 'iban', name: 'Transferência Bancária', icon: Banknote, available: !!profile?.bank_info },
+    { id: 'express', name: 'Multicaixa Express', icon: Smartphone, available: !!profile?.express_number },
   ];
 
   const handleAction = async () => {
     const val = parseFloat(amount);
+    if (isNaN(val) || val <= 0) {
+      toast.error("Insira um valor válido.");
+      return;
+    }
+
     setLoading(true);
     try {
       let proofUrl = null;
@@ -61,6 +78,11 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
           setLoading(false);
           return;
         }
+        
+        // Verificar se o método selecionado tem dados
+        if (method === 'iban' && !profile?.bank_info) throw new Error("IBAN não cadastrado no perfil.");
+        if (method === 'express' && !profile?.express_number) throw new Error("Número Express não cadastrado.");
+
         // DEDUÇÃO IMEDIATA DO SALDO
         const { error: balanceError } = await supabase.from('profiles').update({ balance: currentBalance - val }).eq('id', user.id);
         if (balanceError) throw balanceError;
@@ -72,19 +94,19 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
         type: type,
         amount: val,
         status: 'pending',
-        payment_method: method,
+        payment_method: method === 'express' ? `Express: ${profile?.express_number}` : method === 'iban' ? `IBAN: ${profile?.bank_info}` : method,
         proof_url: proofUrl
       });
 
       if (error) throw error;
 
-      // NOTIFICAÇÃO INSTANTÂNEA PARA O USUÁRIO
+      // NOTIFICAÇÃO
       await supabase.from('notifications').insert({
         user_id: user.id,
         title: type === 'deposit' ? 'Depósito Solicitado ⏳' : 'Saque Solicitado 💸',
         message: type === 'deposit' 
           ? `Sua recarga de ${val.toLocaleString()} Kz foi enviada para análise.` 
-          : `Seu saque de ${val.toLocaleString()} Kz foi solicitado e o valor deduzido da conta.`,
+          : `Seu saque de ${val.toLocaleString()} Kz via ${method.toUpperCase()} foi solicitado.`,
         type: 'info'
       });
 
@@ -106,7 +128,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
-        setStep(type === 'deposit' ? 'method' : 'form');
+        setStep('method');
         setAmount('');
         setMethod('');
         setFile(null);
@@ -124,14 +146,20 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
               {(type === 'deposit' ? depositMethods : withdrawalMethods).map((m) => (
                 <button 
                   key={m.id}
+                  disabled={type === 'withdrawal' && !(m as any).available}
                   onClick={() => setMethod(m.id)}
                   className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
                     method === m.id ? 'bg-purple-600 border-purple-400' : 'bg-white/5 border-white/10 hover:bg-white/10'
-                  }`}
+                  } ${type === 'withdrawal' && !(m as any).available ? 'opacity-30 grayscale cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center gap-3">
                     <m.icon size={20} className={method === m.id ? 'text-white' : (m as any).color || 'text-white/40'} />
-                    <span className="font-black text-xs uppercase tracking-widest">{m.name}</span>
+                    <div className="text-left">
+                      <span className="font-black text-xs uppercase tracking-widest block">{m.name}</span>
+                      {type === 'withdrawal' && !(m as any).available && (
+                        <span className="text-[8px] font-bold text-red-400 uppercase">Não cadastrado no perfil</span>
+                      )}
+                    </div>
                   </div>
                   {method === m.id && <CheckCircle2 size={18} />}
                 </button>

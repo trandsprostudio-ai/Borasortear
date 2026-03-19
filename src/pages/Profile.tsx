@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap, Trash2, AlertTriangle, Share2, Copy, Users, CheckCircle2 } from 'lucide-react';
+import { User, CreditCard, Phone, ShieldCheck, Save, Loader2, Trophy, Zap, Trash2, AlertTriangle, Share2, Copy, Users, CheckCircle2, Smartphone } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,17 +11,6 @@ import { toast } from 'sonner';
 import FloatingNav from '@/components/layout/FloatingNav';
 import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -70,7 +59,8 @@ const Profile = () => {
         .update({
           first_name: profile.first_name,
           last_name: profile.last_name,
-          bank_info: profile.bank_info
+          bank_info: profile.bank_info,
+          express_number: profile.express_number // Novo campo
         })
         .eq('id', user.id);
 
@@ -93,7 +83,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
-      <Navbar user={user} />
+      <Navbar />
       
       <main className="max-w-5xl mx-auto px-4 pt-28">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -163,16 +153,30 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Dados para Saque (IBAN / Conta)</Label>
-                  <div className="relative">
-                    <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                    <input 
-                      value={profile?.bank_info || ''} 
-                      onChange={(e) => setProfile({...profile, bank_info: e.target.value})}
-                      placeholder="AO06..." 
-                      className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 w-full focus:outline-none focus:border-purple-500/50" 
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">IBAN para Saque</Label>
+                    <div className="relative">
+                      <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                      <input 
+                        value={profile?.bank_info || ''} 
+                        onChange={(e) => setProfile({...profile, bank_info: e.target.value})}
+                        placeholder="AO06..." 
+                        className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 w-full focus:outline-none focus:border-purple-500/50" 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Multicaixa Express</Label>
+                    <div className="relative">
+                      <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                      <input 
+                        value={profile?.express_number || ''} 
+                        onChange={(e) => setProfile({...profile, express_number: e.target.value})}
+                        placeholder="9XXXXXXXX" 
+                        className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 w-full focus:outline-none focus:border-purple-500/50" 
+                      />
+                    </div>
                   </div>
                 </div>
 
