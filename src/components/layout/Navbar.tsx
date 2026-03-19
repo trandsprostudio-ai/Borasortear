@@ -59,13 +59,6 @@ const Navbar = () => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (data) setProfile(data);
-
-    const channel = supabase.channel(`nav-profile-${userId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, 
-      (payload) => setProfile(payload.new))
-      .subscribe();
-      
-    return () => { supabase.removeChannel(channel); };
   };
 
   const fetchPendingAmount = async (userId: string) => {
@@ -80,14 +73,6 @@ const Navbar = () => {
       const total = data.reduce((acc, t) => acc + Number(t.amount), 0);
       setPendingAmount(total);
     }
-
-    // Real-time para transações
-    const channel = supabase.channel(`nav-txs-${userId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${userId}` }, 
-      () => fetchPendingAmount(userId))
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
   };
 
   const handleLogout = async () => {
@@ -96,7 +81,7 @@ const Navbar = () => {
       await supabase.auth.signOut();
       setShowExitSplash(false);
       navigate('/');
-    }, 1500);
+    }, 2000);
   };
 
   const totalDisplayBalance = (profile?.balance || 0) + pendingAmount;

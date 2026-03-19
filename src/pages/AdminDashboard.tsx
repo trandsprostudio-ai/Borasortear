@@ -13,12 +13,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminUsers from '@/components/admin/AdminUsers';
 import AdminSystem from '@/components/admin/AdminSystem';
 import AdminFinance from '@/components/admin/AdminFinance';
+import { AnimatePresence } from 'framer-motion';
+import SplashScreen from '@/components/ui/SplashScreen';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showExitSplash, setShowExitSplash] = useState(false);
   const [stats, setStats] = useState({
     totalDeposits: 0,
     totalWithdrawals: 0,
@@ -31,13 +34,6 @@ const AdminDashboard = () => {
       navigate('/admin-login');
     }
     fetchGlobalStats();
-
-    const channel = supabase.channel('admin-stats-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchGlobalStats())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchGlobalStats())
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
   }, [navigate]);
 
   const fetchGlobalStats = async () => {
@@ -75,12 +71,20 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_session');
-    navigate('/');
+    setShowExitSplash(true);
+    setTimeout(() => {
+      localStorage.removeItem('admin_session');
+      setShowExitSplash(false);
+      navigate('/');
+    }, 2000);
   };
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white font-sans">
+      <AnimatePresence>
+        {showExitSplash && <SplashScreen message="Encerrando sessão administrativa..." />}
+      </AnimatePresence>
+
       <main className="max-w-[1600px] mx-auto p-4 md:p-10">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
           <div className="flex items-center gap-4">
@@ -117,7 +121,6 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* Cards de Estatísticas com fontes responsivas para evitar cortes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-10">
           <div className="glass-card p-6 md:p-8 rounded-[2.5rem] border-purple-500/20 relative overflow-hidden group min-h-[160px] flex flex-col justify-center">
             <div className="absolute -right-4 -bottom-4 text-purple-500/10 group-hover:scale-110 transition-transform">

@@ -26,8 +26,7 @@ const Footer = () => {
   // Lógica rigorosa para ocultar o footer em qualquer página de administração
   const isAdminPath = location.pathname.toLowerCase().includes('admin');
   
-  // O footer só aparece se o usuário estiver logado E não estiver em uma rota admin
-  if (!isAuthenticated || isAdminPath) {
+  if (isAdminPath) {
     return null;
   }
 
