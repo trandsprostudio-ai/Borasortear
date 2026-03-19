@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Ticket, Trophy, Clock, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Search, Ticket, Trophy, Clock, AlertCircle, CheckCircle2, Loader2, Share2, TrendingUp, ShieldCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +26,7 @@ const ConsultDraw = () => {
     try {
       const { data: participant, error: pError } = await supabase
         .from('participants')
-        .select('*, rooms(*, modules(*))')
+        .select('*, rooms(*, modules(*)), profiles(referred_by)')
         .eq('ticket_code', code.toUpperCase())
         .single();
 
@@ -46,7 +46,26 @@ const ConsultDraw = () => {
         winnerInfo = winner;
       }
 
-      setResult({ ...participant, winner: winnerInfo });
+      // Cálculo de Divisões
+      const totalPool = participant.rooms.modules.price * participant.rooms.max_participants;
+      const firstPrize = totalPool * 0.5;
+      const secondPrize = totalPool * 0.3;
+      const platformFee = totalPool * 0.2;
+      
+      // Cálculo de Bônus de Indicação (5% do prêmio se ele ganhar)
+      const referralBonus = winnerInfo ? winnerInfo.prize_amount * 0.05 : 0;
+
+      setResult({ 
+        ...participant, 
+        winner: winnerInfo,
+        divisions: {
+          total: totalPool,
+          first: firstPrize,
+          second: secondPrize,
+          fee: platformFee,
+          referral: referralBonus
+        }
+      });
     } catch (err) {
       setError('Ocorreu um erro na busca.');
     } finally {
@@ -101,56 +120,98 @@ const ConsultDraw = () => {
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-card rounded-[2.5rem] overflow-hidden border-white/5"
+              className="space-y-6"
             >
-              <div className={`p-8 text-center ${
-                result.winner ? 'bg-green-500/10' : result.rooms.status === 'finished' ? 'bg-white/5' : 'bg-blue-500/10'
-              }`}>
-                {result.winner ? (
-                  <>
-                    <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-400">
-                      <Trophy size={40} />
-                    </div>
-                    <h2 className="text-3xl font-black italic tracking-tighter text-green-400 mb-1">VOCÊ GANHOU!</h2>
-                    <p className="text-sm font-bold text-white/60 uppercase tracking-widest">Prêmio de {result.winner.prize_amount.toLocaleString()} Kz</p>
-                  </>
-                ) : result.rooms.status === 'finished' ? (
-                  <>
-                    <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-white/20">
-                      <CheckCircle2 size={40} />
-                    </div>
-                    <h2 className="text-3xl font-black italic tracking-tighter text-white/40 mb-1">SORTEIO ENCERRADO</h2>
-                    <p className="text-sm font-bold text-white/20 uppercase tracking-widest">Não foi desta vez. Tente novamente!</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-400">
-                      <Clock size={40} className="animate-pulse" />
-                    </div>
-                    <h2 className="text-3xl font-black italic tracking-tighter text-blue-400 mb-1">MESA EM ABERTO</h2>
-                    <p className="text-sm font-bold text-white/60 uppercase tracking-widest">Aguardando preenchimento da mesa</p>
-                  </>
-                )}
+              <div className="glass-card rounded-[2.5rem] overflow-hidden border-white/5">
+                <div className={`p-8 text-center ${
+                  result.winner ? 'bg-green-500/10' : result.rooms.status === 'finished' ? 'bg-white/5' : 'bg-blue-500/10'
+                }`}>
+                  {result.winner ? (
+                    <>
+                      <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-400">
+                        <Trophy size={40} />
+                      </div>
+                      <h2 className="text-3xl font-black italic tracking-tighter text-green-400 mb-1">VOCÊ GANHOU!</h2>
+                      <p className="text-sm font-bold text-white/60 uppercase tracking-widest">Prêmio de {result.winner.prize_amount.toLocaleString()} Kz</p>
+                    </>
+                  ) : result.rooms.status === 'finished' ? (
+                    <>
+                      <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-white/20">
+                        <CheckCircle2 size={40} />
+                      </div>
+                      <h2 className="text-3xl font-black italic tracking-tighter text-white/40 mb-1">SORTEIO ENCERRADO</h2>
+                      <p className="text-sm font-bold text-white/20 uppercase tracking-widest">Não foi desta vez. Tente novamente!</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-400">
+                        <Clock size={40} className="animate-pulse" />
+                      </div>
+                      <h2 className="text-3xl font-black italic tracking-tighter text-blue-400 mb-1">MESA EM ABERTO</h2>
+                      <p className="text-sm font-bold text-white/60 uppercase tracking-widest">Aguardando preenchimento da mesa</p>
+                    </>
+                  )}
+                </div>
+
+                <div className="p-8 space-y-4">
+                  <div className="flex justify-between items-center py-3 border-b border-white/5">
+                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Código do Bilhete</span>
+                    <span className="font-black text-purple-400 tracking-widest">{result.ticket_code}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3 border-b border-white/5">
+                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Mesa / Módulo</span>
+                    <span className="font-black">#{result.rooms.id.slice(0, 8)} / {result.rooms.modules.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-3">
+                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Valor da Entrada</span>
+                    <span className="font-black">{result.rooms.modules.price.toLocaleString()} Kz</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="p-8 space-y-4">
-                <div className="flex justify-between items-center py-3 border-b border-white/5">
-                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Código do Bilhete</span>
-                  <span className="font-black text-purple-400 tracking-widest">{result.ticket_code}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-white/5">
-                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Mesa / Módulo</span>
-                  <span className="font-black">#{result.rooms.id.slice(0, 8)} / {result.rooms.modules.name}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-white/5">
-                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Valor da Entrada</span>
-                  <span className="font-black">{result.rooms.modules.price.toLocaleString()} Kz</span>
-                </div>
-                <div className="flex justify-between items-center py-3">
-                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Data da Entrada</span>
-                  <span className="font-black text-white/60">{new Date(result.created_at).toLocaleString()}</span>
+              {/* Divisões de Prêmios */}
+              <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-6 flex items-center gap-2">
+                  <TrendingUp size={14} className="text-purple-500" /> Divisão de Prêmios da Mesa
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (50%)</p>
+                    <p className="text-xl font-black text-green-400">{result.divisions.first.toLocaleString()} Kz</p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">2º Lugar (30%)</p>
+                    <p className="text-xl font-black text-blue-400">{result.divisions.second.toLocaleString()} Kz</p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">Taxa de Manutenção (20%)</p>
+                    <p className="text-xl font-black text-white/40">{result.divisions.fee.toLocaleString()} Kz</p>
+                  </div>
+                  <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">
+                    <p className="text-[9px] font-black text-purple-400 uppercase mb-1 flex items-center gap-1">
+                      <Share2 size={10} /> Bônus de Indicação (5%)
+                    </p>
+                    <p className="text-xl font-black text-purple-400">
+                      {result.profiles?.referred_by ? `${(result.rooms.modules.price * result.rooms.max_participants * 0.5 * 0.05).toLocaleString()} Kz` : '0 Kz'}
+                    </p>
+                    <p className="text-[8px] font-bold text-white/20 uppercase mt-1">
+                      {result.profiles?.referred_by ? 'Usuário convidado: Bônus ativo' : 'Sem convite: Bônus inativo'}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {result.winner && result.profiles?.referred_by && (
+                <div className="bg-green-500/10 border border-green-500/20 p-6 rounded-[2rem] flex items-center gap-4">
+                  <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center text-green-400">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black uppercase tracking-widest text-green-400">Bônus de Indicação Gerado</h4>
+                    <p className="text-xs font-bold text-white/40">Como você ganhou e foi convidado, seu padrinho recebeu {result.divisions.referral.toLocaleString()} Kz de bônus!</p>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

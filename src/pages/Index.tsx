@@ -29,7 +29,6 @@ const Index = () => {
   const [topWinners, setTopWinners] = useState<any[]>([]);
   const [onlinePlayers, setOnlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   
-  // Estado para o Overlay de Sorteio
   const [drawResult, setDrawResult] = useState<{ isOpen: boolean, winners: any[], roomInfo: string }>({
     isOpen: false,
     winners: [],
@@ -60,22 +59,38 @@ const Index = () => {
     fetchTopWinners();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchMyParticipations(session.user.id);
-        listenToDraws(session.user.id);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        fetchProfile(currentUser.id);
+        fetchMyParticipations(currentUser.id);
+        listenToDraws(currentUser.id);
+        
+        // Listener em tempo real para o perfil (Saldo)
+        const profileChannel = supabase.channel(`index-profile-${currentUser.id}`)
+          .on('postgres_changes', { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'profiles', 
+            filter: `id=eq.${currentUser.id}` 
+          }, (payload) => {
+            setProfile(payload.new);
+          })
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(profileChannel);
+        };
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [user?.id]);
+  }, []);
 
   const listenToDraws = (userId: string) => {
     const channel = supabase.channel(`user-draws-${userId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'status=eq.finished' }, 
       async (payload) => {
-        // Verificar se o usuário participou desta mesa
         const { data: participation } = await supabase
           .from('participants')
           .select('id')
@@ -84,7 +99,6 @@ const Index = () => {
           .single();
 
         if (participation) {
-          // Buscar vencedores da mesa
           const { data: winners } = await supabase
             .from('winners')
             .select('*, profiles(first_name)')
@@ -104,8 +118,6 @@ const Index = () => {
               roomInfo: `MESA #${payload.new.id.slice(0,8)} FINALIZADA`
             });
             
-            // Atualizar dados do usuário
-            fetchProfile(userId);
             fetchMyParticipations(userId);
           }
         }
@@ -155,7 +167,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white font-sans pb-24">
-      <Navbar user={user} />
+      <Navbar />
       
       <DrawOverlay 
         isOpen={drawResult.isOpen} 
@@ -170,7 +182,6 @@ const Index = () => {
           room={selectedRoom.room} module={selectedRoom.module}
           userBalance={profile.balance} userId={user.id}
           onSuccess={() => {
-            fetchProfile(user.id);
             fetchMyParticipations(user.id);
           }}
         />
