@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Edit2, Save, X, User, Loader2 } from 'lucide-react';
+import { Search, Edit2, Save, X, User, Loader2, ShieldAlert, ShieldCheck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminUsers = () => {
@@ -54,6 +54,22 @@ const AdminUsers = () => {
     }
   };
 
+  const toggleBan = async (userId: string, currentStatus: boolean) => {
+    const action = currentStatus ? "DESBANIR" : "BANIR";
+    if (!confirm(`Deseja realmente ${action} este usuário?`)) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_banned: !currentStatus })
+      .eq('id', userId);
+
+    if (error) toast.error("Erro ao alterar status");
+    else {
+      toast.success(`Usuário ${currentStatus ? 'desbanido' : 'banido'}!`);
+      fetchUsers();
+    }
+  };
+
   const filteredUsers = users.filter(u => 
     u.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.id.includes(searchTerm)
@@ -86,21 +102,21 @@ const AdminUsers = () => {
             <TableRow className="border-white/5 hover:bg-transparent">
               <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Jogador</TableHead>
               <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Saldo Atual</TableHead>
-              <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Dados Bancários</TableHead>
+              <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Status / Segurança</TableHead>
               <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredUsers.length > 0 ? (
               filteredUsers.map((u) => (
-                <TableRow key={u.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                <TableRow key={u.id} className={`border-white/5 hover:bg-white/5 transition-colors ${u.is_banned ? 'bg-red-500/5' : ''}`}>
                   <TableCell className="p-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 font-black">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${u.is_banned ? 'bg-red-500/20 text-red-500' : 'bg-purple-500/10 text-purple-400'}`}>
                         {u.first_name?.charAt(0)}
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold">{u.first_name} {u.last_name}</span>
+                        <span className={`font-bold ${u.is_banned ? 'text-red-400' : ''}`}>{u.first_name} {u.last_name}</span>
                         <span className="text-[10px] text-white/20">ID: {u.id.slice(0,12)}</span>
                       </div>
                     </div>
@@ -130,12 +146,30 @@ const AdminUsers = () => {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="p-6 text-white/40 text-xs max-w-[200px] truncate">
-                    {u.bank_info || 'Não cadastrado'}
+                  <TableCell className="p-6">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${u.is_banned ? 'bg-red-500 text-white' : 'bg-green-500/20 text-green-400'}`}>
+                          {u.is_banned ? 'Banido' : 'Ativo'}
+                        </span>
+                        {u.false_proof_count > 0 && (
+                          <span className="text-[9px] font-black text-amber-500 uppercase">
+                            {u.false_proof_count} Alertas
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[9px] text-white/20 font-bold truncate max-w-[150px]">{u.bank_info || 'Sem IBAN'}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="p-6 text-right">
-                    <Button variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white">
-                      Ver Detalhes
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => toggleBan(u.id, u.is_banned)}
+                      className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest ${u.is_banned ? 'text-green-400 hover:bg-green-400/10' : 'text-red-400 hover:bg-red-400/10'}`}
+                    >
+                      {u.is_banned ? <ShieldCheck size={14} className="mr-2" /> : <ShieldAlert size={14} className="mr-2" />}
+                      {u.is_banned ? 'Desbanir' : 'Banir'}
                     </Button>
                   </TableCell>
                 </TableRow>

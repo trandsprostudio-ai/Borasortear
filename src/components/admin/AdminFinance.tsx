@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, FileText, Zap, AlertTriangle, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, FileText, Zap, AlertTriangle, Loader2, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminFinanceProps {
@@ -28,7 +28,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      // Busca transações e tenta trazer os dados do perfil associado
       const { data, error } = await supabase
         .from('transactions')
         .select(`
@@ -86,11 +85,31 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     }
   };
 
-  const handleReject = async (tx: any) => {
-    const reason = prompt("Motivo da rejeição:", "Comprovativo inválido.");
+  const handleReject = async (tx: any, isFalse: boolean = false) => {
+    const reason = isFalse ? "COMPROVATIVO FALSO DETECTADO" : prompt("Motivo da rejeição:", "Comprovativo inválido.");
     if (reason === null) return;
 
     try {
+      if (isFalse) {
+        const currentCount = tx.profiles?.false_proof_count || 0;
+        const newCount = currentCount + 1;
+        const shouldBan = newCount >= 3;
+
+        await supabase.from('profiles').update({ 
+          false_proof_count: newCount,
+          is_banned: shouldBan
+        }).eq('id', tx.user_id);
+
+        await supabase.from('notifications').insert({
+          user_id: tx.user_id,
+          title: 'ALERTA DE SEGURANÇA ⚠️',
+          message: shouldBan 
+            ? 'Sua conta foi banida permanentemente por envio de comprovativos falsos.' 
+            : `Detectamos um comprovativo falso. Você tem ${newCount}/3 alertas. No 3º sua conta será banida.`,
+          type: 'error'
+        });
+      }
+
       if (tx.type === 'withdrawal') {
         const { data: profile } = await supabase.from('profiles').select('balance').eq('id', tx.user_id).single();
         const currentBalance = profile?.balance || 0;
@@ -98,11 +117,11 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       }
 
       await supabase.from('transactions').update({ status: 'rejected' }).eq('id', tx.id);
-      toast.success("Transação rejeitada.");
+      toast.success(isFalse ? "Fraude registrada!" : "Transação rejeitada.");
       fetchTransactions();
       onUpdate();
     } catch (error) {
-      toast.error("Erro ao rejeitar");
+      toast.error("Erro ao processar");
     }
   };
 
@@ -133,7 +152,10 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
               <TableRow key={tx.id} className={`border-white/5 hover:bg-white/5 transition-colors ${tx.acceleration_requested && tx.status === 'pending' ? 'bg-purple-500/5' : ''}`}>
                 <TableCell className="p-6">
                   <div className="flex flex-col">
-                    <span className="font-bold">{tx.profiles?.first_name || 'Usuário'} {tx.profiles?.last_name || ''}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold">{tx.profiles?.first_name || 'Usuário'}</span>
+                      {tx.profiles?.is_banned && <ShieldAlert size={12} className="text-red-500" />}
+                    </div>
                     <span className="text-[10px] text-white/20">{new Date(tx.created_at).toLocaleString()}</span>
                   </div>
                 </TableCell>
@@ -167,7 +189,8 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                   {tx.status === 'pending' && (
                     <div className="flex justify-end gap-2">
                       <Button onClick={() => handleApprove(tx)} className="h-8 bg-green-600 hover:bg-green-700 text-[10px] font-black px-3 rounded-lg">APROVAR</Button>
-                      <Button onClick={() => handleReject(tx)} variant="ghost" className="h-8 text-red-400 hover:bg-red-400/10 text-[10px] font-black px-3 rounded-lg">REJEITAR</Button>
+                      <Button onClick={() => handleReject(tx, false)} variant="ghost" className="h-8 text-white/40 hover:bg-white/5 text-[10px] font-black px-3 rounded-lg">REJEITAR</Button>
+                      <Button onClick={() => handleReject(tx, true)} variant="ghost" className="h-8 text-red-500 hover:bg-red-500/10 text-[10px] font-black px-3 rounded-lg">FALSO</Button>
                     </div>
                   )}
                 </TableCell>
@@ -176,7 +199,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           ) : (
             <TableRow>
               <TableCell colSpan={5} className="p-20 text-center text-white/10 font-black uppercase tracking-widest text-xs">
-                Nenhuma transação encontrada no sistema.
+                Nenhuma transação encontrada.
               </TableCell>
             </TableRow>
           )}

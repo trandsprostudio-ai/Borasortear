@@ -8,6 +8,7 @@ import JoinRoomModal from '@/components/raffle/JoinRoomModal';
 import PrizeCarousel from '@/components/raffle/PrizeCarousel';
 import WinnersCarousel from '@/components/raffle/WinnersCarousel';
 import LiveActivity from '@/components/raffle/LiveActivity';
+import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +29,13 @@ const Index = () => {
   const [topWinners, setTopWinners] = useState<any[]>([]);
   const [onlinePlayers, setOnlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   
+  // Estado para o Overlay de Sorteio
+  const [drawResult, setDrawResult] = useState<{ isOpen: boolean, winners: any[], roomInfo: string }>({
+    isOpen: false,
+    winners: [],
+    roomInfo: ""
+  });
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,34 +64,55 @@ const Index = () => {
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchMyParticipations(session.user.id);
+        listenToDraws(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [user?.id]);
 
-  useEffect(() => {
-    const roomId = searchParams.get('room');
-    if (roomId && rooms.length > 0 && modules.length > 0 && user) {
-      const room = rooms.find(r => r.id === roomId);
-      if (room && room.status === 'open') {
-        const module = modules.find(m => m.id === room.module_id);
-        if (module) {
-          setSelectedRoom({ 
-            room: {
-              id: room.id, moduleId: room.module_id, status: room.status,
-              currentParticipants: room.current_participants, maxParticipants: room.max_participants,
-              expiresAt: room.expires_at, createdAt: room.created_at
-            }, 
-            module 
-          });
-          const newParams = new URLSearchParams(searchParams);
-          newParams.delete('room');
-          setSearchParams(newParams);
+  const listenToDraws = (userId: string) => {
+    const channel = supabase.channel(`user-draws-${userId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'status=eq.finished' }, 
+      async (payload) => {
+        // Verificar se o usuário participou desta mesa
+        const { data: participation } = await supabase
+          .from('participants')
+          .select('id')
+          .eq('room_id', payload.new.id)
+          .eq('user_id', userId)
+          .single();
+
+        if (participation) {
+          // Buscar vencedores da mesa
+          const { data: winners } = await supabase
+            .from('winners')
+            .select('*, profiles(first_name)')
+            .eq('draw_id', payload.new.id)
+            .order('position', { ascending: true });
+
+          if (winners) {
+            const formattedWinners = winners.map(w => ({
+              name: w.profiles?.first_name || 'Jogador',
+              prize: `${w.prize_amount.toLocaleString()} Kz`,
+              position: w.position
+            }));
+
+            setDrawResult({
+              isOpen: true,
+              winners: formattedWinners,
+              roomInfo: `MESA #${payload.new.id.slice(0,8)} FINALIZADA`
+            });
+            
+            // Atualizar dados do usuário
+            fetchProfile(userId);
+            fetchMyParticipations(userId);
+          }
         }
-      }
-    }
-  }, [searchParams, rooms, modules, user]);
+      }).subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  };
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
@@ -128,6 +157,13 @@ const Index = () => {
     <div className="min-h-screen bg-[#0A0B12] text-white font-sans pb-24">
       <Navbar user={user} />
       
+      <DrawOverlay 
+        isOpen={drawResult.isOpen} 
+        onClose={() => setDrawResult(prev => ({ ...prev, isOpen: false }))}
+        winners={drawResult.winners}
+        roomInfo={drawResult.roomInfo}
+      />
+
       {selectedRoom && user && profile && (
         <JoinRoomModal 
           isOpen={!!selectedRoom} onClose={() => setSelectedRoom(null)}
