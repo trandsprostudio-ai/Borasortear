@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Star, Zap, X } from 'lucide-react';
+import { Trophy, Star, Zap, X, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface DrawOverlayProps {
@@ -22,6 +22,9 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
+
+  // Garantir que sempre mostramos 3 posições
+  const displayWinners = [...winners].sort((a, b) => a.position - b.position);
 
   return (
     <AnimatePresence>
@@ -80,11 +83,11 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                 </div>
 
                 <h2 className="text-4xl font-black text-white tracking-tighter italic">
-                  TEMOS GANHADORES!
+                  RESULTADO DA MESA
                 </h2>
                 
                 <div className="space-y-3 mt-6">
-                  {winners.map((winner, idx) => (
+                  {displayWinners.map((winner, idx) => (
                     <motion.div
                       key={idx}
                       initial={{ x: -50, opacity: 0 }}
@@ -92,21 +95,29 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                       transition={{ delay: idx * 0.4 }}
                       className={`glass-card p-4 rounded-xl border-l-4 flex items-center justify-between ${
                         idx === 0 ? 'border-l-amber-500 bg-amber-500/5' : 
-                        idx === 1 ? 'border-l-slate-400 bg-slate-400/5' : 'border-l-orange-500 bg-orange-500/5'
+                        idx === 1 ? 'border-l-slate-400 bg-slate-400/5' : 'border-l-blue-500 bg-blue-500/5'
                       }`}
                     >
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black text-lg ${
-                          idx === 0 ? 'bg-amber-500 text-black' : 'bg-white/10 text-white'
+                          idx === 0 ? 'bg-amber-500 text-black' : 
+                          idx === 1 ? 'bg-slate-400 text-black' : 'bg-blue-500 text-white'
                         }`}>
                           {idx + 1}º
                         </div>
                         <div className="text-left">
-                          <p className="text-xl font-black text-white">@{winner.name}</p>
+                          <p className="text-xl font-black text-white">
+                            {winner.position === 3 ? 'PUBLICIDADE' : `@${winner.name}`}
+                          </p>
+                          {winner.position === 3 && (
+                            <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest">Taxa de Manutenção</span>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-black text-green-400">{winner.prize}</p>
+                        <p className={`text-2xl font-black ${winner.position === 3 ? 'text-blue-400' : 'text-green-400'}`}>
+                          {winner.prize}
+                        </p>
                       </div>
                     </motion.div>
                   ))}

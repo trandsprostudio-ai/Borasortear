@@ -96,6 +96,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
           setLoading(false);
           return;
         }
+        // DESCONTO IMEDIATO DO SALDO
         const { error: balanceError } = await supabase.from('profiles').update({ balance: currentBalance - val }).eq('id', user.id);
         if (balanceError) throw balanceError;
       }
