@@ -30,7 +30,11 @@ export function useRooms() {
         { event: '*', schema: 'public', table: 'rooms' },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setRooms((prev) => [payload.new as Room, ...prev]);
+            setRooms((prev) => {
+              // Evita duplicados se o fetch inicial e o insert ocorrerem quase juntos
+              if (prev.some(r => r.id === payload.new.id)) return prev;
+              return [payload.new as Room, ...prev];
+            });
           } else if (payload.eventType === 'UPDATE') {
             setRooms((prev) =>
               prev.map((room) =>

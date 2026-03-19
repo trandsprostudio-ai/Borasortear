@@ -17,21 +17,26 @@ const ConsultDraw = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!code) return;
+    const cleanCode = code.trim().toUpperCase();
+    if (!cleanCode) return;
 
     setLoading(true);
     setError('');
     setResult(null);
 
     try {
+      // Busca o participante pelo código do bilhete
       const { data: participant, error: pError } = await supabase
         .from('participants')
         .select('*, rooms(*, modules(*)), profiles(referred_by)')
-        .eq('ticket_code', code.toUpperCase())
-        .single();
+        .eq('ticket_code', cleanCode)
+        .maybeSingle(); // maybeSingle não lança erro se não encontrar
 
-      if (pError || !participant) {
-        setError('Código de bilhete não encontrado. Verifique e tente novamente.');
+      if (pError) throw pError;
+
+      if (!participant) {
+        setError('Código de bilhete não encontrado. Verifique se digitou corretamente.');
+        setLoading(false);
         return;
       }
 
@@ -42,17 +47,16 @@ const ConsultDraw = () => {
           .select('*')
           .eq('user_id', participant.user_id)
           .eq('draw_id', participant.rooms.id)
-          .single();
+          .maybeSingle();
         winnerInfo = winner;
       }
 
-      // Cálculo de Divisões
+      // Cálculo de Divisões (Simulação baseada na regra de negócio)
       const totalPool = participant.rooms.modules.price * participant.rooms.max_participants;
-      const firstPrize = totalPool * 0.5;
-      const secondPrize = totalPool * 0.3;
-      const platformFee = totalPool * 0.2;
+      const firstPrize = totalPool * 0.333; // 1/3
+      const secondPrize = totalPool * 0.333; // 1/3
+      const platformFee = totalPool * 0.333; // 1/3
       
-      // Cálculo de Bônus de Indicação (5% do prêmio se ele ganhar)
       const referralBonus = winnerInfo ? winnerInfo.prize_amount * 0.05 : 0;
 
       setResult({ 
@@ -66,8 +70,9 @@ const ConsultDraw = () => {
           referral: referralBonus
         }
       });
-    } catch (err) {
-      setError('Ocorreu um erro na busca.');
+    } catch (err: any) {
+      console.error("Erro na busca:", err);
+      setError('Ocorreu um erro ao processar sua busca. Tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }
@@ -91,11 +96,11 @@ const ConsultDraw = () => {
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="EX: A1B2C3D4"
               className="bg-white/5 border-white/10 h-16 pl-14 pr-32 rounded-2xl text-xl font-black tracking-[0.2em] focus:border-purple-500/50 transition-all"
-              maxLength={8}
+              maxLength={12}
             />
             <Button 
               type="submit" 
-              disabled={loading || code.length < 4}
+              disabled={loading || code.trim().length < 4}
               className="absolute right-2 top-2 bottom-2 premium-gradient rounded-xl px-6 font-black"
             >
               {loading ? <Loader2 className="animate-spin" /> : 'BUSCAR'}
@@ -176,15 +181,15 @@ const ConsultDraw = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (50%)</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (33.3%)</p>
                     <p className="text-xl font-black text-green-400">{result.divisions.first.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">2º Lugar (30%)</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">2º Lugar (33.3%)</p>
                     <p className="text-xl font-black text-blue-400">{result.divisions.second.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">Taxa de Manutenção (20%)</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">Taxa de Manutenção (33.3%)</p>
                     <p className="text-xl font-black text-white/40">{result.divisions.fee.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">
@@ -192,7 +197,7 @@ const ConsultDraw = () => {
                       <Share2 size={10} /> Bônus de Indicação (5%)
                     </p>
                     <p className="text-xl font-black text-purple-400">
-                      {result.profiles?.referred_by ? `${(result.rooms.modules.price * result.rooms.max_participants * 0.5 * 0.05).toLocaleString()} Kz` : '0 Kz'}
+                      {result.profiles?.referred_by ? `${(result.divisions.first * 0.05).toLocaleString()} Kz` : '0 Kz'}
                     </p>
                     <p className="text-[8px] font-bold text-white/20 uppercase mt-1">
                       {result.profiles?.referred_by ? 'Usuário convidado: Bônus ativo' : 'Sem convite: Bônus inativo'}

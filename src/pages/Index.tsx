@@ -43,8 +43,10 @@ const Index = () => {
     const fetchModules = async () => {
       const { data } = await supabase.from('modules').select('*').order('price', { ascending: true });
       if (data) {
-        setModules(data);
-        if (data.length > 0) setActiveModuleId(data[0].id);
+        // Garantir que não haja duplicatas por ID vindas do banco
+        const uniqueModules = Array.from(new Map(data.map(m => [m.id, m])).values());
+        setModules(uniqueModules);
+        if (uniqueModules.length > 0) setActiveModuleId(uniqueModules[0].id);
       }
     };
 
@@ -175,7 +177,7 @@ const Index = () => {
   const activeModuleRooms = rooms
     .filter(r => r.module_id === activeModuleId && r.status === 'open')
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
-    .slice(0, 3); // Limitado a 3 mesas por módulo
+    .slice(0, 3);
 
   const activeModule = modules.find(m => m.id === activeModuleId);
 
