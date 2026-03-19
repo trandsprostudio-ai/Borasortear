@@ -30,11 +30,20 @@ const AdminDashboard = () => {
       navigate('/admin-login');
     }
     fetchGlobalStats();
+
+    // Ouvir novos usuários em tempo real
+    const channel = supabase.channel('admin-stats-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchGlobalStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchGlobalStats())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [navigate]);
 
   const fetchGlobalStats = async () => {
     setLoading(true);
     try {
+      // Contagem de perfis (usuários visíveis na plataforma)
       const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
       setTotalUsers(count || 0);
 

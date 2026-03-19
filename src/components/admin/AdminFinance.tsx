@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Smartphone, Banknote, CreditCard, ExternalLink, FileText, Zap } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Smartphone, Banknote, CreditCard, ExternalLink, FileText, Zap, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminFinanceProps {
@@ -38,7 +38,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         const newBalance = (tx.profiles?.balance || 0) + Number(tx.amount);
         await supabase.from('profiles').update({ balance: newBalance }).eq('id', tx.user_id);
         
-        // Notificação de Depósito
         await supabase.from('notifications').insert({
           user_id: tx.user_id,
           title: 'Recarga Confirmada! 💰',
@@ -46,7 +45,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           type: 'success'
         });
       } else {
-        // Notificação de Saque
         await supabase.from('notifications').insert({
           user_id: tx.user_id,
           title: 'Saque Processado! ✅',
@@ -83,7 +81,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           is_banned: isBanned
         }).eq('id', tx.user_id);
 
-        // Notificação de Rejeição
         await supabase.from('notifications').insert({
           user_id: tx.user_id,
           title: isBanned ? 'CONTA BANIDA 🚫' : 'Recarga Rejeitada ❌',
@@ -120,62 +117,69 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {transactions.map((tx) => (
-            <TableRow key={tx.id} className={`border-white/5 hover:bg-white/5 transition-colors ${tx.acceleration_requested && tx.status === 'pending' ? 'bg-purple-500/5' : ''}`}>
-              <TableCell className="p-6">
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
-                    {tx.profiles?.is_banned && <span className="bg-red-500 text-[8px] px-1.5 py-0.5 rounded font-black">BANIDO</span>}
+          {transactions.map((tx) => {
+            const isExpired = !tx.proof_url && tx.type === 'deposit' && tx.status === 'pending';
+            return (
+              <TableRow key={tx.id} className={`border-white/5 hover:bg-white/5 transition-colors ${tx.acceleration_requested && tx.status === 'pending' ? 'bg-purple-500/5' : ''}`}>
+                <TableCell className="p-6">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
+                      {tx.profiles?.is_banned && <span className="bg-red-500 text-[8px] px-1.5 py-0.5 rounded font-black">BANIDO</span>}
+                    </div>
+                    <span className="text-[10px] text-white/20">{new Date(tx.created_at).toLocaleString()}</span>
                   </div>
-                  <span className="text-[10px] text-white/20">{new Date(tx.created_at).toLocaleString()}</span>
-                </div>
-              </TableCell>
-              <TableCell className="p-6">
-                <div className="flex items-center gap-2">
-                  {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
-                  <span className="font-black text-lg">{tx.amount.toLocaleString()} Kz</span>
-                </div>
-              </TableCell>
-              <TableCell className="p-6">
-                <div className="flex flex-col gap-2">
-                  <span className="text-[10px] font-black uppercase text-white/60">{tx.payment_method || 'N/A'}</span>
-                  {tx.proof_url && (
-                    <a href={tx.proof_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] font-black text-purple-400 uppercase">
-                      <FileText size={12} /> Ver Comprovativo
-                    </a>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="p-6">
-                <div className="flex flex-col gap-1">
+                </TableCell>
+                <TableCell className="p-6">
                   <div className="flex items-center gap-2">
-                    {tx.status === 'pending' ? <Clock size={14} className="text-amber-500" /> : 
-                     tx.status === 'completed' ? <CheckCircle2 size={14} className="text-green-500" /> : 
-                     <XCircle size={14} className="text-red-500" />}
-                    <span className={`text-[10px] uppercase font-black ${
-                      tx.status === 'pending' ? 'text-amber-500' : 
-                      tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
-                    }`}>{tx.status}</span>
+                    {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
+                    <span className="font-black text-lg">{tx.amount.toLocaleString()} Kz</span>
                   </div>
-                  {tx.acceleration_requested && tx.status === 'pending' && (
-                    <div className="flex items-center gap-1 text-purple-400 animate-pulse">
-                      <Zap size={10} />
-                      <span className="text-[8px] font-black uppercase">Urgência Solicitada</span>
+                </TableCell>
+                <TableCell className="p-6">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[10px] font-black uppercase text-white/60">{tx.payment_method || 'N/A'}</span>
+                    {tx.proof_url ? (
+                      <a href={tx.proof_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] font-black text-purple-400 uppercase">
+                        <FileText size={12} /> Ver Comprovativo
+                      </a>
+                    ) : tx.type === 'deposit' ? (
+                      <div className="flex items-center gap-1 text-[9px] font-black text-red-500/50 uppercase">
+                        <AlertTriangle size={10} /> Comprovativo Expirado (28h)
+                      </div>
+                    ) : null}
+                  </div>
+                </TableCell>
+                <TableCell className="p-6">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      {tx.status === 'pending' ? <Clock size={14} className="text-amber-500" /> : 
+                       tx.status === 'completed' ? <CheckCircle2 size={14} className="text-green-500" /> : 
+                       <XCircle size={14} className="text-red-500" />}
+                      <span className={`text-[10px] uppercase font-black ${
+                        tx.status === 'pending' ? 'text-amber-500' : 
+                        tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
+                      }`}>{tx.status}</span>
+                    </div>
+                    {tx.acceleration_requested && tx.status === 'pending' && (
+                      <div className="flex items-center gap-1 text-purple-400 animate-pulse">
+                        <Zap size={10} />
+                        <span className="text-[8px] font-black uppercase">Urgência Solicitada</span>
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="p-6 text-right">
+                  {tx.status === 'pending' && (
+                    <div className="flex justify-end gap-2">
+                      <Button onClick={() => handleApprove(tx)} className="h-8 bg-green-600 hover:bg-green-700 text-[10px] font-black px-3 rounded-lg">APROVAR</Button>
+                      <Button onClick={() => handleReject(tx)} variant="ghost" className="h-8 text-red-400 hover:bg-red-400/10 text-[10px] font-black px-3 rounded-lg">REJEITAR</Button>
                     </div>
                   )}
-                </div>
-              </TableCell>
-              <TableCell className="p-6 text-right">
-                {tx.status === 'pending' && (
-                  <div className="flex justify-end gap-2">
-                    <Button onClick={() => handleApprove(tx)} className="h-8 bg-green-600 hover:bg-green-700 text-[10px] font-black px-3 rounded-lg">APROVAR</Button>
-                    <Button onClick={() => handleReject(tx)} variant="ghost" className="h-8 text-red-400 hover:bg-red-400/10 text-[10px] font-black px-3 rounded-lg">REJEITAR</Button>
-                  </div>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
