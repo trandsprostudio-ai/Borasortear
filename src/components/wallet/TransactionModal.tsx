@@ -1,4 +1,3 @@
-Valor -> Detalhes com Dados da Plataforma e Upload de Comprovativo.">
 "use client";
 
 import React, { useState, useRef } from 'react';
