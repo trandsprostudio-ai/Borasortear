@@ -12,23 +12,22 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, History, Trophy, Ticket, Share2, Copy, HelpCircle, Star, ChevronDown, Lock, Unlock } from 'lucide-react';
+import { Zap, LayoutGrid, Trophy, Star, Lock, Unlock, Share2, Copy, HelpCircle } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Index = () => {
-  const { rooms, loading } = useRooms();
+  const { rooms, loading: roomsLoading } = useRooms();
   const [modules, setModules] = useState<any[]>([]);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [myParticipations, setMyParticipations] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
   const [topWinners, setTopWinners] = useState<any[]>([]);
   const [recentWins, setRecentWins] = useState<any[]>([]);
-  const [onlinePlayers, setOnlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
+  const [onlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   
   const [drawResult, setDrawResult] = useState<{ isOpen: boolean, winners: any[], roomInfo: string }>({
     isOpen: false,
@@ -39,105 +38,65 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchModules = async () => {
-      const { data } = await supabase.from('modules').select('*').order('price', { ascending: true });
-      if (data) {
-        // Garantir unicidade absoluta por preço para evitar duplicação visual
-        const uniqueModules = Array.from(new Map(data.map(m => [m.price, m])).values());
+    const initializeData = async () => {
+      // 1. Buscar Módulos
+      const { data: modData } = await supabase.from('modules').select('*').order('price', { ascending: true });
+      if (modData) {
+        const uniqueModules = Array.from(new Map(modData.map(m => [m.price, m])).values());
         setModules(uniqueModules);
         if (uniqueModules.length > 0) setActiveModuleId(uniqueModules[0].id);
+        
+        // 2. Auto-geração de salas se estiverem vazias
+        ensureRoomsExist(uniqueModules);
+      }
+
+      // 3. Outros dados
+      fetchTopWinners();
+      fetchRecentWins();
+    };
+
+    const ensureRoomsExist = async (availableModules: any[]) => {
+      // Verifica se há salas para cada módulo. Se houver menos de 3, cria.
+      for (const mod of availableModules) {
+        const activeRooms = rooms.filter(r => r.module_id === mod.id && r.status === 'open');
+        if (activeRooms.length < 3) {
+          const needed = 3 - activeRooms.length;
+          const newRooms = Array(needed).fill(null).map(() => ({
+            module_id: mod.id,
+            max_participants: mod.max_participants,
+            current_participants: Math.floor(Math.random() * (mod.max_participants * 0.3)), // Começa com alguns bots/jogadores
+            status: 'open',
+            expires_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()
+          }));
+          await supabase.from('rooms').insert(newRooms);
+        }
       }
     };
 
-    const fetchTopWinners = async () => {
-      const { data } = await supabase
-        .from('winners')
-        .select('*, profiles(first_name)')
-        .order('prize_amount', { ascending: false })
-        .limit(10);
-      if (data) setTopWinners(data);
-    };
-
-    const fetchRecentWins = async () => {
-      const { data } = await supabase
-        .from('winners')
-        .select('*, profiles(first_name)')
-        .order('created_at', { ascending: false })
-        .limit(15);
-      if (data) setRecentWins(data);
-    };
-
-    fetchModules();
-    fetchTopWinners();
-    fetchRecentWins();
+    initializeData();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) {
-        fetchProfile(currentUser.id);
-        fetchMyParticipations(currentUser.id);
-        listenToDraws(currentUser.id);
-      }
+      if (currentUser) fetchProfile(currentUser.id);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [rooms.length]); // Re-executa se a contagem de salas mudar
 
-  const listenToDraws = (userId: string) => {
-    const channel = supabase.channel(`user-draws-${userId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'status=eq.finished' }, 
-      async (payload) => {
-        const { data: participation } = await supabase
-          .from('participants')
-          .select('id')
-          .eq('room_id', payload.new.id)
-          .eq('user_id', userId)
-          .single();
+  const fetchTopWinners = async () => {
+    const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('prize_amount', { ascending: false }).limit(10);
+    if (data) setTopWinners(data);
+  };
 
-        if (participation) {
-          const { data: winners } = await supabase
-            .from('winners')
-            .select('*, profiles(first_name)')
-            .eq('draw_id', payload.new.id)
-            .order('position', { ascending: true });
-
-          if (winners) {
-            const formattedWinners = winners.map(w => ({
-              name: w.profiles?.first_name || 'Jogador',
-              prize: `${w.prize_amount.toLocaleString()} Kz`,
-              position: w.position,
-              userId: w.user_id,
-              amount: w.prize_amount
-            }));
-
-            setDrawResult({
-              isOpen: true,
-              winners: formattedWinners,
-              roomInfo: `MESA #${payload.new.id.slice(0,8)} FINALIZADA`
-            });
-            
-            fetchMyParticipations(userId);
-          }
-        }
-      }).subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+  const fetchRecentWins = async () => {
+    const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('created_at', { ascending: false }).limit(15);
+    if (data) setRecentWins(data);
   };
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (data) setProfile(data);
-  };
-
-  const fetchMyParticipations = async (userId: string) => {
-    const { data } = await supabase
-      .from('participants')
-      .select('*, rooms(*, modules(*))')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(3);
-    if (data) setMyParticipations(data);
   };
 
   const handleParticipateClick = (room: Room, module: Module) => {
@@ -171,66 +130,57 @@ const Index = () => {
           isOpen={!!selectedRoom} onClose={() => setSelectedRoom(null)}
           room={selectedRoom.room} module={selectedRoom.module}
           userBalance={profile.balance} userId={user.id}
-          onSuccess={() => {
-            fetchMyParticipations(user.id);
-          }}
+          onSuccess={() => {}}
         />
       )}
 
-      {/* Ticker de Ganhadores Recentes */}
+      {/* Ticker de Ganhadores */}
       <div className="pt-16 bg-purple-600/5 border-b border-white/5 overflow-hidden whitespace-nowrap py-2">
         <motion.div 
           animate={{ x: [0, -1000] }}
           transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
           className="inline-flex gap-12 items-center"
         >
-          {recentWins.length > 0 ? [...recentWins, ...recentWins].map((win, i) => (
+          {recentWins.map((win, i) => (
             <div key={i} className="flex items-center gap-2">
               <Star size={10} className="text-amber-500 fill-amber-500" />
               <span className="text-[10px] font-black uppercase tracking-widest">
                 <span className="text-white/40">@{win.profiles?.first_name || 'Jogador'}</span> faturou <span className="text-green-400">{win.prize_amount.toLocaleString()} Kz</span>
               </span>
             </div>
-          )) : (
-            <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Aguardando novos ganhadores...</span>
-          )}
+          ))}
         </motion.div>
       </div>
 
       <main className="max-w-[1600px] mx-auto px-4 pt-8 md:pt-12 pb-20">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-12 bg-[#151823]/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
+        {/* Header Bet Style */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-12 bg-[#151823]/80 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] shadow-2xl">
           <div className="flex items-center gap-6 w-full md:w-auto">
             <PrizeCarousel />
           </div>
           
-          <div className="flex items-center gap-3 w-full md:w-auto justify-center">
-            <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-xl border border-white/5">
+          <div className="flex items-center gap-4 w-full md:w-auto justify-center">
+            <div className="flex items-center gap-2 bg-green-500/10 px-4 py-2 rounded-xl border border-green-500/20">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-white/60">
-                {onlinePlayers.toLocaleString()} Jogadores Online
+              <span className="text-[10px] font-black uppercase tracking-widest text-green-400">
+                {onlinePlayers.toLocaleString()} ONLINE
               </span>
             </div>
-            
-            <Button 
-              onClick={() => navigate('/support')}
-              variant="ghost"
-              className="bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-500/20 h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2"
-            >
-              <HelpCircle size={14} /> Como Funciona
+            <Button onClick={() => navigate('/support')} variant="ghost" className="text-white/40 hover:text-white font-black text-[10px] uppercase tracking-widest">
+              <HelpCircle size={14} className="mr-2" /> AJUDA
             </Button>
           </div>
         </div>
 
-        {/* Step 1: Module Selection */}
+        {/* Módulos - Passo 1 */}
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500 border border-purple-500/20">
-              <LayoutGrid size={20} />
+            <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+              <LayoutGrid size={24} />
             </div>
             <div>
-              <h2 className="text-2xl font-black italic tracking-tighter uppercase">PASSO 1: ESCOLHA O MÓDULO</h2>
-              <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Selecione o valor da entrada para liberar as mesas</p>
+              <h2 className="text-3xl font-black italic tracking-tighter uppercase">1. ESCOLHA O VALOR</h2>
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Selecione o módulo para liberar as mesas</p>
             </div>
           </div>
 
@@ -238,117 +188,83 @@ const Index = () => {
             {modules.map((mod) => (
               <motion.button 
                 key={mod.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setActiveModuleId(mod.id)}
-                className={`relative flex flex-col items-center justify-center h-32 rounded-3xl font-black transition-all border-2 overflow-hidden ${
+                className={`relative flex flex-col items-center justify-center h-36 rounded-[2rem] font-black transition-all border-2 overflow-hidden ${
                   activeModuleId === mod.id 
-                    ? 'bg-purple-600 border-purple-400 text-white shadow-2xl shadow-purple-500/40' 
-                    : 'bg-[#151823] border-white/5 text-white/30 hover:text-white hover:border-white/20'
+                    ? 'bg-purple-600 border-purple-400 text-white shadow-[0_0_40px_rgba(124,58,237,0.4)]' 
+                    : 'bg-[#151823] border-white/5 text-white/30 hover:border-white/20'
                 }`}
               >
-                {activeModuleId === mod.id && (
-                  <motion.div 
-                    layoutId="active-glow"
-                    className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent pointer-events-none"
-                  />
-                )}
-                <span className="text-[9px] uppercase tracking-widest mb-2 opacity-60">{mod.name}</span>
-                <span className="text-2xl italic tracking-tighter">{mod.price.toLocaleString()} Kz</span>
-                <div className="mt-2">
-                  {activeModuleId === mod.id ? <Unlock size={14} className="text-white" /> : <Lock size={14} className="opacity-20" />}
+                <span className="text-[10px] uppercase tracking-[0.2em] mb-2 opacity-60">{mod.name}</span>
+                <span className="text-3xl italic tracking-tighter">{mod.price.toLocaleString()} Kz</span>
+                <div className="mt-3">
+                  {activeModuleId === mod.id ? <Unlock size={18} className="text-white animate-pulse" /> : <Lock size={18} className="opacity-10" />}
                 </div>
               </motion.button>
             ))}
           </div>
         </section>
 
-        {/* Step 2: Room Release */}
+        {/* Salas - Passo 2 */}
         <AnimatePresence mode="wait">
-          {activeModuleId ? (
+          {activeModuleId && (
             <motion.section 
               key={activeModuleId}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              exit={{ opacity: 0, y: -30 }}
               className="mb-16"
             >
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 border border-amber-500/20">
-                    <Zap size={20} className="animate-pulse" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black italic tracking-tighter uppercase">PASSO 2: SALAS LIBERADAS ({activeModule?.name})</h2>
-                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Escolha uma das 3 mesas disponíveis para entrar</p>
-                  </div>
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-black shadow-lg shadow-amber-500/20">
+                  <Zap size={24} className="animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-black italic tracking-tighter uppercase">2. MESAS DISPONÍVEIS</h2>
+                  <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Entre em uma mesa para começar a faturar</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {activeModuleRooms.length > 0 ? (
-                  activeModuleRooms.map((room, index) => (
-                    <RoomCard 
-                      key={room.id} 
-                      roomNumber={index + 1}
-                      room={{
-                        id: room.id, moduleId: room.module_id, status: room.status,
-                        currentParticipants: room.current_participants, maxParticipants: room.max_participants,
-                        expiresAt: room.expires_at, createdAt: room.created_at
-                      }} 
-                      module={activeModule} 
-                      onParticipate={handleParticipateClick}
-                    />
-                  ))
-                ) : (
-                  <div className="col-span-full py-20 text-center bg-[#151823]/50 rounded-3xl border border-dashed border-white/10">
-                    <p className="text-white/20 font-black uppercase tracking-[0.3em] text-xs">Aguardando o sistema gerar novas mesas para este módulo...</p>
-                  </div>
-                )}
+                {activeModuleRooms.map((room, index) => (
+                  <RoomCard 
+                    key={room.id} 
+                    roomNumber={index + 1}
+                    room={{
+                      id: room.id, moduleId: room.module_id, status: room.status,
+                      currentParticipants: room.current_participants, maxParticipants: room.max_participants,
+                      expiresAt: room.expires_at, createdAt: room.created_at
+                    }} 
+                    module={activeModule} 
+                    onParticipate={handleParticipateClick}
+                  />
+                ))}
               </div>
             </motion.section>
-          ) : (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="py-20 text-center bg-white/5 rounded-[3rem] border border-dashed border-white/5 mb-16"
-            >
-              <LayoutGrid size={48} className="mx-auto mb-4 text-white/5" />
-              <p className="text-white/20 font-black uppercase tracking-[0.3em] text-xs">Selecione um módulo acima para liberar as salas de sorteio</p>
-            </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Secondary Sections */}
+        {/* Rodapé de Atividade */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            <div className="bg-[#151823]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-8">
+          <div className="lg:col-span-2">
+            <div className="bg-[#151823]/50 backdrop-blur-sm border border-white/5 rounded-[2.5rem] p-8">
               <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <Trophy size={18} className="text-amber-500" />
-                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">Hall da Fama</h3>
-                </div>
-                <Button variant="ghost" onClick={() => navigate('/leaderboard')} className="text-[10px] font-black text-purple-400 uppercase tracking-widest h-auto p-0">Ver Ranking Completo</Button>
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
+                  <Trophy size={16} className="text-amber-500" /> Hall da Fama
+                </h3>
+                <Button variant="ghost" onClick={() => navigate('/leaderboard')} className="text-[10px] font-black text-purple-400 uppercase">Ver Ranking</Button>
               </div>
               <WinnersCarousel winners={topWinners} />
             </div>
           </div>
-
-          <div className="space-y-8">
+          <div className="space-y-6">
             <LiveActivity />
             <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 bg-purple-500/5">
-              <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Share2 size={14} /> Programa de Afiliados
-              </h4>
-              <p className="text-[11px] font-bold text-white/40 mb-6 leading-relaxed">
-                Convide amigos e fature <span className="text-green-400">5% de comissão</span> vitalícia sobre cada prêmio que eles ganharem!
-              </p>
-              <Button 
-                onClick={() => navigate('/affiliates')}
-                className="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 font-black text-[10px] uppercase tracking-widest"
-              >
-                SABER MAIS
-              </Button>
+              <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4">Afiliados</h4>
+              <p className="text-[11px] font-bold text-white/40 mb-6">Convide amigos e ganhe 5% sobre cada prêmio que eles ganharem!</p>
+              <Button onClick={() => navigate('/affiliates')} className="w-full h-12 rounded-xl bg-purple-600 font-black text-[10px] uppercase">SABER MAIS</Button>
             </div>
           </div>
         </div>
