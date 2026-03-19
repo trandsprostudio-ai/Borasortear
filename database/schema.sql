@@ -2,7 +2,8 @@
 -- BORA SORTEIAR - Schema Completo de Produção
 -- ============================================
 
--- Habilitar extensões necessáriasCREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Habilitar extensões necessárias
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Tabela de módulos (valores de entrada)
 CREATE TABLE IF NOT EXISTS modules (
@@ -14,8 +15,7 @@ CREATE TABLE IF NOT EXISTS modules (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Tabela de salas/mesas
-CREATE TABLE IF NOT EXISTS rooms (
+-- Tabela de salas/mesasCREATE TABLE IF NOT EXISTS rooms (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   module_id UUID NOT NULL REFERENCES modules(id) ON DELETE CASCADE,
   status VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed', 'processing', 'finished')),
@@ -52,8 +52,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Tabela de transações financeiras
-CREATE TABLE IF NOT EXISTS transactions (
+-- Tabela de transações financeirasCREATE TABLE IF NOT EXISTS transactions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   type VARCHAR(20) NOT NULL CHECK (type IN ('deposit', 'withdrawal')),
@@ -117,8 +116,7 @@ CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions FOR 
 
 -- Função para gerar código de bilhete único
 CREATE OR REPLACE FUNCTION generate_ticket_code()
-RETURNS VARCHAR(12) AS $$
-DECLARE
+RETURNS VARCHAR(12) AS $$DECLARE
   code VARCHAR(12);
   exists BOOLEAN;
 BEGIN
@@ -142,7 +140,8 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER set_ticket_code_before_insert
 BEFORE INSERT ON participants
-FOR EACH ROWEXECUTE FUNCTION set_ticket_code();
+FOR EACH ROW
+EXECUTE FUNCTION set_ticket_code();
 
 -- Função para criar 3 salas por módulo automaticamente
 CREATE OR REPLACE FUNCTION create_rooms_for_module()
@@ -192,8 +191,7 @@ CREATE TRIGGER check_room_closure_trigger   BEFORE UPDATE ON rooms
 
 -- Função para executar sorteio automático
 CREATE OR REPLACE FUNCTION perform_automatic_draw(p_room_id UUID)
-RETURNS VOID AS $$
-DECLARE
+RETURNS VOID AS $$DECLARE
   room_record RECORD;
   participants_count INTEGER;
   prize_pool INTEGER;
@@ -275,8 +273,7 @@ BEGIN  -- Buscar dados da sala
     'info'
   FROM participants p 
   WHERE p.room_id = p_room_id     AND p.user_id NOT IN (winner1_id, winner2_id);
-  
-END;
+  END;
 $$ LANGUAGE plpgsql;
 
 -- Função para verificar salas expiradas periodicamente
@@ -293,8 +290,7 @@ BEGIN  -- Buscar salas fechadas que ainda não foram sorteadas
       SELECT 1 FROM winners w WHERE w.draw_id = r.id
     )
   LOOP
-    BEGIN
-      PERFORM perform_automatic_draw(room_record.id);
+    BEGIN      PERFORM perform_automatic_draw(room_record.id);
     EXCEPTION WHEN OTHERS THEN
       -- Log error but continue with other rooms
       RAISE NOTICE 'Erro ao sortear sala %: %', room_record.id, SQLERRM;
@@ -305,8 +301,7 @@ $$ LANGUAGE plpgsql;
 
 -- Função para reabrir salas após sorteio (criar novas)
 CREATE OR REPLACE FUNCTION reopen_rooms_for_module()
-RETURNS TRIGGER AS $$
-BEGIN
+RETURNS TRIGGER AS $$BEGIN
   -- Quando uma sala é finalizada, criar uma nova sala para o mesmo módulo
   IF NEW.status = 'finished' AND OLD.status != 'finished' THEN    INSERT INTO rooms (
       module_id,
@@ -326,8 +321,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger para reabrir salas automaticamente
-CREATE TRIGGER reopen_rooms_trigger   AFTER UPDATE ON rooms 
+-- Trigger para reabrir salas automaticamenteCREATE TRIGGER reopen_rooms_trigger   AFTER UPDATE ON rooms 
   FOR EACH ROW 
   WHEN (OLD.status = 'finished' AND NEW.status = 'finished')
   EXECUTE FUNCTION reopen_rooms_for_module();
@@ -354,8 +348,7 @@ END $$;
 
 -- Função para resetar todas as salas (useful for testing)
 CREATE OR REPLACE FUNCTION reset_all_rooms()
-RETURNS VOID AS $$
-BEGIN
+RETURNS VOID AS $$BEGIN
   -- Deletar todas as salas existentes
   DELETE FROM rooms;
   
@@ -376,8 +369,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION get_system_stats()
 RETURNS JSON AS $$DECLARE
   stats JSON;
-BEGIN
-  SELECT json_build_object(
+BEGIN  SELECT json_build_object(
     'total_modules', (SELECT COUNT(*) FROM modules),
     'total_rooms', (SELECT COUNT(*) FROM rooms),
     'open_rooms', (SELECT COUNT(*) FROM rooms WHERE status = 'open'),
@@ -412,8 +404,7 @@ ALTER TABLE winners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Política: Usuários podem ver apenas seus próprios dados
-CREATE POLICY "Users can view own profile" ON profiles
-  FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can view own profile" ON profiles  FOR SELECT USING (auth.uid() = id);
 
 CREATE POLICY "Users can view own participants" ON participants
   FOR SELECT USING (auth.uid() = user_id);
@@ -421,8 +412,7 @@ CREATE POLICY "Users can view own participants" ON participants
 CREATE POLICY "Users can view own transactions" ON transactions
   FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can view own winners" ON winners
-  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can view own winners" ON winners  FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can view own notifications" ON notifications
   FOR SELECT USING (auth.uid() = user_id);
