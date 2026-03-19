@@ -37,41 +37,6 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
     { id: 'express', name: 'Multicaixa Express', icon: CreditCard },
   ];
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-    if (selectedFile.size > 2 * 1024 * 1024) {
-      toast.error("O arquivo deve ter no máximo 2MB.");
-      return;
-    }
-    const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg'];
-    if (!allowedTypes.includes(selectedFile.type)) {
-      toast.error("Formato inválido. Use PDF ou PNG.");
-      return;
-    }
-    setFile(selectedFile);
-  };
-
-  const handleNextFromMethod = () => {
-    if (!method) {
-      toast.error("Selecione um método de pagamento.");
-      return;
-    }
-    setStep('form');
-  };
-
-  const handleNextFromForm = () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Insira um valor válido.");
-      return;
-    }
-    if (type === 'deposit') {
-      setStep('details');
-    } else {
-      handleAction();
-    }
-  };
-
   const handleAction = async () => {
     const val = parseFloat(amount);
     setLoading(true);
@@ -96,11 +61,12 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
           setLoading(false);
           return;
         }
-        // DESCONTO IMEDIATO DO SALDO
+        // DEDUÇÃO IMEDIATA DO SALDO
         const { error: balanceError } = await supabase.from('profiles').update({ balance: currentBalance - val }).eq('id', user.id);
         if (balanceError) throw balanceError;
       }
 
+      // CRIAR TRANSAÇÃO
       const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
         type: type,
@@ -112,10 +78,20 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
 
       if (error) throw error;
 
+      // NOTIFICAÇÃO INSTANTÂNEA PARA O USUÁRIO
+      await supabase.from('notifications').insert({
+        user_id: user.id,
+        title: type === 'deposit' ? 'Depósito Solicitado ⏳' : 'Saque Solicitado 💸',
+        message: type === 'deposit' 
+          ? `Sua recarga de ${val.toLocaleString()} Kz foi enviada para análise.` 
+          : `Seu saque de ${val.toLocaleString()} Kz foi solicitado e o valor deduzido da conta.`,
+        type: 'info'
+      });
+
       if (type === 'deposit') {
         setStep('confirm');
       } else {
-        toast.info("O seu saque está em atualização, por favor aguarde um instante.");
+        toast.success("Saque solicitado com sucesso!");
         onClose();
       }
     } catch (error: any) {
@@ -161,7 +137,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
                 </button>
               ))}
             </div>
-            <Button onClick={handleNextFromMethod} disabled={!method} className="w-full h-14 rounded-2xl font-black premium-gradient">
+            <Button onClick={() => setStep('form')} disabled={!method} className="w-full h-14 rounded-2xl font-black premium-gradient">
               PRÓXIMO PASSO
             </Button>
           </div>
@@ -194,8 +170,8 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
                   />
                 </div>
               </div>
-              <Button onClick={handleNextFromForm} className="w-full h-16 rounded-2xl font-black text-lg premium-gradient">
-                CONTINUAR
+              <Button onClick={() => type === 'deposit' ? setStep('details') : handleAction()} className="w-full h-16 rounded-2xl font-black text-lg premium-gradient">
+                {loading ? <Loader2 className="animate-spin" /> : 'CONTINUAR'}
               </Button>
               <Button variant="ghost" onClick={() => setStep('method')} className="w-full text-[10px] font-black uppercase tracking-widest text-white/20">Voltar</Button>
             </div>
@@ -206,18 +182,12 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
           <div className="p-8">
             <DialogHeader className="text-center mb-6">
               <DialogTitle className="text-2xl font-black italic tracking-tighter uppercase">Dados para Pagamento</DialogTitle>
-              <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-white/40">Realize a transferência para os dados abaixo</DialogDescription>
             </DialogHeader>
 
             <div className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-4 mb-6">
               <div>
                 <p className="text-[9px] font-black text-white/20 uppercase mb-1">{selectedMethodData.details.label}</p>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-black tracking-wider">{selectedMethodData.details.value}</p>
-                  <button onClick={() => { navigator.clipboard.writeText(selectedMethodData.details.value); toast.success("Copiado!"); }} className="text-purple-500 hover:text-purple-400">
-                    <Copy size={14} />
-                  </button>
-                </div>
+                <p className="text-sm font-black tracking-wider">{selectedMethodData.details.value}</p>
               </div>
               <div>
                 <p className="text-[9px] font-black text-white/20 uppercase mb-1">Beneficiário</p>
@@ -226,43 +196,20 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
             </div>
 
             <div className="space-y-4 mb-8">
-              <div className="bg-purple-500/10 border border-purple-500/20 p-4 rounded-2xl flex gap-3">
-                <Info className="text-purple-500 shrink-0" size={18} />
-                <p className="text-[10px] font-bold text-white/60 leading-relaxed uppercase tracking-tight">
-                  O envio do comprovativo é necessário para validarmos sua transação com segurança. Verificação automática em até 15 minutos.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Anexar Comprovativo (PDF/PNG/JPG)</Label>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" className="hidden" />
-                <Button 
-                  variant="outline" 
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`w-full h-14 rounded-2xl border-dashed border-white/10 bg-white/5 flex items-center justify-center gap-3 ${file ? 'border-green-500/50 text-green-400' : 'text-white/40'}`}
-                >
-                  {file ? (
-                    <>
-                      {file.type.includes('pdf') ? <FileText size={20} /> : <ImageIcon size={20} />}
-                      <span className="truncate max-w-[200px]">{file.name}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={20} /> SELECIONAR COMPROVATIVO
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Anexar Comprovativo</Label>
+              <input type="file" ref={fileInputRef} onChange={(e) => setFile(e.target.files?.[0] || null)} accept=".pdf,.png,.jpg,.jpeg" className="hidden" />
+              <Button 
+                variant="outline" 
+                onClick={() => fileInputRef.current?.click()}
+                className={`w-full h-14 rounded-2xl border-dashed border-white/10 bg-white/5 flex items-center justify-center gap-3 ${file ? 'border-green-500/50 text-green-400' : 'text-white/40'}`}
+              >
+                {file ? <span className="truncate">{file.name}</span> : <><Upload size={20} /> SELECIONAR ARQUIVO</>}
+              </Button>
             </div>
 
-            <Button 
-              onClick={handleAction} 
-              disabled={!file || loading}
-              className="w-full h-16 rounded-2xl font-black text-lg premium-gradient"
-            >
+            <Button onClick={handleAction} disabled={!file || loading} className="w-full h-16 rounded-2xl font-black text-lg premium-gradient">
               {loading ? <Loader2 className="animate-spin" /> : 'ENVIAR PARA VALIDAÇÃO'}
             </Button>
-            <Button variant="ghost" onClick={() => setStep('form')} className="w-full mt-2 text-[10px] font-black uppercase tracking-widest text-white/20">Voltar</Button>
           </div>
         )}
 
@@ -273,11 +220,9 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
             </div>
             <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase">SOLICITAÇÃO ENVIADA</h3>
             <p className="text-xs text-white/40 font-bold mb-8 leading-relaxed uppercase tracking-widest">
-              A sua recarga foi solicitada com sucesso. O comprovativo será validado em até 15 minutos pela nossa equipe.
+              A sua recarga foi solicitada. O comprovativo será validado em até 15 minutos.
             </p>
-            <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-purple-600 font-black">
-              ENTENDIDO
-            </Button>
+            <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-purple-600 font-black">ENTENDIDO</Button>
           </div>
         )}
       </DialogContent>

@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, FileText, Loader2, ShieldAlert, ExternalLink, CreditCard, Phone } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Loader2, ShieldAlert, ExternalLink, CreditCard, History } from 'lucide-react';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AdminFinanceProps {
   onUpdate: () => void;
@@ -17,90 +18,61 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
 
   useEffect(() => {
     fetchTransactions();
-    
     const channel = supabase.channel('admin-finance-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchTransactions())
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      // Passo 1: Buscar as transações
-      const { data: txData, error: txError } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (txError) throw txError;
-
+      const { data: txData } = await supabase.from('transactions').select('*').order('created_at', { ascending: false });
       if (txData && txData.length > 0) {
-        // Passo 2: Buscar os perfis dos usuários dessas transações
         const userIds = [...new Set(txData.map(t => t.user_id))];
-        const { data: profileData, error: profError } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name, bank_info, false_proof_count, is_banned')
-          .in('id', userIds);
-
-        if (profError) throw profError;
-
-        // Passo 3: Mesclar os dados manualmente para evitar erro de join do Supabase
+        const { data: profileData } = await supabase.from('profiles').select('id, first_name, last_name, bank_info, false_proof_count').in('id', userIds);
         const mergedData = txData.map(tx => ({
           ...tx,
           profiles: profileData?.find(p => p.id === tx.user_id) || null
         }));
-
         setTransactions(mergedData);
       } else {
         setTransactions([]);
       }
-    } catch (err: any) {
-      console.error("Erro ao carregar dados financeiros:", err);
-      toast.error("Erro ao sincronizar dados. Tente atualizar a página.");
+    } catch (err) {
+      toast.error("Erro ao carregar dados.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleApprove = async (tx: any) => {
-    if (!confirm(`CONFIRMAR RECEBIMENTO DE ${tx.amount.toLocaleString()} Kz?`)) return;
+    if (!confirm(`CONFIRMAR OPERAÇÃO DE ${tx.amount.toLocaleString()} Kz?`)) return;
 
     try {
       if (tx.type === 'deposit') {
         const { data: profile } = await supabase.from('profiles').select('balance').eq('id', tx.user_id).single();
-        const currentBalance = Number(profile?.balance || 0);
+        await supabase.from('profiles').update({ balance: Number(profile?.balance || 0) + Number(tx.amount) }).eq('id', tx.user_id);
         
-        const { error: balanceError } = await supabase
-          .from('profiles')
-          .update({ balance: currentBalance + Number(tx.amount) })
-          .eq('id', tx.user_id);
-        
-        if (balanceError) throw balanceError;
-
         await supabase.from('notifications').insert({
           user_id: tx.user_id,
           title: 'Depósito Confirmado! ✅',
-          message: `Sua recarga de ${tx.amount.toLocaleString()} Kz foi validada manualmente pelo admin.`,
+          message: `Sua recarga de ${tx.amount.toLocaleString()} Kz foi validada.`,
           type: 'success'
         });
       }
 
-      const { error: txError } = await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
-      if (txError) throw txError;
-
-      toast.success("Transação validada!");
+      await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
+      toast.success("Operação validada!");
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
-      toast.error("Erro ao processar: " + error.message);
+      toast.error("Erro: " + error.message);
     }
   };
 
-  const handleReject = async (tx: any, isFalse: boolean = false) => {
-    const reason = isFalse ? "COMPROVATIVO FALSO" : prompt("Motivo da rejeição:");
-    if (reason === null) return;
+  const handleRejectDeposit = async (tx: any, isFalse: boolean = false) => {
+    if (!confirm("Deseja rejeitar este depósito?")) return;
 
     try {
       if (isFalse) {
@@ -111,118 +83,137 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         }).eq('id', tx.user_id);
       }
 
-      if (tx.type === 'withdrawal') {
-        const { data: profile } = await supabase.from('profiles').select('balance').eq('id', tx.user_id).single();
-        const currentBalance = Number(profile?.balance || 0);
-        await supabase.from('profiles').update({ balance: currentBalance + Number(tx.amount) }).eq('id', tx.user_id);
-      }
-
       await supabase.from('transactions').update({ status: 'rejected' }).eq('id', tx.id);
-      toast.error("Transação rejeitada.");
+      
+      await supabase.from('notifications').insert({
+        user_id: tx.user_id,
+        title: 'Depósito Rejeitado ❌',
+        message: isFalse ? 'Seu comprovativo foi identificado como falso.' : 'Seu depósito não pôde ser validado.',
+        type: 'error'
+      });
+
+      toast.error("Depósito rejeitado.");
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
-      toast.error("Erro ao rejeitar: " + error.message);
+      toast.error("Erro ao rejeitar.");
     }
   };
 
-  if (loading && transactions.length === 0) {
-    return (
-      <div className="py-20 flex flex-col items-center justify-center text-white/20">
-        <Loader2 className="animate-spin mb-4" size={32} />
-        <p className="text-[10px] font-black uppercase tracking-widest">Carregando Centro Financeiro...</p>
-      </div>
-    );
-  }
+  const pendingDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'pending');
+  const pendingWithdrawals = transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending');
+  const history = transactions.filter(t => t.status !== 'pending');
+
+  if (loading && transactions.length === 0) return <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-purple-500" /></div>;
 
   return (
-    <div className="space-y-4">
-      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center gap-3 mb-4">
-        <ShieldAlert className="text-amber-500" size={20} />
-        <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">
-          Validação Manual: Compare o comprovativo com o seu extrato bancário antes de aprovar.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <Tabs defaultValue="deposits" className="w-full">
+        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-12 mb-6">
+          <TabsTrigger value="deposits" className="rounded-lg px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-green-600">
+            Depósitos ({pendingDeposits.length})
+          </TabsTrigger>
+          <TabsTrigger value="withdrawals" className="rounded-lg px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-amber-600">
+            Saques ({pendingWithdrawals.length})
+          </TabsTrigger>
+          <TabsTrigger value="history" className="rounded-lg px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10">
+            Histórico Geral
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="glass-card rounded-[2rem] overflow-hidden border-white/5">
-        <Table>
-          <TableHeader className="bg-white/5">
-            <TableRow className="border-white/5 hover:bg-transparent">
-              <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Jogador / Dados</TableHead>
-              <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Valor / Método</TableHead>
-              <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Comprovativo</TableHead>
-              <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Status</TableHead>
-              <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.length > 0 ? (
-              transactions.map((tx) => (
-                <TableRow key={tx.id} className={`border-white/5 hover:bg-white/5 transition-colors ${tx.status === 'pending' ? 'bg-purple-500/5' : ''}`}>
-                  <TableCell className="p-6">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-black text-white uppercase">
-                        {tx.profiles?.first_name} {tx.profiles?.last_name}
-                      </span>
-                      <div className="flex items-center gap-2 text-[10px] text-white/40 font-bold">
-                        <CreditCard size={12} />
-                        <span>IBAN: {tx.profiles?.bank_info || 'Não informado'}</span>
-                      </div>
-                      <span className="text-[9px] text-white/20 uppercase">{new Date(tx.created_at).toLocaleString()}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="p-6">
-                    <div className="flex items-center gap-2">
-                      {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
-                      <span className="font-black text-xl">{Number(tx.amount).toLocaleString()} Kz</span>
-                    </div>
-                    <span className="text-[9px] font-black text-purple-400 uppercase bg-purple-500/10 px-2 py-0.5 rounded w-fit">
-                      {tx.payment_method}
-                    </span>
-                  </TableCell>
-                  <TableCell className="p-6">
-                    {tx.proof_url ? (
-                      <Button asChild variant="outline" size="sm" className="h-9 border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500 hover:text-white font-black text-[10px] uppercase rounded-xl">
-                        <a href={tx.proof_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink size={14} className="mr-2" /> ABRIR
-                        </a>
-                      </Button>
-                    ) : (
-                      <span className="text-[9px] font-black text-white/10 uppercase">Sem anexo</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="p-6">
-                    <div className="flex items-center gap-2">
-                      {tx.status === 'pending' ? <Clock size={14} className="text-amber-500" /> : 
-                       tx.status === 'completed' ? <CheckCircle2 size={14} className="text-green-500" /> : 
-                       <XCircle size={14} className="text-red-500" />}
-                      <span className={`text-[10px] uppercase font-black ${
-                        tx.status === 'pending' ? 'text-amber-500' : 
-                        tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
-                      }`}>{tx.status === 'pending' ? 'Pendente' : tx.status}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="p-6 text-right">
-                    {tx.status === 'pending' && (
-                      <div className="flex justify-end gap-2">
-                        <Button onClick={() => handleApprove(tx)} className="h-9 bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase px-4 rounded-xl">APROVAR</Button>
-                        <Button onClick={() => handleReject(tx, false)} variant="ghost" className="h-9 text-white/40 hover:bg-white/5 font-black text-[10px] uppercase px-4 rounded-xl">REJEITAR</Button>
-                        <Button onClick={() => handleReject(tx, true)} variant="ghost" className="h-9 text-red-500 hover:bg-red-500/10 font-black text-[10px] uppercase px-4 rounded-xl border border-red-500/20">FALSO</Button>
-                      </div>
-                    )}
-                  </TableCell>
+        <TabsContent value="deposits">
+          <div className="glass-card rounded-3xl overflow-hidden border-white/5">
+            <Table>
+              <TableHeader className="bg-white/5">
+                <TableRow className="border-white/5">
+                  <TableHead className="text-[10px] font-black uppercase p-6">Jogador</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6">Valor</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6">Comprovativo</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ações</TableHead>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="p-20 text-center text-white/10 font-black uppercase tracking-widest text-xs">
-                  Nenhuma transação registrada.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {pendingDeposits.map((tx) => (
+                  <TableRow key={tx.id} className="border-white/5 hover:bg-white/5">
+                    <TableCell className="p-6">
+                      <div className="flex flex-col">
+                        <span className="font-black uppercase">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
+                        <span className="text-[9px] text-white/20">{new Date(tx.created_at).toLocaleString()}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-6 font-black text-green-400">{tx.amount.toLocaleString()} Kz</TableCell>
+                    <TableCell className="p-6">
+                      {tx.proof_url && (
+                        <Button asChild variant="outline" size="sm" className="h-8 border-purple-500/30 bg-purple-500/10 text-purple-400 text-[9px] font-black uppercase">
+                          <a href={tx.proof_url} target="_blank" rel="noopener noreferrer">Ver Anexo</a>
+                        </Button>
+                      )}
+                    </TableCell>
+                    <TableCell className="p-6 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button onClick={() => handleApprove(tx)} className="h-8 bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-3 rounded-lg">Aprovar</Button>
+                        <Button onClick={() => handleRejectDeposit(tx, false)} variant="ghost" className="h-8 text-white/40 text-[9px] font-black uppercase px-3">Rejeitar</Button>
+                        <Button onClick={() => handleRejectDeposit(tx, true)} variant="ghost" className="h-8 text-red-500 border border-red-500/20 text-[9px] font-black uppercase px-3">Falso</Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="withdrawals">
+          <div className="glass-card rounded-3xl overflow-hidden border-white/5">
+            <Table>
+              <TableHeader className="bg-white/5">
+                <TableRow className="border-white/5">
+                  <TableHead className="text-[10px] font-black uppercase p-6">Jogador / IBAN</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6">Valor</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingWithdrawals.map((tx) => (
+                  <TableRow key={tx.id} className="border-white/5 hover:bg-white/5">
+                    <TableCell className="p-6">
+                      <div className="flex flex-col">
+                        <span className="font-black uppercase">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
+                        <span className="text-[10px] text-amber-500 font-bold">{tx.profiles?.bank_info || 'Sem IBAN'}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-6 font-black text-amber-500">{tx.amount.toLocaleString()} Kz</TableCell>
+                    <TableCell className="p-6 text-right">
+                      <Button onClick={() => handleApprove(tx)} className="h-9 bg-amber-600 hover:bg-amber-700 text-white font-black text-[10px] uppercase px-6 rounded-xl">Validar Pagamento</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="history">
+          <div className="glass-card rounded-3xl overflow-hidden border-white/5 opacity-60">
+            <Table>
+              <TableBody>
+                {history.map((tx) => (
+                  <TableRow key={tx.id} className="border-white/5">
+                    <TableCell className="p-4 text-[10px] font-bold text-white/40">{new Date(tx.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="p-4 font-black uppercase text-xs">{tx.profiles?.first_name}</TableCell>
+                    <TableCell className="p-4 font-black text-xs">{tx.type === 'deposit' ? '+' : '-'}{tx.amount.toLocaleString()} Kz</TableCell>
+                    <TableCell className="p-4 text-right">
+                      <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${tx.status === 'completed' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                        {tx.status}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
