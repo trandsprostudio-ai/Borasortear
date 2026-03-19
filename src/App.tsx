@@ -11,6 +11,7 @@ import ConsultDraw from "./pages/ConsultDraw";
 import Profile from "./pages/Profile";
 import Support from "./pages/Support";
 import Leaderboard from "./pages/Leaderboard";
+import Affiliates from "./pages/Affiliates";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/profile" element={<Profile />} />
           <Route path="/support" element={<Support />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/affiliates" element={<Affiliates />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />
