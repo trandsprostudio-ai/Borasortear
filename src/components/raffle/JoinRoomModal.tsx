@@ -159,8 +159,7 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
             </div>
             <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase">ENTRADA CONFIRMADA!</h3>
             <div 
-              className="bg-white/5 p-6 rounded-3xl border border-purple-500/20 mb-8 relative group cursor-pointer" 
-              onClick={copyTicket}
+              className="bg-white/5 p-6 rounded-3xl border border-purple-500/20 mb-8 relative group cursor-pointer"               onClick={copyTicket}
             >
               <p className="text-[9px] font-black text-white/20 uppercase mb-2">Código do Bilhete (Toque para copiar)</p>
               <p className="text-3xl font-black text-purple-400 tracking-[0.3em]">{ticketCode}</p>
