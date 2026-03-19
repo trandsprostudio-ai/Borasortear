@@ -174,7 +174,8 @@ const Index = () => {
 
   const activeModuleRooms = rooms
     .filter(r => r.module_id === activeModuleId && r.status === 'open')
-    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .slice(0, 3); // Limitado a 3 mesas por módulo
 
   const activeModule = modules.find(m => m.id === activeModuleId);
 
@@ -250,15 +251,15 @@ const Index = () => {
               <Share2 className="text-white" size={24} />
             </div>
             <div>
-              <h3 className="text-lg font-black italic tracking-tighter uppercase">Convite Geral (5% Bônus)</h3>
-              <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Ganhe 5% sobre todos os prêmios de quem aderir à plataforma pelo seu link.</p>
+              <h3 className="text-lg font-black italic tracking-tighter uppercase">Seja o Próximo Vencedor!</h3>
+              <p className="text-white/40 text-xs font-bold uppercase tracking-widest">Ganhe o valor acumulado de todos os participantes da mesa. Convide amigos e fature 5% sobre as vitórias deles.</p>
             </div>
           </div>
           <Button 
             onClick={copyInviteLink}
             className="bg-white text-black hover:bg-gray-200 font-black px-6 rounded-xl h-12 flex items-center gap-2"
           >
-            <Copy size={16} /> COPIAR LINK GERAL
+            <Copy size={16} /> COPIAR MEU LINK
           </Button>
         </div>
 
