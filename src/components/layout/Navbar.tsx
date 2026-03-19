@@ -37,6 +37,22 @@ const Navbar = () => {
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchPendingAmount(session.user.id);
+        
+        // Listener em tempo real para o perfil (Saldo)
+        const profileChannel = supabase.channel(`navbar-profile-${session.user.id}`)
+          .on('postgres_changes', { 
+            event: 'UPDATE', 
+            schema: 'public', 
+            table: 'profiles', 
+            filter: `id=eq.${session.user.id}` 
+          }, (payload) => {
+            setProfile(payload.new);
+          })
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(profileChannel);
+        };
       }
     };
     checkSession();

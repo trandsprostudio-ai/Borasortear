@@ -12,10 +12,11 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, History, Trophy, Ticket, Share2, Copy, HelpCircle } from 'lucide-react';
+import { Zap, LayoutGrid, History, Trophy, Ticket, Share2, Copy, HelpCircle, Star } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 const Index = () => {
   const { rooms, loading } = useRooms();
@@ -27,6 +28,7 @@ const Index = () => {
   const [myParticipations, setMyParticipations] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
   const [topWinners, setTopWinners] = useState<any[]>([]);
+  const [recentWins, setRecentWins] = useState<any[]>([]);
   const [onlinePlayers, setOnlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   
   const [drawResult, setDrawResult] = useState<{ isOpen: boolean, winners: any[], roomInfo: string }>({
@@ -55,8 +57,18 @@ const Index = () => {
       if (data) setTopWinners(data);
     };
 
+    const fetchRecentWins = async () => {
+      const { data } = await supabase
+        .from('winners')
+        .select('*, profiles(first_name)')
+        .order('created_at', { ascending: false })
+        .limit(15);
+      if (data) setRecentWins(data);
+    };
+
     fetchModules();
     fetchTopWinners();
+    fetchRecentWins();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user ?? null;
@@ -66,7 +78,6 @@ const Index = () => {
         fetchMyParticipations(currentUser.id);
         listenToDraws(currentUser.id);
         
-        // Listener em tempo real para o perfil (Saldo)
         const profileChannel = supabase.channel(`index-profile-${currentUser.id}`)
           .on('postgres_changes', { 
             event: 'UPDATE', 
@@ -187,7 +198,27 @@ const Index = () => {
         />
       )}
 
-      <main className="max-w-[1600px] mx-auto px-4 pt-20 md:pt-24 pb-20">
+      {/* Ticker de Ganhadores Recentes */}
+      <div className="pt-16 bg-purple-600/5 border-b border-white/5 overflow-hidden whitespace-nowrap py-2">
+        <motion.div 
+          animate={{ x: [0, -1000] }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          className="inline-flex gap-12 items-center"
+        >
+          {recentWins.length > 0 ? [...recentWins, ...recentWins].map((win, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Star size={10} className="text-amber-500 fill-amber-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                <span className="text-white/40">@{win.profiles?.first_name || 'Jogador'}</span> faturou <span className="text-green-400">{win.prize_amount.toLocaleString()} Kz</span>
+              </span>
+            </div>
+          )) : (
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/20">Aguardando novos ganhadores...</span>
+          )}
+        </motion.div>
+      </div>
+
+      <main className="max-w-[1600px] mx-auto px-4 pt-8 md:pt-12 pb-20">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-[#151823]/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
           <div className="flex items-center gap-6 w-full md:w-auto">
             <PrizeCarousel />

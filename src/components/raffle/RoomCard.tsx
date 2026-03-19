@@ -58,11 +58,23 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
   return (
     <motion.div 
       whileHover={{ y: -4 }}
-      className="bg-[#151823] border border-white/5 rounded-xl p-4 flex flex-col justify-between hover:border-purple-500/50 transition-all group relative overflow-hidden"
+      className={`bg-[#151823] border rounded-xl p-4 flex flex-col justify-between transition-all group relative overflow-hidden ${
+        isAlmostFull ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.1)]' : 'border-white/5 hover:border-purple-500/50'
+      }`}
     >
+      {isAlmostFull && (
+        <div className="absolute -right-8 -top-8 w-20 h-20 bg-amber-500/10 blur-2xl animate-pulse" />
+      )}
+
       <div className="absolute top-0 left-0 bg-purple-600 text-[9px] font-black px-2 py-1 rounded-br-lg z-10">
         MESA {roomNumber}
       </div>
+
+      {isAlmostFull && (
+        <div className="absolute top-0 right-0 bg-amber-500 text-black text-[8px] font-black px-2 py-1 rounded-bl-lg z-10 flex items-center gap-1 animate-bounce">
+          <Zap size={8} fill="currentColor" /> QUENTE
+        </div>
+      )}
 
       <div className="flex justify-between items-start mb-4 pt-2">
         <div className="flex flex-col">
@@ -105,7 +117,9 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             size="sm" 
             disabled={isExpired}
             onClick={() => onParticipate(room, module)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-black text-[11px] uppercase tracking-widest h-10 w-full rounded-lg shadow-lg disabled:opacity-50"
+            className={`font-black text-[11px] uppercase tracking-widest h-10 w-full rounded-lg shadow-lg disabled:opacity-50 transition-all ${
+              isAlmostFull ? 'bg-amber-500 hover:bg-amber-600 text-black' : 'bg-purple-600 hover:bg-purple-700 text-white'
+            }`}
           >
             {isExpired ? 'SORTEANDO...' : 'ENTRAR NA MESA'}
           </Button>
