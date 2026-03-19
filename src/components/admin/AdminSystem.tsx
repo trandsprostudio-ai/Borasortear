@@ -105,52 +105,54 @@ const AdminSystem = () => {
           </Button>
         </div>
         <div className="glass-card rounded-3xl overflow-hidden border-white/5">
-          <Table>
-            <TableHeader className="bg-white/5">
-              <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">ID Mesa</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Módulo</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Progresso</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Expira em</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rooms.filter(r => r.status !== 'finished').map((room) => {
-                const isExpired = new Date(room.expires_at) <= new Date();
-                return (
-                  <TableRow key={room.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                    <TableCell className="p-6 font-black text-purple-400">#{room.id.slice(0, 8)}</TableCell>
-                    <TableCell className="p-6 font-bold">{room.modules?.name} ({room.modules?.price.toLocaleString()} Kz)</TableCell>
-                    <TableCell className="p-6">
-                      <div className="flex items-center gap-3">
-                        <span className="font-bold">{room.current_participants}/{room.max_participants}</span>
-                        <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-purple-500" 
-                            style={{ width: `${(room.current_participants / room.max_participants) * 100}%` }} 
-                          />
+          <div className="overflow-x-auto">
+            <Table className="min-w-[800px]">
+              <TableHeader className="bg-white/5">
+                <TableRow className="border-white/5 hover:bg-transparent">
+                  <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">ID Mesa</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Módulo</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Progresso</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Expira em</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rooms.filter(r => r.status !== 'finished').map((room) => {
+                  const isExpired = new Date(room.expires_at) <= new Date();
+                  return (
+                    <TableRow key={room.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                      <TableCell className="p-6 font-black text-purple-400">#{room.id.slice(0, 8)}</TableCell>
+                      <TableCell className="p-6 font-bold">{room.modules?.name} ({room.modules?.price.toLocaleString()} Kz)</TableCell>
+                      <TableCell className="p-6">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold">{room.current_participants}/{room.max_participants}</span>
+                          <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-purple-500" 
+                              style={{ width: `${(room.current_participants / room.max_participants) * 100}%` }} 
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="p-6">
-                      <span className={`text-[10px] font-black uppercase ${isExpired ? 'text-red-500' : 'text-white/40'}`}>
-                        {isExpired ? 'Expirada' : new Date(room.expires_at).toLocaleTimeString()}
-                      </span>
-                    </TableCell>
-                    <TableCell className="p-6 text-right">
-                      <Button 
-                        onClick={() => handleForceDraw(room.id)}
-                        className="h-8 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-[9px] font-black uppercase px-3 rounded-lg"
-                      >
-                        Sortear Agora
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                      <TableCell className="p-6">
+                        <span className={`text-[10px] font-black uppercase ${isExpired ? 'text-red-500' : 'text-white/40'}`}>
+                          {isExpired ? 'Expirada' : new Date(room.expires_at).toLocaleTimeString()}
+                        </span>
+                      </TableCell>
+                      <TableCell className="p-6 text-right">
+                        <Button 
+                          onClick={() => handleForceDraw(room.id)}
+                          className="h-8 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-[9px] font-black uppercase px-3 rounded-lg"
+                        >
+                          Sortear Agora
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </section>
     </div>
