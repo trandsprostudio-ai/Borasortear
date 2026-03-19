@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, Share2, Zap, TrendingUp } from 'lucide-react';
+import { Users, Clock, Share2, Zap, TrendingUp, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,7 @@ interface RoomCardProps {
 const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) => {
   const [timeLeft, setTimeLeft] = useState("");
   const [isExpired, setIsExpired] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
   
   const progress = (room.currentParticipants / room.maxParticipants) * 100;
   const isAlmostFull = progress > 80;
@@ -32,6 +33,11 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
         setIsExpired(true);
         return "SORTEANDO...";
       }
+
+      // Marcar como urgente se faltar menos de 30 minutos
+      if (diff < 30 * 60 * 1000) {
+        setIsUrgent(true);
+      }
       
       const h = Math.floor(diff / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -40,6 +46,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
     };
 
     const timer = setInterval(() => setTimeLeft(calculateTime()), 1000);
+    setTimeLeft(calculateTime());
     return () => clearInterval(timer);
   }, [room.expiresAt]);
 
@@ -55,11 +62,17 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
         MESA {roomNumber}
       </div>
 
-      {isAlmostFull && (
-        <div className="absolute top-0 right-0 bg-amber-500 text-black text-[9px] font-black px-4 py-1.5 rounded-bl-2xl z-10 flex items-center gap-1 animate-pulse">
-          <TrendingUp size={12} /> QUASE CHEIA
+      <div className="absolute top-0 right-0 flex items-center gap-2 px-4 py-1.5 rounded-bl-2xl z-10">
+        <div className="flex items-center gap-1.5 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
+          <Radio size={10} className="text-red-500 animate-pulse" />
+          <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">LIVE</span>
         </div>
-      )}
+        {isAlmostFull && (
+          <div className="bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
+            <TrendingUp size={10} /> QUENTE
+          </div>
+        )}
+      </div>
 
       <div className="flex justify-between items-start mb-6 pt-6">
         <div className="flex flex-col">
@@ -80,9 +93,22 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             <Users size={14} />
             <span>{room.currentParticipants} / {room.maxParticipants}</span>
           </div>
-          <div className={`flex items-center gap-2 ${isExpired ? 'text-purple-500' : 'text-amber-500'}`}>
+          <div className={`flex items-center gap-2 transition-colors duration-300 ${
+            isExpired ? 'text-purple-500' : 
+            isUrgent ? 'text-red-500 animate-pulse' : 'text-amber-500'
+          }`}>
             <Clock size={14} />
-            <span>{timeLeft}</span>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={timeLeft}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.2 }}
+              >
+                {timeLeft}
+              </motion.span>
+            </AnimatePresence>
           </div>
         </div>
         

@@ -39,24 +39,18 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-      // 1. Buscar Módulos
       const { data: modData } = await supabase.from('modules').select('*').order('price', { ascending: true });
       if (modData) {
         const uniqueModules = Array.from(new Map(modData.map(m => [m.price, m])).values());
         setModules(uniqueModules);
         if (uniqueModules.length > 0) setActiveModuleId(uniqueModules[0].id);
-        
-        // 2. Auto-geração de salas se estiverem vazias
         ensureRoomsExist(uniqueModules);
       }
-
-      // 3. Outros dados
       fetchTopWinners();
       fetchRecentWins();
     };
 
     const ensureRoomsExist = async (availableModules: any[]) => {
-      // Verifica se há salas para cada módulo. Se houver menos de 3, cria.
       for (const mod of availableModules) {
         const activeRooms = rooms.filter(r => r.module_id === mod.id && r.status === 'open');
         if (activeRooms.length < 3) {
@@ -64,9 +58,9 @@ const Index = () => {
           const newRooms = Array(needed).fill(null).map(() => ({
             module_id: mod.id,
             max_participants: mod.max_participants,
-            current_participants: Math.floor(Math.random() * (mod.max_participants * 0.3)), // Começa com alguns bots/jogadores
+            current_participants: Math.floor(Math.random() * (mod.max_participants * 0.2)),
             status: 'open',
-            expires_at: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString()
+            expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // Alterado para 3 horas
           }));
           await supabase.from('rooms').insert(newRooms);
         }
@@ -82,7 +76,7 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [rooms.length]); // Re-executa se a contagem de salas mudar
+  }, [rooms.length]);
 
   const fetchTopWinners = async () => {
     const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('prize_amount', { ascending: false }).limit(10);
@@ -134,7 +128,6 @@ const Index = () => {
         />
       )}
 
-      {/* Ticker de Ganhadores */}
       <div className="pt-16 bg-purple-600/5 border-b border-white/5 overflow-hidden whitespace-nowrap py-2">
         <motion.div 
           animate={{ x: [0, -1000] }}
@@ -153,7 +146,6 @@ const Index = () => {
       </div>
 
       <main className="max-w-[1600px] mx-auto px-4 pt-8 md:pt-12 pb-20">
-        {/* Header Bet Style */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-12 bg-[#151823]/80 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] shadow-2xl">
           <div className="flex items-center gap-6 w-full md:w-auto">
             <PrizeCarousel />
@@ -172,7 +164,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Módulos - Passo 1 */}
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
@@ -207,7 +198,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Salas - Passo 2 */}
         <AnimatePresence mode="wait">
           {activeModuleId && (
             <motion.section 
@@ -246,7 +236,6 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* Rodapé de Atividade */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-[#151823]/50 backdrop-blur-sm border border-white/5 rounded-[2.5rem] p-8">
