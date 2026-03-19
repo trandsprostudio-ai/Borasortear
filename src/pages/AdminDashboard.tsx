@@ -31,10 +31,10 @@ const AdminDashboard = () => {
     }
     fetchGlobalStats();
 
-    // Ouvir novos usuários em tempo real
     const channel = supabase.channel('admin-stats-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchGlobalStats())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchGlobalStats())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'winners' }, () => fetchGlobalStats())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -43,20 +43,28 @@ const AdminDashboard = () => {
   const fetchGlobalStats = async () => {
     setLoading(true);
     try {
-      // Contagem de perfis (usuários visíveis na plataforma)
       const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
       setTotalUsers(count || 0);
 
       const { data: txs } = await supabase.from('transactions').select('amount, type, status');
+      
+      // Lucro da Plataforma = Soma de todos os prêmios na posição 3 (Publicidade/Plataforma)
+      const { data: platformEarnings } = await supabase
+        .from('winners')
+        .select('prize_amount')
+        .eq('position', 3);
+
       if (txs) {
         const deposits = txs.filter(t => t.type === 'deposit' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
         const withdrawals = txs.filter(t => t.type === 'withdrawal' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
         const pending = txs.filter(t => t.status === 'pending').length;
         
+        const totalPlatformProfit = platformEarnings?.reduce((acc, curr) => acc + Number(curr.prize_amount), 0) || 0;
+
         setStats({
           totalDeposits: deposits,
           totalWithdrawals: withdrawals,
-          platformBalance: deposits - withdrawals,
+          platformBalance: totalPlatformProfit,
           pendingTxs: pending
         });
       }
@@ -74,7 +82,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0B12] flex text-white font-sans">
-      {/* Sidebar */}
       <aside className="w-72 border-r border-white/5 bg-[#0F111A] p-8 flex flex-col hidden lg:flex">
         <div className="flex items-center gap-3 mb-12">
           <div className="w-10 h-10 premium-gradient rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
@@ -104,7 +111,6 @@ const AdminDashboard = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
           <div>
@@ -128,7 +134,6 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
           <div className="glass-card p-6 rounded-3xl border-purple-500/20 relative overflow-hidden group">
             <div className="absolute -right-4 -bottom-4 text-purple-500/10 group-hover:scale-110 transition-transform">
@@ -158,7 +163,7 @@ const AdminDashboard = () => {
             <div className="absolute -right-4 -bottom-4 text-blue-500/10 group-hover:scale-110 transition-transform">
               <DollarSign size={100} />
             </div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Lucro Bruto</p>
+            <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Lucro Plataforma</p>
             <p className="text-4xl font-black italic text-blue-400">{stats.platformBalance.toLocaleString()} <span className="text-xs not-italic opacity-60">Kz</span></p>
           </div>
         </div>
