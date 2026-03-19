@@ -7,10 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ShieldCheck, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { AnimatePresence } from 'framer-motion';
+import SplashScreen from '@/components/ui/SplashScreen';
 
 const AdminLogin = () => {
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
+  const [showSplash, setShowSplash] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
@@ -19,9 +22,13 @@ const AdminLogin = () => {
     const adminPass = "933271690Ramos";
 
     if (id === adminId && password === adminPass) {
+      setShowSplash(true);
       localStorage.setItem('admin_session', 'true');
-      toast.success("Acesso administrativo concedido!");
-      navigate('/admin-dashboard');
+      
+      setTimeout(() => {
+        toast.success("Acesso administrativo concedido!");
+        navigate('/admin-dashboard');
+      }, 2000);
     } else {
       toast.error("Credenciais administrativas inválidas.");
     }
@@ -29,6 +36,10 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0B12]">
+      <AnimatePresence>
+        {showSplash && <SplashScreen message="Autenticando Administrador..." />}
+      </AnimatePresence>
+
       <div className="glass-card w-full max-w-md p-8 rounded-3xl border-purple-500/20">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-purple-400">
