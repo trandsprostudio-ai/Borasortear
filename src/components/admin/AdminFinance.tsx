@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, FileText, Loader2, ShieldAlert, ExternalLink, Phone, CreditCard } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, FileText, Loader2, ShieldAlert, ExternalLink, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminFinanceProps {
@@ -28,12 +28,19 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      // Consulta simplificada e robusta
+      // Usando a sintaxe !inner ou especificando a coluna para garantir a junção
       const { data, error } = await supabase
         .from('transactions')
         .select(`
-          *,
-          profiles (
+          id,
+          user_id,
+          type,
+          amount,
+          status,
+          payment_method,
+          proof_url,
+          created_at,
+          profiles!user_id (
             first_name,
             last_name,
             bank_info,
@@ -43,11 +50,15 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro detalhado do Supabase:", error);
+        throw error;
+      }
+      
       setTransactions(data || []);
     } catch (err: any) {
-      console.error("Erro ao buscar transações:", err);
-      toast.error("Falha na conexão com o banco de dados.");
+      console.error("Erro na função fetchTransactions:", err);
+      toast.error("Erro de sincronização. Verifique o console do navegador.");
     } finally {
       setLoading(false);
     }
@@ -58,11 +69,9 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
 
     try {
       if (tx.type === 'deposit') {
-        // Buscar saldo atual do perfil
         const { data: profile } = await supabase.from('profiles').select('balance').eq('id', tx.user_id).single();
         const currentBalance = Number(profile?.balance || 0);
         
-        // Atualizar saldo
         const { error: balanceError } = await supabase
           .from('profiles')
           .update({ balance: currentBalance + Number(tx.amount) })
@@ -70,7 +79,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         
         if (balanceError) throw balanceError;
 
-        // Notificar usuário
         await supabase.from('notifications').insert({
           user_id: tx.user_id,
           title: 'Depósito Confirmado! ✅',
@@ -79,11 +87,10 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         });
       }
 
-      // Marcar transação como concluída
       const { error: txError } = await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
       if (txError) throw txError;
 
-      toast.success("Transação validada com sucesso!");
+      toast.success("Transação validada!");
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
@@ -92,7 +99,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   };
 
   const handleReject = async (tx: any, isFalse: boolean = false) => {
-    const reason = isFalse ? "COMPROVATIVO FALSO DETECTADO" : prompt("Motivo da rejeição:", "Dados não conferem com o extrato bancário.");
+    const reason = isFalse ? "COMPROVATIVO FALSO" : prompt("Motivo da rejeição:");
     if (reason === null) return;
 
     try {
@@ -104,7 +111,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         }).eq('id', tx.user_id);
       }
 
-      // Se for saque, devolve o dinheiro ao saldo do usuário
       if (tx.type === 'withdrawal') {
         const { data: profile } = await supabase.from('profiles').select('balance').eq('id', tx.user_id).single();
         const currentBalance = Number(profile?.balance || 0);
@@ -112,7 +118,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       }
 
       await supabase.from('transactions').update({ status: 'rejected' }).eq('id', tx.id);
-      toast.error(isFalse ? "Usuário alertado por fraude." : "Transação rejeitada.");
+      toast.error("Transação rejeitada.");
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
@@ -124,20 +130,13 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     return (
       <div className="py-20 flex flex-col items-center justify-center text-white/20">
         <Loader2 className="animate-spin mb-4" size={32} />
-        <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando com o Banco...</p>
+        <p className="text-[10px] font-black uppercase tracking-widest">Conectando ao Banco de Dados...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center gap-3 mb-4">
-        <ShieldAlert className="text-amber-500" size={20} />
-        <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">
-          Atenção: Valide o valor no seu extrato bancário antes de aprovar qualquer depósito.
-        </p>
-      </div>
-
       <div className="glass-card rounded-[2rem] overflow-hidden border-white/5">
         <Table>
           <TableHeader className="bg-white/5">
@@ -146,50 +145,40 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
               <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Valor / Método</TableHead>
               <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Comprovativo</TableHead>
               <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Status</TableHead>
-              <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações de Controle</TableHead>
+              <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {transactions.length > 0 ? (
               transactions.map((tx) => (
-                <TableRow key={tx.id} className={`border-white/5 hover:bg-white/5 transition-colors ${tx.status === 'pending' ? 'bg-purple-500/5' : ''}`}>
+                <TableRow key={tx.id} className="border-white/5 hover:bg-white/5 transition-colors">
                   <TableCell className="p-6">
                     <div className="flex flex-col gap-1">
-                      <span className="font-black text-white uppercase tracking-tighter">
+                      <span className="font-black text-white uppercase">
                         {tx.profiles?.first_name} {tx.profiles?.last_name}
                       </span>
                       <div className="flex items-center gap-2 text-[10px] text-white/40 font-bold">
                         <CreditCard size={12} />
                         <span>IBAN: {tx.profiles?.bank_info || 'Não informado'}</span>
                       </div>
-                      <span className="text-[9px] text-white/20 uppercase">{new Date(tx.created_at).toLocaleString()}</span>
                     </div>
                   </TableCell>
                   <TableCell className="p-6">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
-                        <span className="font-black text-xl text-white">{Number(tx.amount).toLocaleString()} Kz</span>
-                      </div>
-                      <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest bg-purple-500/10 px-2 py-0.5 rounded w-fit">
-                        {tx.payment_method || 'MÉTODO PADRÃO'}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      {tx.type === 'deposit' ? <ArrowDownLeft size={14} className="text-green-400" /> : <ArrowUpRight size={14} className="text-amber-400" />}
+                      <span className="font-black text-xl">{Number(tx.amount).toLocaleString()} Kz</span>
                     </div>
+                    <span className="text-[9px] font-black text-purple-400 uppercase">{tx.payment_method}</span>
                   </TableCell>
                   <TableCell className="p-6">
                     {tx.proof_url ? (
-                      <Button 
-                        asChild 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-10 border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500 hover:text-white font-black text-[10px] uppercase rounded-xl"
-                      >
+                      <Button asChild variant="outline" size="sm" className="h-9 border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500 hover:text-white font-black text-[10px] uppercase rounded-xl">
                         <a href={tx.proof_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink size={14} className="mr-2" /> ABRIR ANEXO
+                          <ExternalLink size={14} className="mr-2" /> ABRIR
                         </a>
                       </Button>
                     ) : (
-                      <span className="text-[9px] font-black text-white/10 uppercase">Sem Comprovativo</span>
+                      <span className="text-[9px] font-black text-white/10 uppercase">Sem anexo</span>
                     )}
                   </TableCell>
                   <TableCell className="p-6">
@@ -200,46 +189,24 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                       <span className={`text-[10px] uppercase font-black ${
                         tx.status === 'pending' ? 'text-amber-500' : 
                         tx.status === 'completed' ? 'text-green-500' : 'text-red-500'
-                      }`}>{tx.status === 'pending' ? 'Aguardando Você' : tx.status}</span>
+                      }`}>{tx.status}</span>
                     </div>
                   </TableCell>
                   <TableCell className="p-6 text-right">
-                    {tx.status === 'pending' ? (
+                    {tx.status === 'pending' && (
                       <div className="flex justify-end gap-2">
-                        <Button 
-                          onClick={() => handleApprove(tx)} 
-                          className="h-10 bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase px-4 rounded-xl shadow-lg shadow-green-900/20"
-                        >
-                          APROVAR
-                        </Button>
-                        <Button 
-                          onClick={() => handleReject(tx, false)} 
-                          variant="ghost" 
-                          className="h-10 text-white/40 hover:bg-white/5 font-black text-[10px] uppercase px-4 rounded-xl"
-                        >
-                          REJEITAR
-                        </Button>
-                        <Button 
-                          onClick={() => handleReject(tx, true)} 
-                          variant="ghost" 
-                          className="h-10 text-red-500 hover:bg-red-500/10 font-black text-[10px] uppercase px-4 rounded-xl border border-red-500/20"
-                        >
-                          FALSO
-                        </Button>
+                        <Button onClick={() => handleApprove(tx)} className="h-9 bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase px-4 rounded-xl">APROVAR</Button>
+                        <Button onClick={() => handleReject(tx, false)} variant="ghost" className="h-9 text-white/40 hover:bg-white/5 font-black text-[10px] uppercase px-4 rounded-xl">REJEITAR</Button>
+                        <Button onClick={() => handleReject(tx, true)} variant="ghost" className="h-9 text-red-500 hover:bg-red-500/10 font-black text-[10px] uppercase px-4 rounded-xl border border-red-500/20">FALSO</Button>
                       </div>
-                    ) : (
-                      <span className="text-[9px] font-black text-white/10 uppercase">Processado</span>
                     )}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="p-20 text-center">
-                  <div className="flex flex-col items-center gap-4">
-                    <FileText size={48} className="text-white/5" />
-                    <p className="text-white/20 font-black uppercase tracking-widest text-xs">Nenhuma transação pendente no momento.</p>
-                  </div>
+                <TableCell colSpan={5} className="p-20 text-center text-white/10 font-black uppercase tracking-widest text-xs">
+                  Nenhuma transação pendente.
                 </TableCell>
               </TableRow>
             )}
