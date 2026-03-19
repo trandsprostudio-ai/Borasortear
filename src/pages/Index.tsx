@@ -60,7 +60,7 @@ const Index = () => {
             max_participants: mod.max_participants,
             current_participants: Math.floor(Math.random() * (mod.max_participants * 0.2)),
             status: 'open',
-            expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // Alterado para 3 horas
+            expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString()
           }));
           await supabase.from('rooms').insert(newRooms);
         }
@@ -170,7 +170,7 @@ const Index = () => {
               <LayoutGrid size={24} />
             </div>
             <div>
-              <h2 className="text-3xl font-black italic tracking-tighter uppercase">1. ESCOLHA O VALOR</h2>
+              <h2 className="text-3xl font-black italic tracking-tighter uppercase">Módulos</h2>
               <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Selecione o módulo para liberar as mesas</p>
             </div>
           </div>
@@ -212,7 +212,7 @@ const Index = () => {
                   <Zap size={24} className="animate-pulse" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-black italic tracking-tighter uppercase">2. MESAS DISPONÍVEIS</h2>
+                  <h2 className="text-3xl font-black italic tracking-tighter uppercase">MESAS</h2>
                   <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Entre em uma mesa para começar a faturar</p>
                 </div>
               </div>

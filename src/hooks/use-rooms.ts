@@ -1,8 +1,8 @@
+"use client";
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/types/database';
-
-type Room = Database['public']['Tables']['rooms']['Row'];
+import { Room } from '@/types/raffle';
 
 export function useRooms() {
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -16,7 +16,7 @@ export function useRooms() {
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setRooms(data);
+        setRooms(data as Room[]);
       }
       setLoading(false);
     };
@@ -31,7 +31,6 @@ export function useRooms() {
         (payload) => {
           if (payload.eventType === 'INSERT') {
             setRooms((prev) => {
-              // Evita duplicados se o fetch inicial e o insert ocorrerem quase juntos
               if (prev.some(r => r.id === payload.new.id)) return prev;
               return [payload.new as Room, ...prev];
             });

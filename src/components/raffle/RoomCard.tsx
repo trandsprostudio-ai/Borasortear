@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface RoomCardProps {
   room: Room;
@@ -131,7 +132,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
               : 'premium-gradient text-white shadow-lg shadow-purple-500/20'
           }`}
         >
-          {isExpired ? 'SORTEANDO...' : 'JOGAR AGORA'}
+          {isExpired ? 'SORTEANDO...' : 'SORTEAR'}
         </Button>
       </div>
     </motion.div>
