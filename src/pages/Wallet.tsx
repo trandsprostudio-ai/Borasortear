@@ -290,7 +290,7 @@ const Wallet = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="participations">
+          <TabsContent value="participations" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-[#1A1D29]/40 backdrop-blur-3xl rounded-[2.5rem] p-20 text-center border border-white/10">
               <History size={48} className="mx-auto mb-6 text-white/10" />
               <p className="text-white/20 font-black text-xs uppercase tracking-[0.3em]">Histórico de mesas disponível em "Minhas Mesas".</p>
