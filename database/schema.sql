@@ -102,8 +102,7 @@ CREATE INDEX IF NOT EXISTS idx_winners_draw_id ON winners(draw_id);
 CREATE INDEX IF NOT EXISTS idx_winners_user_id ON winners(user_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_referred_by ON profiles(referred_by);
 
--- Trigger para atualizar updated_at automaticamente
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- Trigger para atualizar updated_at automaticamenteCREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -159,15 +158,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para criar salas automaticamente quando um módulo é inserido
-CREATE TRIGGER create_rooms_for_module_trigger 
-  AFTER INSERT ON modules 
+CREATE TRIGGER create_rooms_for_module_trigger   AFTER INSERT ON modules 
   FOR EACH ROW 
   EXECUTE FUNCTION create_rooms_for_module();
 
 -- Função para verificar e fechar salas expiradas ou cheias
 CREATE OR REPLACE FUNCTION check_room_closure()
-RETURNS TRIGGER AS $$
-BEGIN
+RETURNS TRIGGER AS $$BEGIN
   -- Se a sala está aberta e (expirada OU cheia)
   IF NEW.status = 'open' AND 
      (NEW.expires_at <= NOW() OR NEW.current_participants >= NEW.max_participants) THEN
@@ -181,8 +178,7 @@ $$ LANGUAGE plpgsql;
 -- Trigger para verificar fechamento automático de salas
 CREATE TRIGGER check_room_closure_trigger 
   BEFORE UPDATE ON rooms 
-  FOR EACH ROW 
-  EXECUTE FUNCTION check_room_closure();
+  FOR EACH ROW   EXECUTE FUNCTION check_room_closure();
 
 -- Função para executar sorteio automático
 CREATE OR REPLACE FUNCTION perform_automatic_draw(p_room_id UUID)
@@ -197,8 +193,7 @@ DECLARE
   winner1_id UUID;
   winner2_id;
   random_offset INTEGER;
-BEGIN
-  -- Buscar dados da sala
+BEGIN  -- Buscar dados da sala
   SELECT r.*, m.price, m.name 
   INTO room_record 
   FROM rooms r 
@@ -211,8 +206,7 @@ BEGIN
   END IF;
   
   -- Contar participantes
-  SELECT COUNT(*) INTO participants_count 
-  FROM participants 
+  SELECT COUNT(*) INTO participants_count   FROM participants 
   WHERE room_id = p_room_id;
   
   IF participants_count < 2 THEN
@@ -240,8 +234,7 @@ BEGIN
   LIMIT 1;
   
   -- Inserir vencedores
-  INSERT INTO winners (draw_id, user_id, prize_amount, position) 
-  VALUES 
+  INSERT INTO winners (draw_id, user_id, prize_amount, position)   VALUES 
     (p_room_id, winner1_id, first_prize, 1),
     (p_room_id, winner2_id, second_prize, 2);
   
@@ -251,28 +244,24 @@ BEGIN
   WHERE id = p_room_id;
   
   -- Creditar prêmios automaticamente
-  UPDATE profiles 
-  SET balance = balance + first_prize 
+  UPDATE profiles   SET balance = balance + first_prize 
   WHERE id = winner1_id;
   
   UPDATE profiles 
   SET balance = balance + second_prize 
   WHERE id = winner2_id;
   
-  -- Registrar transações de prêmios
-  INSERT INTO transactions (user_id, type, amount, status, payment_method)
+  -- Registrar transações de prêmios  INSERT INTO transactions (user_id, type, amount, status, payment_method)
   VALUES 
     (winner1_id, 'deposit', first_prize, 'completed', 'Prêmio de Sorteio'),
     (winner2_id, 'deposit', second_prize, 'completed', 'Prêmio de Sorteio');
   
   -- Notificar vencedores
   INSERT INTO notifications (user_id, title, message, type)
-  VALUES 
-    (winner1_id, 'VOCÊ GANHOU! 🎉', 
+  VALUES     (winner1_id, 'VOCÊ GANHOU! 🎉', 
      format('Parabéns! Você ganhou %s Kz no módulo %s!', first_prize, room_record.name), 
      'success'),
-    (winner2_id, 'VOCÊ GANHOU! 🎉', 
-     format('Parabéns! Você ganhou %s Kz no módulo %s!', second_prize, room_record.name), 
+    (winner2_id, 'VOCÊ GANHOU! 🎉',      format('Parabéns! Você ganhou %s Kz no módulo %s!', second_prize, room_record.name), 
      'success');
   
   -- Notificar participantes não vencedores
@@ -342,8 +331,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para reabrir salas automaticamente
-CREATE TRIGGER reopen_rooms_trigger 
-  AFTER UPDATE ON rooms 
+CREATE TRIGGER reopen_rooms_trigger   AFTER UPDATE ON rooms 
   FOR EACH ROW 
   WHEN (OLD.status = 'finished' AND NEW.status = 'finished')
   EXECUTE FUNCTION reopen_rooms_for_module();
@@ -357,6 +345,49 @@ INSERT INTO modules (name, price, max_participants) VALUES
   ('M5', 2000, 300),
   ('M6', 5000, 300)
 ON CONFLICT (name) DO NOTHING;
+
+-- Função para resetar todas as salas (useful for testing)
+CREATE OR REPLACE FUNCTION reset_all_rooms()
+RETURNS VOID AS $$
+BEGIN
+  -- Deletar todas as salas existentes
+  DELETE FROM rooms;
+  
+  -- Recriar 3 salas para cada módulo
+  INSERT INTO rooms (module_id, status, max_participants, current_participants, expires_at)
+  SELECT 
+    m.id,
+    'open',
+    m.max_participants,
+    0,
+    NOW() + INTERVAL '3 hours'
+  FROM modules m;
+  
+  RAISE NOTICE 'Todas as salas foram resetadas. Criadas 3 salas por módulo.';
+END;
+$$ LANGUAGE plpgsql;
+
+-- Função para obter estatísticas do sistema
+CREATE OR REPLACE FUNCTION get_system_stats()
+RETURNS JSON AS $$
+DECLARE
+  stats JSON;
+BEGIN
+  SELECT json_build_object(
+    'total_modules', (SELECT COUNT(*) FROM modules),
+    'total_rooms', (SELECT COUNT(*) FROM rooms),
+    'open_rooms', (SELECT COUNT(*) FROM rooms WHERE status = 'open'),
+    'closed_rooms', (SELECT COUNT(*) FROM rooms WHERE status = 'closed'),
+    'processing_rooms', (SELECT COUNT(*) FROM rooms WHERE status = 'processing'),
+    'finished_rooms', (SELECT COUNT(*) FROM rooms WHERE status = 'finished'),
+    'total_participants', (SELECT COUNT(*) FROM participants),
+    'total_winners', (SELECT COUNT(*) FROM winners),
+    'total_profiles', (SELECT COUNT(*) FROM profiles),
+    'total_transactions', (SELECT COUNT(*) FROM transactions)
+  ) INTO stats;
+    RETURN stats;
+END;
+$$ LANGUAGE plpgsql;
 
 -- Comentários para documentação
 COMMENT ON TABLE modules IS 'Módulos de jogo com diferentes valores de entrada';
