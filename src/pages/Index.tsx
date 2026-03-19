@@ -5,7 +5,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import RoomCard from '@/components/raffle/RoomCard';
 import JoinRoomModal from '@/components/raffle/JoinRoomModal';
-import DrawOverlay from '@/components/raffle/DrawOverlay';
 import PrizeCarousel from '@/components/raffle/PrizeCarousel';
 import WinnersCarousel from '@/components/raffle/WinnersCarousel';
 import LiveActivity from '@/components/raffle/LiveActivity';
@@ -26,7 +25,6 @@ const Index = () => {
   const [profile, setProfile] = useState<any>(null);
   const [myParticipations, setMyParticipations] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
-  const [finishedDraw, setFinishedDraw] = useState<{ winners: any[], info: string } | null>(null);
   const [topWinners, setTopWinners] = useState<any[]>([]);
   const [onlinePlayers, setOnlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   
@@ -61,36 +59,9 @@ const Index = () => {
       }
     });
 
-    // Real-time para resultados de sorteio
-    const channel = supabase.channel('draw-results')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'status=eq.finished' }, 
-      async (payload) => {
-        const { data: winners } = await supabase
-          .from('winners')
-          .select('*, profiles(first_name)')
-          .eq('draw_id', payload.new.id);
-        
-        if (winners) {
-          setFinishedDraw({
-            winners: winners.map(w => ({ 
-              name: w.profiles?.first_name || 'Usuário', 
-              prize: `${w.prize_amount.toLocaleString()} Kz`,
-              position: w.position 
-            })),
-            info: `MESA #${payload.new.id.slice(0,4)} FINALIZADA`
-          });
-          fetchTopWinners();
-          if (user) fetchMyParticipations(user.id);
-        }
-      }).subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-      supabase.removeChannel(channel);
-    };
+    return () => subscription.unsubscribe();
   }, [user?.id]);
 
-  // Lógica para abrir sala específica via convite
   useEffect(() => {
     const roomId = searchParams.get('room');
     if (roomId && rooms.length > 0 && modules.length > 0 && user) {
@@ -106,11 +77,9 @@ const Index = () => {
             }, 
             module 
           });
-          // Limpar o parâmetro da URL para não reabrir ao atualizar
           const newParams = new URLSearchParams(searchParams);
           newParams.delete('room');
           setSearchParams(newParams);
-          toast.success("Você entrou pelo convite da sala! Bônus de 15% ativo para o seu convidante.");
         }
       }
     }
@@ -146,7 +115,7 @@ const Index = () => {
     }
     const link = `${window.location.origin}/auth?mode=signup&ref=${user.id}`;
     navigator.clipboard.writeText(link);
-    toast.success("Link de convite da plataforma copiado! Ganhe 5% de bônus vitalício.");
+    toast.success("Link de convite copiado!");
   };
 
   const activeModuleRooms = rooms
@@ -171,15 +140,7 @@ const Index = () => {
         />
       )}
 
-      <DrawOverlay 
-        isOpen={!!finishedDraw} 
-        onClose={() => setFinishedDraw(null)} 
-        winners={finishedDraw?.winners || []}
-        roomInfo={finishedDraw?.info}
-      />
-
       <main className="max-w-[1600px] mx-auto px-4 pt-20 md:pt-24 pb-20">
-        {/* Top Bar Stats */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-[#151823]/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
           <div className="flex items-center gap-6 w-full md:w-auto">
             <PrizeCarousel />
@@ -203,7 +164,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Referral Banner */}
         <div className="mb-12 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/20 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20">
@@ -223,9 +183,7 @@ const Index = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
-          {/* Main Content Area */}
           <div className="lg:col-span-3 space-y-12">
-            {/* My Active Participations */}
             {user && myParticipations.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-5">
@@ -260,7 +218,6 @@ const Index = () => {
               </div>
             )}
 
-            {/* Module Selector */}
             <div>
               <div className="flex items-center gap-2 mb-5">
                 <LayoutGrid size={18} className="text-purple-500" />
@@ -284,7 +241,6 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Rooms Section */}
             <div className="space-y-6 relative">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -323,47 +279,38 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Sidebar Activity */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-8">
               <LiveActivity />
-              
               <div className="glass-card p-6 rounded-3xl border-white/5 bg-gradient-to-br from-purple-600/10 to-transparent">
                 <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Dica Premium</h4>
                 <p className="text-[11px] font-bold text-white/40 leading-relaxed">
-                  Quanto maior o valor da mesa, maior o prêmio acumulado. Mesas de 5.000 Kz podem render prêmios gigantescos!
+                  Consulte seus bilhetes na aba "Consultar" para ver se você foi um dos vencedores da última mesa!
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Winners Section & CTA */}
         <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-[#151823]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <History size={18} className="text-purple-500" />
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40">
-                  Maiores Ganhadores da Plataforma
+                  Maiores Ganhadores
                 </h3>
               </div>
               <Button variant="ghost" onClick={() => navigate('/leaderboard')} className="text-[10px] font-black text-purple-400 uppercase tracking-widest h-auto p-0">Ver Ranking</Button>
             </div>
-            
             <WinnersCarousel winners={topWinners} />
           </div>
           
           <div className="bg-gradient-to-br from-purple-900/40 via-[#151823] to-black border border-purple-500/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-purple-600/10 rounded-full blur-3xl group-hover:bg-purple-600/20 transition-all" />
-            
             <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-6 text-amber-500 border border-amber-500/20 shadow-2xl shadow-amber-500/10">
               <Trophy size={40} />
             </div>
             <h3 className="text-2xl md:text-3xl font-black italic tracking-tighter mb-3 uppercase">Sua Sorte Começa Aqui</h3>
-            <p className="text-sm text-white/40 font-bold mb-8 leading-relaxed">
-              Milhares de kwanzas são distribuídos diariamente. Não fique de fora da próxima mesa!
-            </p>
             <Button 
               onClick={() => navigate(user ? '/wallet' : '/auth?mode=signup')}
               className="w-full h-14 bg-white text-black hover:bg-white/90 rounded-2xl font-black text-lg shadow-2xl shadow-white/10 transition-transform active:scale-95"
