@@ -1,4 +1,4 @@
--- Função de Sorteio Automático Corrigida e Otimizada
+-- Função de Sorteio Automático Corrigida (Resolvendo Ambiguidade de Colunas)
 CREATE OR REPLACE FUNCTION public.perform_automatic_draw(p_room_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -20,7 +20,7 @@ DECLARE
   v_participant_count int;
   v_platform_id uuid := '00000000-0000-0000-0000-000000000000';
 BEGIN
-  -- Garantir que o usuário da plataforma existe para evitar erro de chave estrangeira
+  -- Garantir que o usuário da plataforma existe
   INSERT INTO public.profiles (id, first_name, balance)
   VALUES (v_platform_id, 'PLATAFORMA', 0)
   ON CONFLICT (id) DO NOTHING;
@@ -30,8 +30,8 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Busca dados do módulo e da sala
-  SELECT module_id, max_participants, COALESCE(m.price, 0), r.current_participants
+  -- Busca dados do módulo e da sala (Corrigido: r.max_participants para evitar ambiguidade)
+  SELECT r.module_id, r.max_participants, COALESCE(m.price, 0), r.current_participants
   INTO v_module_id, v_max_p, v_module_price, v_total_participants
   FROM public.rooms r
   JOIN public.modules m ON r.module_id = m.id
@@ -104,8 +104,8 @@ BEGIN
 
   -- Finalização e Reinício Automático
   UPDATE public.rooms SET status = 'finished' WHERE id = p_room_id;
-  -- Nota: O trigger replace_finished_room cuidará de abrir a nova sala se configurado, 
-  -- mas mantemos aqui para garantir a continuidade imediata.
+  
+  -- Garante que sempre haverá uma sala aberta para este módulo
   IF NOT EXISTS (SELECT 1 FROM public.rooms WHERE module_id = v_module_id AND status = 'open') THEN
     INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
     VALUES (v_module_id, v_max_p, 'open', now() + interval '3 hours');
