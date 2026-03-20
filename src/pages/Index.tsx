@@ -10,7 +10,7 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, Trophy, Star, Lock, Unlock, HelpCircle } from 'lucide-react';
+import { Zap, LayoutGrid, Trophy, Star, Lock, Unlock, HelpCircle, Loader2 } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -187,8 +187,8 @@ const Index = () => {
               <Zap size={24} className="animate-pulse" />
             </div>
             <div>
-              <h2 className="text-3xl font-black italic tracking-tighter uppercase">MESAS</h2>
-              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Entre em uma mesa para começar a faturar</p>
+              <h2 className="text-3xl font-black italic tracking-tighter uppercase">MESAS AO VIVO</h2>
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Sorteios instantâneos 24/7</p>
             </div>
           </div>
 
@@ -221,21 +221,24 @@ const Index = () => {
                       <div key={i} className="glass-card p-6 rounded-[2rem] border-white/5 animate-pulse h-64"></div>
                     ))}
                   </div>
-                ) : activeModuleRooms.length === 0 ? (
-                  <div className="text-center py-20 bg-white/5 rounded-[2rem] border border-dashed border-white/10">
-                    <p className="text-white/20 font-black uppercase tracking-widest">Nenhuma mesa disponível no momento.</p>
-                  </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {activeModuleRooms.map((room, index) => (
-                      <RoomCard 
-                        key={room.id} 
-                        roomNumber={index + 1}
-                        room={room}
-                        module={activeModule}
-                        onParticipate={handleParticipateClick}
-                      />
-                    ))}
+                    {activeModuleRooms.length > 0 ? (
+                      activeModuleRooms.map((room, index) => (
+                        <RoomCard 
+                          key={room.id} 
+                          roomNumber={index + 1}
+                          room={room}
+                          module={activeModule}
+                          onParticipate={handleParticipateClick}
+                        />
+                      ))
+                    ) : (
+                      <div className="col-span-full py-20 flex flex-col items-center justify-center text-white/20">
+                        <Loader2 className="animate-spin mb-4" size={32} />
+                        <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando Mesas Live...</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </motion.section>
