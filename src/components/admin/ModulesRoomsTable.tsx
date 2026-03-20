@@ -78,10 +78,12 @@ const ModulesRoomsTable = () => {
     try {
       const { error } = await supabase.rpc('perform_automatic_draw', { p_room_id: roomId });
       if (error) throw error;
-      toast.success("Sorteio forçado com sucesso!");
+      toast.success("Sorteio realizado com sucesso!");
       await fetchData();
     } catch (err: any) {
-      toast.error("Erro ao forçar sorteio: " + err.message);
+      // Exibe a mensagem de erro detalhada do banco de dados
+      toast.error("Erro no sorteio: " + (err.message || "Erro desconhecido"));
+      console.error("Erro detalhado:", err);
     } finally {
       setRefreshing(false);
     }
