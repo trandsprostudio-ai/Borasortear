@@ -204,7 +204,7 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Seleção de Módulos (1 a 6) */}
+          {/* Seleção de Módulos (M1 a M6) */}
           <div className="flex flex-wrap gap-2 mb-10">
             {modules.map((mod) => (
               <Button
