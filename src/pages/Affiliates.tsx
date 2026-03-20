@@ -3,7 +3,7 @@
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { Users, DollarSign, Share2, Trophy, Star, ShieldCheck, Gift, Megaphone, ArrowRight } from 'lucide-react';
+import { Users, DollarSign, Share2, Trophy, Zap, ShieldCheck, Gift, Megaphone, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/layout/Footer';
@@ -94,7 +94,7 @@ const Affiliates = () => {
             </div>
 
             <div className="glass-card p-8 rounded-[2.5rem] border-amber-500/20 bg-amber-500/5">
-              <Star className="text-amber-500 mb-4" size={32} />
+              <Zap className="text-amber-500 mb-4" size={32} />
               <h4 className="text-lg font-black italic tracking-tighter uppercase mb-2">Seja um Parceiro</h4>
               <p className="text-xs font-bold text-white/40 mb-6 leading-relaxed">
                 O nosso programa de afiliados é a forma mais rápida de construir uma renda passiva enquanto os seus amigos se divertem.

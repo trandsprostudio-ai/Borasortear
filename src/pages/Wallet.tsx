@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Activity, ArrowUpRight, CreditCard, ArrowDownLeft, Clock, CheckCircle2, XCircle, AlertTriangle, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
+import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Activity, ArrowUpRight, CreditCard, ArrowDownLeft, Clock, CheckCircle2, XCircle, AlertTriangle, ShieldAlert, ShieldCheck, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
@@ -113,7 +113,7 @@ const Wallet = () => {
               <div className="flex items-center justify-between mb-10">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-                    <Sparkles size={24} className="text-white" />
+                    <Zap size={24} className="text-white" />
                   </div>
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 block">Status da Conta</span>
