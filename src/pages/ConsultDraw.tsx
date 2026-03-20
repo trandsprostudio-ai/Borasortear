@@ -25,12 +25,11 @@ const ConsultDraw = () => {
     setResult(null);
 
     try {
-      // Busca o participante pelo código do bilhete
       const { data: participant, error: pError } = await supabase
         .from('participants')
         .select('*, rooms(*, modules(*)), profiles(referred_by)')
         .eq('ticket_code', cleanCode)
-        .maybeSingle(); // maybeSingle não lança erro se não encontrar
+        .maybeSingle();
 
       if (pError) throw pError;
 
@@ -51,11 +50,10 @@ const ConsultDraw = () => {
         winnerInfo = winner;
       }
 
-      // Cálculo de Divisões (Simulação baseada na regra de negócio)
       const totalPool = participant.rooms.modules.price * participant.rooms.max_participants;
-      const firstPrize = totalPool * 0.333; // 1/3
-      const secondPrize = totalPool * 0.333; // 1/3
-      const platformFee = totalPool * 0.333; // 1/3
+      const firstPrize = totalPool * 0.33;
+      const secondPrize = totalPool * 0.33;
+      const platformFee = totalPool * 0.34;
       
       const referralBonus = winnerInfo ? winnerInfo.prize_amount * 0.05 : 0;
 
@@ -71,8 +69,7 @@ const ConsultDraw = () => {
         }
       });
     } catch (err: any) {
-      console.error("Erro na busca:", err);
-      setError('Ocorreu um erro ao processar sua busca. Tente novamente mais tarde.');
+      setError('Ocorreu um erro ao processar sua busca.');
     } finally {
       setLoading(false);
     }
@@ -113,7 +110,6 @@ const ConsultDraw = () => {
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
               className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-400 text-sm font-bold"
             >
               <AlertCircle size={20} />
@@ -174,22 +170,21 @@ const ConsultDraw = () => {
                 </div>
               </div>
 
-              {/* Divisões de Prêmios */}
               <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-6 flex items-center gap-2">
                   <TrendingUp size={14} className="text-purple-500" /> Divisão de Prêmios da Mesa
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (33.3%)</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (33%)</p>
                     <p className="text-xl font-black text-green-400">{result.divisions.first.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">2º Lugar (33.3%)</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">2º Lugar (33%)</p>
                     <p className="text-xl font-black text-blue-400">{result.divisions.second.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">Taxa de Manutenção (33.3%)</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">Plataforma (34%)</p>
                     <p className="text-xl font-black text-white/40">{result.divisions.fee.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">
@@ -199,24 +194,9 @@ const ConsultDraw = () => {
                     <p className="text-xl font-black text-purple-400">
                       {result.profiles?.referred_by ? `${(result.divisions.first * 0.05).toLocaleString()} Kz` : '0 Kz'}
                     </p>
-                    <p className="text-[8px] font-bold text-white/20 uppercase mt-1">
-                      {result.profiles?.referred_by ? 'Usuário convidado: Bônus ativo' : 'Sem convite: Bônus inativo'}
-                    </p>
                   </div>
                 </div>
               </div>
-
-              {result.winner && result.profiles?.referred_by && (
-                <div className="bg-green-500/10 border border-green-500/20 p-6 rounded-[2rem] flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center text-green-400">
-                    <ShieldCheck size={24} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-black uppercase tracking-widest text-green-400">Bônus de Indicação Gerado</h4>
-                    <p className="text-xs font-bold text-white/40">Como você ganhou e foi convidado, seu padrinho recebeu {result.divisions.referral.toLocaleString()} Kz de bônus!</p>
-                  </div>
-                </div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>

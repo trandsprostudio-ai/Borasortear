@@ -118,7 +118,7 @@ const Index = () => {
   const activeModuleRooms = rooms
     .filter(r => r.moduleId === activeModuleId && r.status === 'open')
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-    .slice(0, 3);
+    .slice(0, 4);
 
   const activeModule = modules.find(m => m.id === activeModuleId);
 
@@ -192,6 +192,21 @@ const Index = () => {
             </div>
           </div>
 
+          <div className="flex flex-wrap gap-2 mb-8">
+            {modules.map((mod) => (
+              <Button
+                key={mod.id}
+                onClick={() => setActiveModuleId(mod.id)}
+                variant={activeModuleId === mod.id ? 'default' : 'outline'}
+                className={`h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+                  activeModuleId === mod.id ? 'premium-gradient border-none' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                }`}
+              >
+                {mod.price.toLocaleString()} Kz
+              </Button>
+            ))}
+          </div>
+
           <AnimatePresence mode="wait">
             {activeModuleId && (
               <motion.section
@@ -200,52 +215,23 @@ const Index = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-16"
               >
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-black shadow-lg shadow-amber-500/20">
-                    <Zap size={24} className="animate-pulse" />
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-black italic tracking-tighter uppercase">MESAS</h2>
-                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Escolha o valor da sua mesa</p>
-                  </div>
-                </div>
-
                 {roomsLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {[1,2,3].map(i => (
-                      <div key={i} className="glass-card p-6 rounded-[2rem] border-white/5 animate-pulse">
-                        <div className="flex justify-between items-start mb-6">
-                          <div className="h-6 bg-white/5 rounded w-1/3 mb-2"></div>
-                          <div className="w-12 h-12 bg-white/5 rounded-2xl"></div>
-                        </div>
-                        <div className="space-y-4">
-                          <div className="h-4 bg-white/5 rounded w-1/2"></div>
-                          <div className="h-4 bg-white/5 rounded w-3/4"></div>
-                          <div className="h-12 bg-white/5 rounded"></div>
-                        </div>
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[1,2,3,4].map(i => (
+                      <div key={i} className="glass-card p-6 rounded-[2rem] border-white/5 animate-pulse h-64"></div>
                     ))}
                   </div>
                 ) : activeModuleRooms.length === 0 ? (
                   <div className="text-center py-20 bg-white/5 rounded-[2rem] border border-dashed border-white/10">
                     <p className="text-white/20 font-black uppercase tracking-widest">Nenhuma mesa disponível no momento.</p>
-                    <p className="text-white/10 text-sm mt-2">Tente outro módulo ou volte mais tarde.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {activeModuleRooms.map((room, index) => (
                       <RoomCard 
                         key={room.id} 
                         roomNumber={index + 1}
-                        room={{
-                          id: room.id,
-                          moduleId: room.moduleId,
-                          status: room.status,
-                          currentParticipants: room.currentParticipants,
-                          maxParticipants: room.maxParticipants,
-                          expiresAt: room.expiresAt,
-                          createdAt: room.createdAt
-                        }}
+                        room={room}
                         module={activeModule}
                         onParticipate={handleParticipateClick}
                       />
