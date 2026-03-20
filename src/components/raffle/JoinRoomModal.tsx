@@ -53,30 +53,54 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
 
   const handleJoin = async () => {
     if (isRestricted) return;
-    if (userBalance < module.price) {
-      toast.error("Saldo insuficiente!");
-      return;
-    }
+    
     setIsJoining(true);
     try {
+      // VERIFICAÇÃO DE ÚLTIMO SEGUNDO: A sala ainda está aberta?
+      const { data: currentRoom, error: roomError } = await supabase
+        .from('rooms')
+        .select('status, current_participants, max_participants')
+        .eq('id', room.id)
+        .single();
+
+      if (roomError || currentRoom.status !== 'open' || currentRoom.current_participants >= currentRoom.max_participants) {
+        toast.error("Esta mesa acabou de fechar! Escolha outra.");
+        onClose();
+        return;
+      }
+
+      if (userBalance < module.price) {
+        toast.error("Saldo insuficiente!");
+        setIsJoining(false);
+        return;
+      }
+
+      // Deduzir saldo
       const { error: balanceError } = await supabase
         .from('profiles')
         .update({ balance: userBalance - module.price })
         .eq('id', userId);
+      
       if (balanceError) throw balanceError;
 
+      // Inserir participante (O trigger do banco cuidará do resto com segurança)
       const { data, error: participantError } = await supabase
         .from('participants')
         .insert({ user_id: userId, room_id: room.id })
         .select('ticket_code')
         .single();
 
-      if (participantError) throw participantError;
+      if (participantError) {
+        // Reembolsar se falhar a inserção
+        await supabase.from('profiles').update({ balance: userBalance }).eq('id', userId);
+        throw participantError;
+      }
+
       setTicketCode(data.ticket_code);
       toast.success("Participação confirmada!");
       onSuccess();
     } catch (error: any) {
-      toast.error("Erro ao entrar na sala: " + error.message);
+      toast.error("Erro: " + error.message);
     } finally {
       setIsJoining(false);
     }
