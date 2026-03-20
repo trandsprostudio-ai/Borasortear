@@ -31,7 +31,6 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-      // Buscar módulos reais do banco de dados
       const { data: modData } = await supabase
         .from('modules')
         .select('*')
@@ -126,7 +125,6 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
-  // Filtrar as 3 salas abertas para o módulo selecionado
   const activeModuleRooms = rooms
     .filter(r => r.moduleId === activeModuleId && r.status === 'open')
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
@@ -188,7 +186,7 @@ const Index = () => {
               </span>
             </div>
             <Button onClick={() => navigate('/central-de-ajuda')} variant="ghost" className="text-white/40 hover:text-white font-black text-[10px] uppercase tracking-widest">
-              <HelpCircle size={14} className="mr-2" /> AJUDA
+              <HelpCircle size={14} className="mr-2" /> COMO FUNCIONA
             </Button>
           </div>
         </div>
@@ -204,7 +202,6 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Seleção de Módulos (M1 a M6) */}
           <div className="flex flex-wrap gap-2 mb-10">
             {modules.map((mod) => (
               <Button

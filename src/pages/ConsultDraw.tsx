@@ -62,11 +62,8 @@ const ConsultDraw = () => {
         winnerInfo = winner;
       }
 
-      // Cálculo baseado no total arrecadado (Participantes Atuais x Preço)
       const totalPool = participant.rooms.modules.price * participant.rooms.current_participants;
-      const firstPrize = totalPool * 0.33;
-      const secondPrize = totalPool * 0.33;
-      const thirdPrize = totalPool * 0.34; // 3º Lugar (Plataforma)
+      const share = totalPool * 0.3333;
       
       const referralBonus = winnerInfo ? winnerInfo.prize_amount * 0.05 : 0;
 
@@ -76,9 +73,9 @@ const ConsultDraw = () => {
         winner: winnerInfo,
         divisions: {
           total: totalPool,
-          first: firstPrize,
-          second: secondPrize,
-          third: thirdPrize,
+          first: share,
+          second: share,
+          third: share,
           referral: referralBonus
         }
       });
@@ -202,7 +199,7 @@ const ConsultDraw = () => {
                     <p className="text-xl font-black text-blue-400">{result.divisions.second.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">3º Lugar (34%)</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">3º Lugar (33%)</p>
                     <p className="text-xl font-black text-white/40">{result.divisions.third.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">

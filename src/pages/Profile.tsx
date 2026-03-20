@@ -101,7 +101,6 @@ const Profile = () => {
       
       <main className="max-w-5xl mx-auto px-4 pt-28">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Sidebar Info */}
           <div className="space-y-6">
             <div className="glass-card p-8 rounded-[2.5rem] text-center border-white/5">
               <div className="w-24 h-24 bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-purple-500/20">
@@ -140,7 +139,6 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
               <h3 className="text-xl font-black italic tracking-tighter uppercase mb-8 flex items-center gap-3">
@@ -224,7 +222,6 @@ const Profile = () => {
               </form>
             </div>
 
-            {/* Referral List */}
             <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">

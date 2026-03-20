@@ -54,7 +54,6 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
         toast.success("Texto de vitória copiado! Partilhe para ganhar o bônus.");
       }
 
-      // Aplicar Bônus de 2%
       const bonusAmount = Math.floor(winner.amount * 0.02);
       
       const { data: profile } = await supabase.from('profiles').select('balance').eq('id', currentUser.id).single();
