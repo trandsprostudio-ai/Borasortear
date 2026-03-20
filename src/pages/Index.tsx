@@ -10,7 +10,7 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, LayoutGrid, Trophy, Star, Lock, Unlock, HelpCircle, Loader2 } from 'lucide-react';
+import { Zap, Trophy, Star, HelpCircle, Loader2 } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,10 +32,9 @@ const Index = () => {
   useEffect(() => {
     const initializeData = async () => {
       const { data: modData } = await supabase.from('modules').select('*').order('price', { ascending: true });
-      if (modData) {
-        const uniqueModules = Array.from(new Map(modData.map(m => [m.price, m])).values());
-        setModules(uniqueModules);
-        if (uniqueModules.length > 0) setActiveModuleId(uniqueModules[0].id);
+      if (modData && modData.length > 0) {
+        setModules(modData);
+        setActiveModuleId(modData[0].id);
       }
       await fetchTopWinners();
       await fetchRecentWins();
