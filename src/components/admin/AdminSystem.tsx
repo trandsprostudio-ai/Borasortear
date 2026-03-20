@@ -32,19 +32,6 @@ const AdminSystem = () => {
     setLoading(false);
   };
 
-  const handleForceDraw = async (roomId: string) => {
-    if (!confirm("Deseja forçar o sorteio desta mesa agora?")) return;
-    
-    const { error } = await supabase.rpc('perform_automatic_draw', { p_room_id: roomId });
-    if (error) {
-      toast.error("Erro no sorteio: " + (error.message || "Erro desconhecido"));
-      console.error("Erro detalhado:", error);
-    } else {
-      toast.success("Sorteio realizado com sucesso!");
-      fetchSystemData();
-    }
-  };
-
   const handleCleanExpired = async () => {
     const { error } = await supabase.rpc('check_and_draw_expired_rooms');
     if (error) toast.error("Erro ao processar expirações");
@@ -155,7 +142,6 @@ const AdminSystem = () => {
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Módulo</TableHead>
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Progresso</TableHead>
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Expira em</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase text-white/40 p-6 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -180,14 +166,6 @@ const AdminSystem = () => {
                         <span className={`text-[10px] font-black uppercase ${isExpired ? 'text-red-500' : 'text-white/40'}`}>
                           {isExpired ? 'Expirada' : new Date(room.expires_at).toLocaleTimeString()}
                         </span>
-                      </TableCell>
-                      <TableCell className="p-6 text-right">
-                        <Button 
-                          onClick={() => handleForceDraw(room.id)}
-                          className="h-8 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-[9px] font-black uppercase px-3 rounded-lg"
-                        >
-                          Sortear Agora
-                        </Button>
                       </TableCell>
                     </TableRow>
                   );

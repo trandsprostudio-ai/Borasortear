@@ -71,24 +71,6 @@ const ModulesRoomsTable = () => {
     }
   };
 
-  const handleForceDraw = async (roomId: string) => {
-    if (!confirm("⚠️ ATENÇÃO: Deseja forçar o sorteio desta mesa agora? Isso encerrará a participação e escolherá os vencedores entre os jogadores atuais.")) return;
-    
-    setRefreshing(true);
-    try {
-      const { error } = await supabase.rpc('perform_automatic_draw', { p_room_id: roomId });
-      if (error) throw error;
-      toast.success("Sorteio realizado com sucesso!");
-      await fetchData();
-    } catch (err: any) {
-      // Exibe a mensagem de erro detalhada do banco de dados
-      toast.error("Erro no sorteio: " + (err.message || "Erro desconhecido"));
-      console.error("Erro detalhado:", err);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchData();
@@ -157,7 +139,7 @@ const ModulesRoomsTable = () => {
           <div>
             <h3 className="text-xl font-black italic tracking-tighter uppercase">Estrutura de Módulos e Salas</h3>
             <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
-              Visão geral completa do sistema
+              Visão geral completa do sistema (Sorteios 100% Automáticos)
             </p>
           </div>
         </div>
@@ -255,7 +237,7 @@ const ModulesRoomsTable = () => {
         <div className="p-6 border-b border-white/5 bg-white/5">
           <h3 className="text-lg font-black italic tracking-tighter uppercase">Lista Completa de Salas</h3>
           <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-1">
-            Todas as salas ativas e seu status atual
+            Todas as salas ativas e seu status atual (Monitoramento em Tempo Real)
           </p>
         </div>
         
@@ -269,7 +251,6 @@ const ModulesRoomsTable = () => {
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Participantes</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Progresso</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Expira em</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-4 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -318,17 +299,6 @@ const ModulesRoomsTable = () => {
                     }`}>
                       {formatTimeRemaining(room.expires_at)}
                     </span>
-                  </TableCell>
-                  <TableCell className="p-4 text-right">
-                    {room.status === 'open' && (
-                      <Button 
-                        size="sm"
-                        onClick={() => handleForceDraw(room.id)}
-                        className="h-8 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-[9px] font-black uppercase px-3 rounded-lg hover:bg-purple-600 hover:text-white transition-all"
-                      >
-                        <Zap size={12} className="mr-1" /> Forçar Sorteio
-                      </Button>
-                    )}
                   </TableCell>
                 </TableRow>
               ))}
