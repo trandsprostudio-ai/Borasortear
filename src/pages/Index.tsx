@@ -10,14 +10,15 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, Trophy, Star, HelpCircle, Loader2, LayoutGrid } from 'lucide-react';
-import { Room, Module, MODULES } from '@/types/raffle';
+import { Zap, Trophy, Star, HelpCircle, Loader2 } from 'lucide-react';
+import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Index = () => {
   const { rooms, loading: roomsLoading } = useRooms();
-  const [activeModuleId, setActiveModuleId] = useState<string>(MODULES[0].id);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
@@ -30,6 +31,23 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
+      // Buscar módulos reais do banco de dados
+      const { data: modData } = await supabase
+        .from('modules')
+        .select('*')
+        .order('price', { ascending: true });
+      
+      if (modData && modData.length > 0) {
+        const mappedModules: Module[] = modData.map(m => ({
+          id: m.id,
+          name: m.name,
+          price: Number(m.price),
+          maxParticipants: m.max_participants
+        }));
+        setModules(mappedModules);
+        setActiveModuleId(mappedModules[0].id);
+      }
+      
       await fetchTopWinners();
       await fetchRecentWins();
     };
@@ -108,21 +126,13 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
-  // Encontrar o módulo atual baseado no ID ativo
-  const activeModule = MODULES.find(m => m.id === activeModuleId) || MODULES[0];
-
   // Filtrar as 3 salas abertas para o módulo selecionado
   const activeModuleRooms = rooms
-    .filter(r => r.status === 'open')
-    // Aqui fazemos um mapeamento flexível para encontrar as salas do módulo
-    // No banco de dados, o module_id pode ser um UUID, então buscamos pelo preço correspondente
-    .filter(r => {
-      // Se o banco usar UUIDs, precisamos buscar o módulo real do banco
-      // Por agora, assumimos que o useRooms traz o moduleId correto
-      return r.moduleId === activeModuleId;
-    })
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .filter(r => r.moduleId === activeModuleId && r.status === 'open')
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .slice(0, 3);
+
+  const activeModule = modules.find(m => m.id === activeModuleId);
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white font-sans pb-24">
@@ -196,7 +206,7 @@ const Index = () => {
 
           {/* Seleção de Módulos (1 a 6) */}
           <div className="flex flex-wrap gap-2 mb-10">
-            {MODULES.map((mod) => (
+            {modules.map((mod) => (
               <Button
                 key={mod.id}
                 onClick={() => setActiveModuleId(mod.id)}
@@ -211,34 +221,36 @@ const Index = () => {
           </div>
 
           <AnimatePresence mode="wait">
-            <motion.div
-              key={activeModuleId}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            >
-              {roomsLoading ? (
-                [1, 2, 3].map(i => (
-                  <div key={i} className="glass-card h-64 rounded-[2.5rem] border-white/5 animate-pulse" />
-                ))
-              ) : activeModuleRooms.length > 0 ? (
-                activeModuleRooms.map((room, index) => (
-                  <RoomCard 
-                    key={room.id} 
-                    roomNumber={index + 1}
-                    room={room}
-                    module={activeModule}
-                    onParticipate={handleParticipateClick}
-                  />
-                ))
-              ) : (
-                <div className="col-span-full py-20 flex flex-col items-center justify-center text-white/20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
-                  <Loader2 className="animate-spin mb-4" size={32} />
-                  <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando Salas Live...</p>
-                </div>
-              )}
-            </motion.div>
+            {activeModuleId && (
+              <motion.div
+                key={activeModuleId}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="grid grid-cols-1 md:grid-cols-3 gap-8"
+              >
+                {roomsLoading ? (
+                  [1, 2, 3].map(i => (
+                    <div key={i} className="glass-card h-64 rounded-[2.5rem] border-white/5 animate-pulse" />
+                  ))
+                ) : activeModuleRooms.length > 0 ? (
+                  activeModuleRooms.map((room, index) => (
+                    <RoomCard 
+                      key={room.id} 
+                      roomNumber={index + 1}
+                      room={room}
+                      module={activeModule!}
+                      onParticipate={handleParticipateClick}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 flex flex-col items-center justify-center text-white/20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
+                    <Loader2 className="animate-spin mb-4" size={32} />
+                    <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando Salas Live...</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </AnimatePresence>
         </section>
 
