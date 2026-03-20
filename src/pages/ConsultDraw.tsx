@@ -25,9 +25,16 @@ const ConsultDraw = () => {
     setResult(null);
 
     try {
+      // Consulta simplificada para evitar erros de join complexos
       const { data: participant, error: pError } = await supabase
         .from('participants')
-        .select('*, rooms(*, modules(*)), profiles(referred_by)')
+        .select(`
+          *,
+          rooms (
+            *,
+            modules (*)
+          )
+        `)
         .eq('ticket_code', cleanCode)
         .maybeSingle();
 
@@ -38,6 +45,13 @@ const ConsultDraw = () => {
         setLoading(false);
         return;
       }
+
+      // Buscar informações do perfil separadamente para garantir sucesso
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('referred_by, first_name')
+        .eq('id', participant.user_id)
+        .single();
 
       let winnerInfo = null;
       if (participant.rooms.status === 'finished') {
@@ -59,6 +73,7 @@ const ConsultDraw = () => {
 
       setResult({ 
         ...participant, 
+        profiles: profile,
         winner: winnerInfo,
         divisions: {
           total: totalPool,
@@ -69,7 +84,8 @@ const ConsultDraw = () => {
         }
       });
     } catch (err: any) {
-      setError('Ocorreu um erro ao processar sua busca.');
+      console.error("Erro na consulta:", err);
+      setError('Ocorreu um erro ao processar sua busca. Tente novamente mais tarde.');
     } finally {
       setLoading(false);
     }
