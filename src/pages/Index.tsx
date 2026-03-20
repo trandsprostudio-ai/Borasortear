@@ -10,7 +10,7 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, Trophy, Star, HelpCircle, Loader2 } from 'lucide-react';
+import { Activity, Trophy, Star, HelpCircle, Loader2 } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -196,7 +196,7 @@ const Index = () => {
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
-              <Zap size={24} className="animate-pulse" />
+              <Activity size={24} className="animate-pulse" />
             </div>
             <div>
               <h2 className="text-3xl font-black italic tracking-tighter uppercase">MÓDULOS AO VIVO</h2>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { HelpCircle, MessageCircle, ShieldCheck, Zap, ChevronRight, Phone, Mail, FileText, Info, CheckCircle2 } from 'lucide-react';
+import { HelpCircle, MessageCircle, ShieldCheck, Activity, ChevronRight, Phone, Mail, FileText, Info, CheckCircle2 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -64,7 +64,7 @@ const Support = () => {
           <TabsContent value="help" className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <section>
               <h2 className="text-2xl font-black italic tracking-tighter uppercase mb-8 flex items-center gap-3">
-                <Zap className="text-amber-500" /> Perguntas Frequentes
+                <HelpCircle className="text-amber-500" /> Perguntas Frequentes
               </h2>
               
               <div className="glass-card rounded-[2rem] p-4 border-white/5">

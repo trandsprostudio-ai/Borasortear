@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Plus, Zap, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock, Layers } from 'lucide-react';
+import { Plus, Activity, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminSystem = () => {
@@ -138,7 +138,7 @@ const AdminSystem = () => {
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-            <Zap className="text-amber-500" /> Monitoramento de Mesas
+            <Activity className="text-amber-500" /> Monitoramento de Mesas
           </h3>
           <Button variant="ghost" onClick={fetchSystemData} className="text-white/20 hover:text-white">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />

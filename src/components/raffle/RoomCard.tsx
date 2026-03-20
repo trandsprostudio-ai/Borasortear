@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, Share2, Zap, TrendingUp, Radio } from 'lucide-react';
+import { Users, Clock, Share2, Star, TrendingUp, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
@@ -106,7 +106,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
           </div>
         </div>
         <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-white/20 group-hover:text-purple-400 transition-colors">
-          <Zap size={24} />
+          <Star size={24} />
         </div>
       </div>
 

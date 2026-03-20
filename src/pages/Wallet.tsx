@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Zap, ArrowUpRight, CreditCard, ArrowDownLeft, Clock, CheckCircle2, XCircle, AlertTriangle, ZapOff, ShieldCheck, Sparkles } from 'lucide-react';
+import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Activity, ArrowUpRight, CreditCard, ArrowDownLeft, Clock, CheckCircle2, XCircle, AlertTriangle, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
@@ -92,7 +92,7 @@ const Wallet = () => {
       <main className="max-w-6xl mx-auto px-4 pt-24 md:pt-32 relative z-10">
         {profile?.is_banned && (
           <div className="mb-8 bg-red-500/20 border border-red-500/50 p-6 rounded-3xl flex items-center gap-4 text-red-400 backdrop-blur-xl">
-            <ZapOff size={32} />
+            <ShieldAlert size={32} />
             <div>
               <h3 className="font-black uppercase tracking-widest">CONTA BANIDA</h3>
               <p className="text-xs font-bold">Sua conta foi suspensa por envio excessivo de comprovativos falsos.</p>
@@ -122,7 +122,7 @@ const Wallet = () => {
                     </span>
                   </div>
                 </div>
-                {pendingDepositAmount > 0 && (
+                {pendingAmount > 0 && (
                   <div className="bg-amber-500/10 px-4 py-2 rounded-2xl border border-amber-500/20 flex items-center gap-2">
                     <Clock size={14} className="text-amber-500 animate-pulse" />
                     <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Processando</span>

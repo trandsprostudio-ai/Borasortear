@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Star, Zap, X, Megaphone, Share2, Loader2, CheckCircle2 } from 'lucide-react';
+import { Trophy, Star, Activity, X, Megaphone, Share2, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -113,7 +113,7 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                     className="w-40 h-40 border-8 border-t-purple-500 border-r-amber-500 border-b-cyan-400 border-l-transparent rounded-full shadow-[0_0_50px_rgba(124,58,237,0.3)]"
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Zap size={64} className="text-white animate-pulse" />
+                    <Star size={64} className="text-white animate-pulse" />
                   </div>
                 </div>
                 <div className="space-y-2">

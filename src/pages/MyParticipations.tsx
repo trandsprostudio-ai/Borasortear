@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, Zap, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, Copy } from 'lucide-react';
+import { LayoutGrid, Activity, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
@@ -93,7 +93,7 @@ const MyParticipations = () => {
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500 border border-amber-500/20">
-              <Zap size={20} className="animate-pulse" />
+              <Activity size={20} className="animate-pulse" />
             </div>
             <h2 className="text-xl font-black italic tracking-tighter uppercase">Sorteios em Andamento</h2>
           </div>
@@ -130,7 +130,7 @@ const MyParticipations = () => {
                           <span className="text-sm font-black text-purple-500">{Math.round(progress)}%</span>
                         </div>
                         
-                        <div className="h-3 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
+                        <div className="h-3 w-full bg-black/40 rounded-full overflow-hidden border border-white/5 p-0.5">
                           <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
@@ -217,6 +217,3 @@ const MyParticipations = () => {
       <Footer />
     </div>
   );
-};
-
-export default MyParticipations;
