@@ -25,7 +25,6 @@ const ConsultDraw = () => {
     setResult(null);
 
     try {
-      // Consulta simplificada para evitar erros de join complexos
       const { data: participant, error: pError } = await supabase
         .from('participants')
         .select(`
@@ -46,7 +45,6 @@ const ConsultDraw = () => {
         return;
       }
 
-      // Buscar informações do perfil separadamente para garantir sucesso
       const { data: profile } = await supabase
         .from('profiles')
         .select('referred_by, first_name')
@@ -64,10 +62,11 @@ const ConsultDraw = () => {
         winnerInfo = winner;
       }
 
-      const totalPool = participant.rooms.modules.price * participant.rooms.max_participants;
+      // Cálculo baseado no total arrecadado (Participantes Atuais x Preço)
+      const totalPool = participant.rooms.modules.price * participant.rooms.current_participants;
       const firstPrize = totalPool * 0.33;
       const secondPrize = totalPool * 0.33;
-      const platformFee = totalPool * 0.34;
+      const thirdPrize = totalPool * 0.34; // 3º Lugar (Plataforma)
       
       const referralBonus = winnerInfo ? winnerInfo.prize_amount * 0.05 : 0;
 
@@ -79,7 +78,7 @@ const ConsultDraw = () => {
           total: totalPool,
           first: firstPrize,
           second: secondPrize,
-          fee: platformFee,
+          third: thirdPrize,
           referral: referralBonus
         }
       });
@@ -187,9 +186,12 @@ const ConsultDraw = () => {
               </div>
 
               <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 mb-6 flex items-center gap-2">
-                  <TrendingUp size={14} className="text-purple-500" /> Divisão de Prêmios da Mesa
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
+                    <TrendingUp size={14} className="text-purple-500" /> Divisão de Prêmios da Mesa
+                  </h3>
+                  <span className="text-[9px] font-black text-white/20 uppercase">Total Arrecadado: {result.divisions.total.toLocaleString()} Kz</span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                     <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (33%)</p>
@@ -200,8 +202,8 @@ const ConsultDraw = () => {
                     <p className="text-xl font-black text-blue-400">{result.divisions.second.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">Plataforma (34%)</p>
-                    <p className="text-xl font-black text-white/40">{result.divisions.fee.toLocaleString()} Kz</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">3º Lugar (34%)</p>
+                    <p className="text-xl font-black text-white/40">{result.divisions.third.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">
                     <p className="text-[9px] font-black text-purple-400 uppercase mb-1 flex items-center gap-1">
