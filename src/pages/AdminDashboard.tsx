@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, Users, Settings, LogOut, RefreshCw, 
   DollarSign, Wallet, ArrowDownLeft, ArrowUpRight,
-  ShieldAlert, Activity
+  ShieldAlert, Activity, Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +15,7 @@ import AdminSystem from '@/components/admin/AdminSystem';
 import AdminFinance from '@/components/admin/AdminFinance';
 import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '@/components/ui/SplashScreen';
+import { toast } from 'sonner';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -36,7 +37,6 @@ const AdminDashboard = () => {
       return;
     }
     
-    // Splash inicial de 2 segundos
     const timer = setTimeout(() => {
       setShowInitialSplash(false);
     }, 2000);
@@ -72,6 +72,27 @@ const AdminDashboard = () => {
       console.error("Erro ao carregar estatísticas:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClearHistory = async (type: 'deposit' | 'withdrawal') => {
+    const label = type === 'deposit' ? 'DEPÓSITOS' : 'SAQUES';
+    if (!confirm(`⚠️ ATENÇÃO: Deseja realmente LIMPAR todo o histórico de ${label} CONCLUÍDOS? Esta ação é irreversível e zerará o contador no painel.`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('type', type)
+        .eq('status', 'completed');
+
+      if (error) throw error;
+      
+      toast.success(`Histórico de ${label} limpo com sucesso!`);
+      fetchGlobalStats();
+      setRefreshKey(prev => prev + 1);
+    } catch (err: any) {
+      toast.error("Erro ao limpar dados: " + err.message);
     }
   };
 
@@ -146,7 +167,16 @@ const AdminDashboard = () => {
               <div className="absolute -right-4 -bottom-4 text-green-500/10 group-hover:scale-110 transition-transform">
                 <ArrowDownLeft size={100} />
               </div>
-              <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Total Depósitos</p>
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Total Depósitos</p>
+                <button 
+                  onClick={() => handleClearHistory('deposit')}
+                  className="text-white/10 hover:text-red-500 transition-colors relative z-10"
+                  title="Limpar Histórico de Depósitos"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
               <p className="text-2xl sm:text-3xl lg:text-4xl font-black italic tracking-tighter text-green-400 break-all">
                 {stats.totalDeposits.toLocaleString()} <span className="text-xs sm:text-sm not-italic opacity-60">Kz</span>
               </p>
@@ -156,7 +186,16 @@ const AdminDashboard = () => {
               <div className="absolute -right-4 -bottom-4 text-amber-500/10 group-hover:scale-110 transition-transform">
                 <ArrowUpRight size={100} />
               </div>
-              <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Total Saques</p>
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Total Saques</p>
+                <button 
+                  onClick={() => handleClearHistory('withdrawal')}
+                  className="text-white/10 hover:text-red-500 transition-colors relative z-10"
+                  title="Limpar Histórico de Saques"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
               <p className="text-2xl sm:text-3xl lg:text-4xl font-black italic tracking-tighter text-amber-500 break-all">
                 {stats.totalWithdrawals.toLocaleString()} <span className="text-xs sm:text-sm not-italic opacity-60">Kz</span>
               </p>
