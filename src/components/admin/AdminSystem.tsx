@@ -6,11 +6,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from '@/components/ui/button';
 import { Plus, Activity, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock, Layers } from 'lucide-react';
 import { toast } from 'sonner';
+import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
 const AdminSystem = () => {
   const [modules, setModules] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false });
 
   useEffect(() => {
     fetchSystemData();
@@ -57,8 +59,6 @@ const AdminSystem = () => {
   };
 
   const handleAutoFillRooms = async () => {
-    if (!confirm("Isso criará salas até que cada módulo tenha 3 salas ativas. Continuar?")) return;
-    
     setLoading(true);
     try {
       for (const mod of modules) {
@@ -76,6 +76,7 @@ const AdminSystem = () => {
         }
       }
       toast.success("Salas geradas com sucesso!");
+      setConfirmConfig({ isOpen: false });
       fetchSystemData();
     } catch (err) {
       toast.error("Erro ao gerar salas automáticas");
@@ -86,13 +87,23 @@ const AdminSystem = () => {
 
   return (
     <div className="space-y-10">
+      <ActionConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ isOpen: false })}
+        onConfirm={handleAutoFillRooms}
+        title="GERAR SALAS AUTOMÁTICAS"
+        description="Deseja criar salas até que cada módulo tenha 3 salas ativas?"
+        variant="info"
+        loading={loading}
+      />
+
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
             <LayoutGrid className="text-purple-500" /> Módulos de Jogo
           </h3>
           <div className="flex gap-2">
-            <Button onClick={handleAutoFillRooms} variant="outline" className="border-purple-500/20 text-purple-400 hover:bg-purple-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
+            <Button onClick={() => setConfirmConfig({ isOpen: true })} variant="outline" className="border-purple-500/20 text-purple-400 hover:bg-purple-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
               <Layers size={14} className="mr-2" /> Gerar 3 Salas/Módulo
             </Button>
             <Button onClick={handleCleanExpired} variant="outline" className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10 h-10 rounded-xl font-black text-[10px] uppercase">

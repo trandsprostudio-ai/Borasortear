@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Medal, Star } from 'lucide-react';
+import { Trophy, Medal, Zap } from 'lucide-react';
 
 interface Winner {
   id: string;
@@ -61,7 +61,7 @@ const WinnersCarousel = ({ winners }: WinnersCarouselProps) => {
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em]">Top Ganhador</span>
                 <div className="flex gap-0.5">
-                  {[1, 2, 3].map(i => <Star key={i} size={8} className="text-amber-500 fill-amber-500" />)}
+                  <Zap size={8} className="text-amber-500 fill-amber-500" />
                 </div>
               </div>
               <h4 className="text-xl font-black italic tracking-tighter text-white uppercase">
@@ -82,7 +82,6 @@ const WinnersCarousel = ({ winners }: WinnersCarouselProps) => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Indicadores do Carrossel */}
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
         {winners.map((_, i) => (
           <div 

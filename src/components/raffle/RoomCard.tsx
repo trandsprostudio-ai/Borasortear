@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, Share2, Star, TrendingUp, Radio } from 'lucide-react';
+import { Users, Clock, Share2, Trophy, TrendingUp, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
@@ -43,7 +43,6 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
         return "FINALIZANDO...";
       }
 
-      // Marcar como urgente se faltar menos de 30 minutos
       if (diff < 30 * 60 * 1000) {
         setIsUrgent(true);
       } else {
@@ -68,7 +67,6 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
         isAlmostFull && isRoomOpen ? 'border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.15)]' : 'border-white/5 hover:border-purple-500/40'
       }`}
     >
-      {/* Badge de Status */}
       <div className="absolute top-0 left-0 bg-purple-600 text-[10px] font-black px-4 py-1.5 rounded-br-2xl z-10 uppercase tracking-widest">
         MESA {roomNumber}
       </div>
@@ -106,7 +104,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
           </div>
         </div>
         <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-white/20 group-hover:text-purple-400 transition-colors">
-          <Star size={24} />
+          <Trophy size={24} />
         </div>
       </div>
 

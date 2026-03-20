@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Star, Activity, X, Megaphone, Share2, Loader2, CheckCircle2 } from 'lucide-react';
+import { Trophy, Activity, X, Megaphone, Share2, Loader2, CheckCircle2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -112,7 +112,7 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                     className="w-40 h-40 border-8 border-t-purple-500 border-r-amber-500 border-b-cyan-400 border-l-transparent rounded-full shadow-[0_0_50px_rgba(124,58,237,0.3)]"
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Star size={64} className="text-white animate-pulse" />
+                    <Trophy size={64} className="text-white animate-pulse" />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -131,7 +131,8 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                 className="space-y-6"
               >
                 <div className="relative">
-                  <motion.div                    initial={{ scale: 0 }}
+                  <motion.div
+                    initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: "spring", damping: 12 }}
                     className="w-28 h-28 gold-gradient rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-amber-500/40 mb-4"
@@ -141,7 +142,8 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
                 </div>
 
                 <h2 className="text-4xl font-black text-white tracking-tighter italic">
-                  RESULTADO DA MESA                </h2>
+                  RESULTADO DA MESA
+                </h2>
                 
                 <div className="space-y-3 mt-6">
                   {displayWinners.map((winner, idx) => (

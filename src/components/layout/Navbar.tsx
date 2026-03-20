@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Wallet, User, LogOut, ChevronDown, Search, Settings, Plus, Clock, Star } from 'lucide-react';
+import { Wallet, User, LogOut, ChevronDown, Search, Settings, Plus, Clock, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -155,7 +155,7 @@ const Navbar = () => {
                     <div className="w-6 h-6 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white shrink-0 relative">
                       <User size={12} className="md:size-14" />
                       <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-[#1A1D29] flex items-center justify-center">
-                        <Star size={6} className="text-black fill-black" />
+                        <Trophy size={6} className="text-black" />
                       </div>
                     </div>
                     <ChevronDown size={10} className="text-white/20" />
@@ -166,7 +166,7 @@ const Navbar = () => {
                       <Settings size={14} /> Perfil
                     </Link>
                     <Link to="/affiliates" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                      <Star size={14} className="text-amber-500" /> Afiliados
+                      <Trophy size={14} className="text-amber-500" /> Afiliados
                     </Link>
                     <Link to="/wallet" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest">
                       <Wallet size={14} className="text-purple-500" /> Carteira

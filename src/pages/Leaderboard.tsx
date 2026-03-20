@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, Star, Crown, Loader2, TrendingUp, Users } from 'lucide-react';
+import { Trophy, Medal, Crown, Loader2, TrendingUp, Users, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import FloatingNav from '@/components/layout/FloatingNav';
@@ -24,7 +24,7 @@ const Leaderboard = () => {
         .order('prize_amount', { ascending: false });
 
       if (winners) {
-        // Agrupar por usuário (simulação de agregação já que o Supabase client é limitado em GROUP BY complexo)
+        // Agrupar por usuário
         const grouped = winners.reduce((acc: any, curr: any) => {
           const id = curr.user_id;
           if (!acc[id]) {
@@ -42,7 +42,7 @@ const Leaderboard = () => {
         setTopWinners(Object.values(grouped).sort((a: any, b: any) => b.total - a.total).slice(0, 10));
       }
 
-      // Principais Indicadores (Quem mais convidou)
+      // Principais Indicadores
       const { data: referrers } = await supabase
         .from('profiles')
         .select('referred_by, id')
@@ -55,7 +55,6 @@ const Leaderboard = () => {
           return acc;
         }, {});
 
-        // Buscar nomes dos referrers
         const ids = Object.keys(counts);
         const { data: profiles } = await supabase.from('profiles').select('id, first_name').in('id', ids);
         
@@ -82,16 +81,15 @@ const Leaderboard = () => {
       <main className="max-w-5xl mx-auto px-4 pt-28">
         <header className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-full border border-purple-500/20 mb-6">
-            <Star size={14} className="text-amber-500 fill-amber-500" />
+            <Trophy size={14} className="text-amber-500" />
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400">Hall da Fama</span>
-            <Star size={14} className="text-amber-500 fill-amber-500" />
+            <Trophy size={14} className="text-amber-500" />
           </div>
           <h1 className="text-5xl md:text-6xl font-black italic tracking-tighter uppercase mb-4">Ranking de Elite</h1>
           <p className="text-white/40 font-bold text-xs uppercase tracking-widest">Os jogadores que estão dominando as mesas do BORA SORTEIAR</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Top 3 Podium */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center gap-3 mb-8">
               <Trophy className="text-amber-500" size={24} />
@@ -133,7 +131,6 @@ const Leaderboard = () => {
             </div>
           </div>
 
-          {/* Sidebar Stats */}
           <div className="space-y-8">
             <section className="glass-card p-8 rounded-[2.5rem] border-white/5">
               <div className="flex items-center gap-3 mb-6">
@@ -155,7 +152,7 @@ const Leaderboard = () => {
               </div>
             </section>
 
-            <section className="glass-card p-8 rounded-[2.5rem] border-white/5 bg-gradient-to-br from-blue-600/10 to-transparent">
+            <section className="glass-card p-8 rounded-[2.5rem] border-blue-500/20 bg-gradient-to-br from-blue-600/10 to-transparent">
               <TrendingUp className="text-blue-500 mb-4" size={32} />
               <h3 className="text-xl font-black italic tracking-tighter uppercase mb-2">Estatísticas</h3>
               <p className="text-sm text-white/40 font-bold mb-6">A plataforma já distribuiu mais de 15.000.000 Kz em prêmios este mês.</p>

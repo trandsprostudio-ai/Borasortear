@@ -10,7 +10,7 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, Trophy, Star, HelpCircle, Loader2 } from 'lucide-react';
+import { Activity, Trophy, HelpCircle, Loader2, Zap } from 'lucide-react';
 import { Room, Module } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -163,7 +163,7 @@ const Index = () => {
         >
           {recentWins.map((win, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Star size={10} className="text-amber-500 fill-amber-500" />
+              <Trophy size={10} className="text-amber-500" />
               <span className="text-[10px] font-black uppercase tracking-widest">
                 <span className="text-white/40">@{win.profiles?.first_name || 'Jogador'}</span> faturou <span className="text-green-400">{win.prize_amount.toLocaleString()} Kz</span>
               </span>

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Loader2, ShieldAlert, RefreshCw, CreditCard, History, Phone, ExternalLink, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
 interface AdminFinanceProps {
   onUpdate: () => void;
@@ -15,6 +16,7 @@ interface AdminFinanceProps {
 const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, tx: null, isFalse: false });
 
   useEffect(() => {
     fetchTransactions();
@@ -52,12 +54,9 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     toast.success("IBAN copiado para transferência!");
   };
 
-  const handleApprove = async (tx: any) => {
-    const confirmMsg = tx.type === 'deposit' 
-      ? `Deseja APROVAR o depósito de ${tx.amount.toLocaleString()} Kz para ${tx.profiles?.first_name}?`
-      : `Deseja CONFIRMAR que o pagamento de ${tx.amount.toLocaleString()} Kz foi enviado para ${tx.profiles?.first_name}?`;
-
-    if (!confirm(confirmMsg)) return;
+  const handleApprove = async () => {
+    const { tx } = confirmConfig;
+    if (!tx) return;
 
     try {
       if (tx.type === 'deposit') {
@@ -81,6 +80,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
 
       await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
       toast.success("Operação finalizada com sucesso!");
+      setConfirmConfig({ isOpen: false, tx: null });
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
@@ -88,12 +88,9 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     }
   };
 
-  const handleRejectDeposit = async (tx: any, isFalse: boolean = false) => {
-    const confirmMsg = isFalse 
-      ? "⚠️ ATENÇÃO: Marcar como FALSO penalizará o jogador. Confirmar?" 
-      : "Deseja REJEITAR este depósito?";
-
-    if (!confirm(confirmMsg)) return;
+  const handleReject = async () => {
+    const { tx, isFalse } = confirmConfig;
+    if (!tx) return;
 
     try {
       if (isFalse) {
@@ -114,6 +111,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       });
 
       toast.error("Depósito rejeitado.");
+      setConfirmConfig({ isOpen: false, tx: null });
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
@@ -127,6 +125,15 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
 
   return (
     <div className="space-y-6">
+      <ActionConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ isOpen: false, tx: null })}
+        onConfirm={confirmConfig.action === 'approve' ? handleApprove : handleReject}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        variant={confirmConfig.variant}
+      />
+
       <Tabs defaultValue="deposits" className="w-full">
         <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-12 mb-6 w-full md:w-auto overflow-x-auto no-scrollbar">
           <TabsTrigger value="deposits" className="flex-1 md:flex-none rounded-lg px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-green-600">
@@ -171,9 +178,34 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                       </TableCell>
                       <TableCell className="p-6 text-right">
                         <div className="flex justify-end gap-2">
-                          <Button onClick={() => handleApprove(tx)} className="h-8 bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-3 rounded-lg">Aprovar</Button>
-                          <Button onClick={() => handleRejectDeposit(tx, false)} variant="ghost" className="h-8 text-white/40 text-[9px] font-black uppercase px-3">Rejeitar</Button>
-                          <Button onClick={() => handleRejectDeposit(tx, true)} variant="ghost" className="h-8 text-red-500 border border-red-500/20 text-[9px] font-black uppercase px-3">Falso</Button>
+                          <Button onClick={() => setConfirmConfig({ 
+                            isOpen: true, 
+                            tx, 
+                            action: 'approve', 
+                            title: 'APROVAR DEPÓSITO', 
+                            description: `Deseja creditar ${tx.amount.toLocaleString()} Kz para ${tx.profiles?.first_name}?`,
+                            variant: 'success'
+                          })} className="h-8 bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-3 rounded-lg">Aprovar</Button>
+                          
+                          <Button onClick={() => setConfirmConfig({ 
+                            isOpen: true, 
+                            tx, 
+                            action: 'reject', 
+                            isFalse: false,
+                            title: 'REJEITAR DEPÓSITO', 
+                            description: `Deseja recusar o depósito de ${tx.amount.toLocaleString()} Kz?`,
+                            variant: 'info'
+                          })} variant="ghost" className="h-8 text-white/40 text-[9px] font-black uppercase px-3">Rejeitar</Button>
+                          
+                          <Button onClick={() => setConfirmConfig({ 
+                            isOpen: true, 
+                            tx, 
+                            action: 'reject', 
+                            isFalse: true,
+                            title: 'MARCAR COMO FALSO', 
+                            description: `O comprovativo de ${tx.profiles?.first_name} é falso? Isso penalizará o jogador.`,
+                            variant: 'danger'
+                          })} variant="ghost" className="h-8 text-red-500 border border-red-500/20 text-[9px] font-black uppercase px-3">Falso</Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -211,7 +243,14 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                       </TableCell>
                       <TableCell className="p-6 font-black text-amber-500 text-lg">{tx.amount.toLocaleString()} Kz</TableCell>
                       <TableCell className="p-6 text-right">
-                        <Button onClick={() => handleApprove(tx)} className="h-9 bg-amber-600 hover:bg-amber-700 text-white font-black text-[10px] uppercase px-6 rounded-xl">Validar Pagamento</Button>
+                        <Button onClick={() => setConfirmConfig({ 
+                          isOpen: true, 
+                          tx, 
+                          action: 'approve', 
+                          title: 'CONFIRMAR PAGAMENTO', 
+                          description: `Você confirma que enviou ${tx.amount.toLocaleString()} Kz para ${tx.profiles?.first_name}?`,
+                          variant: 'warning'
+                        })} className="h-9 bg-amber-600 hover:bg-amber-700 text-white font-black text-[10px] uppercase px-6 rounded-xl">Validar Pagamento</Button>
                       </TableCell>
                     </TableRow>
                   )) : (

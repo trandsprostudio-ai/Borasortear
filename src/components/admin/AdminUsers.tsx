@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Edit2, Save, X, User, Loader2, ShieldAlert, ShieldCheck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -14,6 +15,7 @@ const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editBalance, setEditBalance] = useState<string>('');
+  const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, userId: null, action: null });
 
   useEffect(() => {
     fetchUsers();
@@ -54,10 +56,8 @@ const AdminUsers = () => {
     }
   };
 
-  const toggleBan = async (userId: string, currentStatus: boolean) => {
-    const action = currentStatus ? "DESBANIR" : "BANIR";
-    if (!confirm(`Deseja realmente ${action} este usuário?`)) return;
-
+  const toggleBan = async () => {
+    const { userId, currentStatus } = confirmConfig;
     const { error } = await supabase
       .from('profiles')
       .update({ is_banned: !currentStatus })
@@ -66,13 +66,13 @@ const AdminUsers = () => {
     if (error) toast.error("Erro ao alterar status");
     else {
       toast.success(`Usuário ${currentStatus ? 'desbanido' : 'banido'}!`);
+      setConfirmConfig({ isOpen: false });
       fetchUsers();
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("⚠️ ATENÇÃO: Esta ação excluirá permanentemente a conta e todo o histórico do jogador. Continuar?")) return;
-
+  const handleDeleteUser = async () => {
+    const { userId } = confirmConfig;
     const { error } = await supabase
       .from('profiles')
       .delete()
@@ -82,6 +82,7 @@ const AdminUsers = () => {
       toast.error("Erro ao excluir conta");
     } else {
       toast.success("Conta excluída com sucesso!");
+      setConfirmConfig({ isOpen: false });
       fetchUsers();
     }
   };
@@ -102,6 +103,15 @@ const AdminUsers = () => {
 
   return (
     <div className="space-y-6">
+      <ActionConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ isOpen: false })}
+        onConfirm={confirmConfig.action === 'ban' ? toggleBan : handleDeleteUser}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        variant={confirmConfig.variant}
+      />
+
       <div className="relative max-w-md">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
         <Input 
@@ -183,7 +193,15 @@ const AdminUsers = () => {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          onClick={() => toggleBan(u.id, u.is_banned)}
+                          onClick={() => setConfirmConfig({
+                            isOpen: true,
+                            userId: u.id,
+                            currentStatus: u.is_banned,
+                            action: 'ban',
+                            title: u.is_banned ? 'DESBANIR JOGADOR' : 'BANIR JOGADOR',
+                            description: `Deseja realmente ${u.is_banned ? 'desbanir' : 'banir'} @${u.first_name}?`,
+                            variant: u.is_banned ? 'success' : 'danger'
+                          })}
                           className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest ${u.is_banned ? 'text-green-400 hover:bg-green-400/10' : 'text-red-400 hover:bg-red-400/10'}`}
                         >
                           {u.is_banned ? <ShieldCheck size={14} className="mr-2" /> : <ShieldAlert size={14} className="mr-2" />}
@@ -192,7 +210,14 @@ const AdminUsers = () => {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          onClick={() => handleDeleteUser(u.id)}
+                          onClick={() => setConfirmConfig({
+                            isOpen: true,
+                            userId: u.id,
+                            action: 'delete',
+                            title: 'EXCLUIR CONTA',
+                            description: `⚠️ ATENÇÃO: Esta ação excluirá permanentemente a conta de @${u.first_name}. Continuar?`,
+                            variant: 'danger'
+                          })}
                           className="h-9 w-9 rounded-xl text-white/10 hover:text-red-500 hover:bg-red-500/10"
                         >
                           <Trash2 size={16} />
