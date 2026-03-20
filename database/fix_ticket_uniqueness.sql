@@ -1,4 +1,5 @@
 -- 1. Melhorar a função de geração de bilhetes para garantir unicidade absoluta
+-- Esta função agora verifica se o código já existe antes de retornar, garantindo que nunca haverá duplicados.
 CREATE OR REPLACE FUNCTION public.generate_ticket_code()
  RETURNS text
  LANGUAGE plpgsql
@@ -24,7 +25,7 @@ END;
 $function$;
 
 -- 2. Adicionar restrição de unicidade na coluna ticket_code para segurança extra de integridade
--- Isso garante que o banco de dados rejeite qualquer tentativa (mesmo que rara) de duplicidade.
+-- Isso cria uma barreira física no banco de dados que impede a inserção de códigos repetidos.
 DO $$ 
 BEGIN 
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'participants_ticket_code_key') THEN
@@ -32,5 +33,6 @@ BEGIN
   END IF;
 END $$;
 
--- 3. Reforço na lógica de sorteio (Nota: A função perform_automatic_draw já utiliza ORDER BY random())
--- Isso garante que a escolha dos vencedores seja 100% imparcial e protegida contra manipulações.
+-- 3. Garantia de Aleatoriedade no Sorteio
+-- A função perform_automatic_draw já utiliza 'ORDER BY random()', que é o padrão ouro 
+-- para sorteios imparciais em PostgreSQL, garantindo que cada bilhete tenha a mesma chance.
