@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, LayoutGrid, Clock, Users, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { RefreshCw, LayoutGrid, Clock, Users, CheckCircle2, XCircle, Loader2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Module {
@@ -41,7 +41,6 @@ const ModulesRoomsTable = () => {
 
   const fetchData = async () => {
     try {
-      // Buscar módulos com contagem de salas
       const { data: modulesData, error: modulesError } = await supabase
         .from('modules')
         .select(`
@@ -52,7 +51,6 @@ const ModulesRoomsTable = () => {
 
       if (modulesError) throw modulesError;
 
-      // Buscar todas as salas
       const { data: roomsData, error: roomsError } = await supabase
         .from('rooms')
         .select(`
@@ -69,6 +67,22 @@ const ModulesRoomsTable = () => {
       toast.error("Erro ao carregar dados: " + error.message);
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleForceDraw = async (roomId: string) => {
+    if (!confirm("⚠️ ATENÇÃO: Deseja forçar o sorteio desta mesa agora? Isso encerrará a participação e escolherá os vencedores entre os jogadores atuais.")) return;
+    
+    setRefreshing(true);
+    try {
+      const { error } = await supabase.rpc('perform_automatic_draw', { p_room_id: roomId });
+      if (error) throw error;
+      toast.success("Sorteio forçado com sucesso!");
+      await fetchData();
+    } catch (err: any) {
+      toast.error("Erro ao forçar sorteio: " + err.message);
+    } finally {
       setRefreshing(false);
     }
   };
@@ -123,7 +137,6 @@ const ModulesRoomsTable = () => {
     );
   }
 
-  // Agrupar salas por módulo
   const roomsByModule = rooms.reduce((acc, room) => {
     if (!acc[room.module_id]) {
       acc[room.module_id] = [];
@@ -157,11 +170,9 @@ const ModulesRoomsTable = () => {
         </Button>
       </div>
 
-      {/* Cards de módulos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {modules.map((module) => {
           const moduleRooms = roomsByModule[module.id] || [];
-          const openRooms = moduleRooms.filter(r => r.status === 'open').length;
           const totalParticipants = moduleRooms.reduce((sum, r) => sum + r.current_participants, 0);
           
           return (
@@ -228,12 +239,6 @@ const ModulesRoomsTable = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         {getStatusBadge(room.status)}
-                        {room.status === 'open' && (
-                          <span className="text-[9px] font-black text-amber-500 flex items-center gap-1">
-                            <Clock size={10} />
-                            {formatTimeRemaining(room.expires_at)}
-                          </span>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -244,7 +249,6 @@ const ModulesRoomsTable = () => {
         })}
       </div>
 
-      {/* Tabela detalhada de todas as salas */}
       <div className="glass-card rounded-[2.5rem] border-white/5 overflow-hidden">
         <div className="p-6 border-b border-white/5 bg-white/5">
           <h3 className="text-lg font-black italic tracking-tighter uppercase">Lista Completa de Salas</h3>
@@ -261,10 +265,9 @@ const ModulesRoomsTable = () => {
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">ID da Sala</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Status</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Participantes</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Capacidade</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Progresso</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Expira em</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Criada em</TableHead>
+                <TableHead className="text-[10px] font-black uppercase text-white/40 p-4 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -288,9 +291,7 @@ const ModulesRoomsTable = () => {
                   </TableCell>
                   <TableCell className="p-4">
                     <span className="font-black text-lg">{room.current_participants}</span>
-                  </TableCell>
-                  <TableCell className="p-4">
-                    <span className="text-white/60">{room.max_participants}</span>
+                    <span className="text-[10px] text-white/20 ml-1">/ {room.max_participants}</span>
                   </TableCell>
                   <TableCell className="p-4">
                     <div className="flex items-center gap-2">
@@ -316,58 +317,21 @@ const ModulesRoomsTable = () => {
                       {formatTimeRemaining(room.expires_at)}
                     </span>
                   </TableCell>
-                  <TableCell className="p-4">
-                    <span className="text-[10px] text-white/20">
-                      {new Date(room.created_at).toLocaleDateString('pt-AO')} {new Date(room.created_at).toLocaleTimeString('pt-AO', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                  <TableCell className="p-4 text-right">
+                    {room.status === 'open' && (
+                      <Button 
+                        size="sm"
+                        onClick={() => handleForceDraw(room.id)}
+                        className="h-8 bg-purple-600/20 text-purple-400 border border-purple-500/30 text-[9px] font-black uppercase px-3 rounded-lg hover:bg-purple-600 hover:text-white transition-all"
+                      >
+                        <Zap size={12} className="mr-1" /> Forçar Sorteio
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </div>
-      </div>
-
-      {/* Resumo estatístico */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="glass-card p-6 rounded-[2rem] border-green-500/20 bg-green-500/5">
-          <div className="flex items-center gap-3 mb-2">
-            <CheckCircle2 size={20} className="text-green-500" />
-            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Salas Abertas</span>
-          </div>
-          <p className="text-3xl font-black text-green-400">
-            {rooms.filter(r => r.status === 'open').length}
-          </p>
-        </div>
-
-        <div className="glass-card p-6 rounded-[2rem] border-amber-500/20 bg-amber-500/5">
-          <div className="flex items-center gap-3 mb-2">
-            <Clock size={20} className="text-amber-500" />
-            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Encerradas</span>
-          </div>
-          <p className="text-3xl font-black text-amber-400">
-            {rooms.filter(r => r.status === 'closed' || r.status === 'processing').length}
-          </p>
-        </div>
-
-        <div className="glass-card p-6 rounded-[2rem] border-purple-500/20 bg-purple-500/5">
-          <div className="flex items-center gap-3 mb-2">
-            <Users size={20} className="text-purple-500" />
-            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Total Participantes</span>
-          </div>
-          <p className="text-3xl font-black text-purple-400">
-            {rooms.reduce((sum, r) => sum + r.current_participants, 0)}
-          </p>
-        </div>
-
-        <div className="glass-card p-6 rounded-[2rem] border-blue-500/20 bg-blue-500/5">
-          <div className="flex items-center gap-3 mb-2">
-            <LayoutGrid size={20} className="text-blue-500" />
-            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Total Salas</span>
-          </div>
-          <p className="text-3xl font-black text-blue-400">
-            {rooms.length}
-          </p>
         </div>
       </div>
     </div>
