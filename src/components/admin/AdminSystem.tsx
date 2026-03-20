@@ -36,8 +36,10 @@ const AdminSystem = () => {
     if (!confirm("Deseja forçar o sorteio desta mesa agora?")) return;
     
     const { error } = await supabase.rpc('perform_automatic_draw', { p_room_id: roomId });
-    if (error) toast.error("Erro ao forçar sorteio");
-    else {
+    if (error) {
+      toast.error("Erro no sorteio: " + (error.message || "Erro desconhecido"));
+      console.error("Erro detalhado:", error);
+    } else {
       toast.success("Sorteio realizado com sucesso!");
       fetchSystemData();
     }

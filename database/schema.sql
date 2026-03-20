@@ -18,23 +18,29 @@ DECLARE
   v_winner1_final numeric;
   v_winner2_final numeric;
   v_participant_count int;
+  v_platform_id uuid := '00000000-0000-0000-0000-000000000000';
 BEGIN
-  -- Bloqueio para evitar sorteios duplicados e garantir que a sala existe e está aberta
+  -- Garantir que o usuário da plataforma existe para evitar erro de chave estrangeira
+  INSERT INTO public.profiles (id, first_name, balance)
+  VALUES (v_platform_id, 'PLATAFORMA', 0)
+  ON CONFLICT (id) DO NOTHING;
+
+  -- Bloqueio para evitar sorteios duplicados
   IF NOT EXISTS (SELECT 1 FROM public.rooms WHERE id = p_room_id AND status = 'open' FOR UPDATE) THEN
     RETURN;
   END IF;
 
   -- Busca dados do módulo e da sala
-  SELECT module_id, max_participants, m.price, r.current_participants
+  SELECT module_id, max_participants, COALESCE(m.price, 0), r.current_participants
   INTO v_module_id, v_max_p, v_module_price, v_total_participants
   FROM public.rooms r
   JOIN public.modules m ON r.module_id = m.id
   WHERE r.id = p_room_id;
 
-  -- Conta participantes reais para evitar erros de divisão ou busca
+  -- Conta participantes reais
   SELECT count(*) INTO v_participant_count FROM public.participants WHERE room_id = p_room_id;
 
-  -- Caso de teste ou mesa vazia: apenas fecha e abre nova
+  -- Caso de mesa vazia: apenas fecha e abre nova
   IF v_participant_count = 0 THEN
     UPDATE public.rooms SET status = 'finished' WHERE id = p_room_id;
     INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
@@ -42,12 +48,12 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Cálculo do prêmio total baseado nos participantes atuais
+  -- Cálculo do prêmio total
   v_total_pool := v_module_price * v_participant_count;
-  v_share_winner := v_total_pool * 0.33;
-  v_share_platform := v_total_pool * 0.34;
+  v_share_winner := COALESCE(v_total_pool * 0.33, 0);
+  v_share_platform := COALESCE(v_total_pool * 0.34, 0);
 
-  -- Escolha dos Vencedores (Suporta 1 ou 2 jogadores para testes)
+  -- Escolha dos Vencedores
   IF v_participant_count >= 2 THEN
     SELECT user_id INTO v_winner1_id FROM public.participants WHERE room_id = p_room_id ORDER BY random() LIMIT 1;
     SELECT user_id INTO v_winner2_id FROM public.participants WHERE room_id = p_room_id AND user_id != v_winner1_id ORDER BY random() LIMIT 1;
@@ -89,17 +95,20 @@ BEGIN
     UPDATE public.profiles SET balance = balance + v_winner2_final WHERE id = v_winner2_id;
     INSERT INTO public.winners (draw_id, user_id, prize_amount, position) VALUES (p_room_id, v_winner2_id, v_winner2_final, 2);
   ELSE
-    -- Se não houver 2º vencedor (mesa com 1 pessoa), o valor vai para a plataforma
     v_share_platform := v_share_platform + v_share_winner;
   END IF;
 
   -- Registro da Plataforma (3º Vencedor)
   INSERT INTO public.winners (draw_id, user_id, prize_amount, position) 
-  VALUES (p_room_id, '00000000-0000-0000-0000-000000000000', v_share_platform, 3);
+  VALUES (p_room_id, v_platform_id, v_share_platform, 3);
 
   -- Finalização e Reinício Automático
   UPDATE public.rooms SET status = 'finished' WHERE id = p_room_id;
-  INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
-  VALUES (v_module_id, v_max_p, 'open', now() + interval '3 hours');
+  -- Nota: O trigger replace_finished_room cuidará de abrir a nova sala se configurado, 
+  -- mas mantemos aqui para garantir a continuidade imediata.
+  IF NOT EXISTS (SELECT 1 FROM public.rooms WHERE module_id = v_module_id AND status = 'open') THEN
+    INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
+    VALUES (v_module_id, v_max_p, 'open', now() + interval '3 hours');
+  END IF;
 END;
 $function$
