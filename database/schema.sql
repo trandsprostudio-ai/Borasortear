@@ -1,8 +1,16 @@
--- 1. REMOVER FUNÇÕES OBSOLETAS QUE CAUSAM CONFLITO
+-- 1. LIMPEZA TOTAL DE GATILHOS E FUNÇÕES CONFLITANTES
+DROP TRIGGER IF EXISTS on_room_full ON public.rooms;
+DROP TRIGGER IF EXISTS on_participant_added ON public.participants;
+DROP TRIGGER IF EXISTS on_room_finished ON public.rooms;
+
+DROP FUNCTION IF EXISTS public.tr_auto_draw_on_full();
 DROP FUNCTION IF EXISTS public.process_room_draw(uuid);
 DROP FUNCTION IF EXISTS public.update_room_participants();
+DROP FUNCTION IF EXISTS public.handle_new_participant_trigger();
+DROP FUNCTION IF EXISTS public.perform_automatic_draw(uuid);
+DROP FUNCTION IF EXISTS public.replace_finished_room();
 
--- 2. FUNÇÃO DE SORTEIO DEFINITIVA (COM ALIASES EXPLÍCITOS)
+-- 2. FUNÇÃO DE SORTEIO REESCRITA (SEM JOINS PARA EVITAR AMBIGUIDADE)
 CREATE OR REPLACE FUNCTION public.perform_automatic_draw(p_room_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -13,7 +21,6 @@ DECLARE
   v_module_id uuid;
   v_max_p int;
   v_module_price numeric;
-  v_total_participants int;
   v_total_pool numeric;
   v_share_winner numeric;
   v_share_platform numeric;
@@ -29,22 +36,27 @@ BEGIN
   VALUES (v_platform_id, 'PLATAFORMA', 0)
   ON CONFLICT (id) DO NOTHING;
 
-  -- Bloqueio de segurança usando alias 'r'
-  IF NOT EXISTS (SELECT 1 FROM public.rooms r WHERE r.id = p_room_id AND r.status = 'open' FOR UPDATE) THEN
+  -- Bloqueio de segurança (Usa nome da tabela explicitamente)
+  IF NOT EXISTS (SELECT 1 FROM public.rooms WHERE rooms.id = p_room_id AND rooms.status = 'open' FOR UPDATE) THEN
     RETURN;
   END IF;
 
-  -- Busca dados da sala e módulo com aliases claros
-  SELECT r.module_id, r.max_participants, m.price, r.current_participants
-  INTO v_module_id, v_max_p, v_module_price, v_total_participants
-  FROM public.rooms r
-  JOIN public.modules m ON r.module_id = m.id
-  WHERE r.id = p_room_id;
+  -- Busca dados da sala (Sem JOIN)
+  SELECT module_id, max_participants INTO v_module_id, v_max_p
+  FROM public.rooms
+  WHERE id = p_room_id;
+
+  -- Busca preço do módulo (Consulta separada para evitar ambiguidade)
+  SELECT price INTO v_module_price
+  FROM public.modules
+  WHERE id = v_module_id;
 
   -- Conta participantes reais
-  SELECT count(*) INTO v_participant_count FROM public.participants p WHERE p.room_id = p_room_id;
+  SELECT count(*) INTO v_participant_count 
+  FROM public.participants 
+  WHERE room_id = p_room_id;
 
-  -- Mesa vazia: apenas fecha e abre nova
+  -- Se a mesa estiver vazia, apenas fecha e abre nova
   IF v_participant_count = 0 THEN
     UPDATE public.rooms SET status = 'finished' WHERE id = p_room_id;
     INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
@@ -52,6 +64,7 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Cálculos de prêmios
   v_total_pool := COALESCE(v_module_price, 0) * v_participant_count;
   v_share_winner := v_total_pool * 0.33;
   v_share_platform := v_total_pool * 0.34;
@@ -102,7 +115,7 @@ BEGIN
   -- Finalização da sala
   UPDATE public.rooms SET status = 'finished' WHERE id = p_room_id;
   
-  -- Garante que uma nova sala seja aberta
+  -- Garante que uma nova sala seja aberta para este módulo
   IF NOT EXISTS (SELECT 1 FROM public.rooms WHERE module_id = v_module_id AND status = 'open') THEN
     INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
     VALUES (v_module_id, v_max_p, 'open', now() + interval '3 hours');
@@ -110,7 +123,7 @@ BEGIN
 END;
 $function$;
 
--- 3. GATILHO DE PARTICIPANTE (USANDO ALIASES PARA EVITAR AMBIGUIDADE)
+-- 3. GATILHO ÚNICO DE PARTICIPAÇÃO (CONSOLIDADO)
 CREATE OR REPLACE FUNCTION public.handle_new_participant_trigger()
  RETURNS trigger
  LANGUAGE plpgsql AS $function$
@@ -118,13 +131,13 @@ DECLARE
   v_current int;
   v_max int;
 BEGIN
-  -- Atualiza o contador da sala usando alias 'r'
-  UPDATE public.rooms r
-  SET current_participants = r.current_participants + 1 
-  WHERE r.id = NEW.room_id
-  RETURNING r.current_participants, r.max_participants INTO v_current, v_max;
+  -- Atualiza o contador da sala de forma ultra-explícita
+  UPDATE public.rooms 
+  SET current_participants = public.rooms.current_participants + 1 
+  WHERE public.rooms.id = NEW.room_id
+  RETURNING public.rooms.current_participants, public.rooms.max_participants INTO v_current, v_max;
 
-  -- Se atingiu o limite, sorteia
+  -- Se atingiu o limite, sorteia imediatamente
   IF v_current >= v_max THEN
     PERFORM public.perform_automatic_draw(NEW.room_id);
   END IF;
@@ -132,3 +145,8 @@ BEGIN
   RETURN NEW;
 END;
 $function$;
+
+-- 4. RE-ANEXAR GATILHOS
+CREATE TRIGGER on_participant_added
+  AFTER INSERT ON public.participants
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_participant_trigger();
