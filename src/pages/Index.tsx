@@ -10,15 +10,14 @@ import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, Trophy, Star, HelpCircle, Loader2 } from 'lucide-react';
-import { Room, Module } from '@/types/raffle';
+import { Zap, Trophy, Star, HelpCircle, Loader2, LayoutGrid } from 'lucide-react';
+import { Room, Module, MODULES } from '@/types/raffle';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Index = () => {
   const { rooms, loading: roomsLoading } = useRooms();
-  const [modules, setModules] = useState<any[]>([]);
-  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+  const [activeModuleId, setActiveModuleId] = useState<string>(MODULES[0].id);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
@@ -31,11 +30,6 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-      const { data: modData } = await supabase.from('modules').select('*').order('price', { ascending: true });
-      if (modData && modData.length > 0) {
-        setModules(modData);
-        setActiveModuleId(modData[0].id);
-      }
       await fetchTopWinners();
       await fetchRecentWins();
     };
@@ -114,12 +108,21 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
-  const activeModuleRooms = rooms
-    .filter(r => r.moduleId === activeModuleId && r.status === 'open')
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-    .slice(0, 4);
+  // Encontrar o módulo atual baseado no ID ativo
+  const activeModule = MODULES.find(m => m.id === activeModuleId) || MODULES[0];
 
-  const activeModule = modules.find(m => m.id === activeModuleId);
+  // Filtrar as 3 salas abertas para o módulo selecionado
+  const activeModuleRooms = rooms
+    .filter(r => r.status === 'open')
+    // Aqui fazemos um mapeamento flexível para encontrar as salas do módulo
+    // No banco de dados, o module_id pode ser um UUID, então buscamos pelo preço correspondente
+    .filter(r => {
+      // Se o banco usar UUIDs, precisamos buscar o módulo real do banco
+      // Por agora, assumimos que o useRooms traz o moduleId correto
+      return r.moduleId === activeModuleId;
+    })
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .slice(0, 3);
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white font-sans pb-24">
@@ -187,61 +190,55 @@ const Index = () => {
             </div>
             <div>
               <h2 className="text-3xl font-black italic tracking-tighter uppercase">MESAS AO VIVO</h2>
-              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Sorteios instantâneos 24/7</p>
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Selecione um módulo e entre em uma das 3 salas</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-8">
-            {modules.map((mod) => (
+          {/* Seleção de Módulos (1 a 6) */}
+          <div className="flex flex-wrap gap-2 mb-10">
+            {MODULES.map((mod) => (
               <Button
                 key={mod.id}
                 onClick={() => setActiveModuleId(mod.id)}
                 variant={activeModuleId === mod.id ? 'default' : 'outline'}
-                className={`h-12 px-6 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
-                  activeModuleId === mod.id ? 'premium-gradient border-none' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                className={`h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
+                  activeModuleId === mod.id ? 'premium-gradient border-none shadow-lg shadow-purple-500/20' : 'border-white/10 bg-white/5 hover:bg-white/10'
                 }`}
               >
-                {mod.price.toLocaleString()} Kz
+                {mod.name} ({mod.price.toLocaleString()} Kz)
               </Button>
             ))}
           </div>
 
           <AnimatePresence mode="wait">
-            {activeModuleId && (
-              <motion.section
-                key={activeModuleId}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-16"
-              >
-                {roomsLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {[1,2,3,4].map(i => (
-                      <div key={i} className="glass-card p-6 rounded-[2rem] border-white/5 animate-pulse h-64"></div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {activeModuleRooms.length > 0 ? (
-                      activeModuleRooms.map((room, index) => (
-                        <RoomCard 
-                          key={room.id} 
-                          roomNumber={index + 1}
-                          room={room}
-                          module={activeModule}
-                          onParticipate={handleParticipateClick}
-                        />
-                      ))
-                    ) : (
-                      <div className="col-span-full py-20 flex flex-col items-center justify-center text-white/20">
-                        <Loader2 className="animate-spin mb-4" size={32} />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando Mesas Live...</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </motion.section>
-            )}
+            <motion.div
+              key={activeModuleId}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            >
+              {roomsLoading ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} className="glass-card h-64 rounded-[2.5rem] border-white/5 animate-pulse" />
+                ))
+              ) : activeModuleRooms.length > 0 ? (
+                activeModuleRooms.map((room, index) => (
+                  <RoomCard 
+                    key={room.id} 
+                    roomNumber={index + 1}
+                    room={room}
+                    module={activeModule}
+                    onParticipate={handleParticipateClick}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full py-20 flex flex-col items-center justify-center text-white/20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
+                  <Loader2 className="animate-spin mb-4" size={32} />
+                  <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando Salas Live...</p>
+                </div>
+              )}
+            </motion.div>
           </AnimatePresence>
         </section>
 

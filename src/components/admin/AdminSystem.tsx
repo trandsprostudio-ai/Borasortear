@@ -68,13 +68,13 @@ const AdminSystem = () => {
   };
 
   const handleAutoFillRooms = async () => {
-    if (!confirm("Isso criará salas até que cada módulo tenha 4 salas ativas. Continuar?")) return;
+    if (!confirm("Isso criará salas até que cada módulo tenha 3 salas ativas. Continuar?")) return;
     
     setLoading(true);
     try {
       for (const mod of modules) {
         const activeRoomsCount = rooms.filter(r => r.module_id === mod.id && r.status === 'open').length;
-        const needed = 4 - activeRoomsCount;
+        const needed = 3 - activeRoomsCount;
         
         if (needed > 0) {
           const newRooms = Array(needed).fill({
@@ -104,7 +104,7 @@ const AdminSystem = () => {
           </h3>
           <div className="flex gap-2">
             <Button onClick={handleAutoFillRooms} variant="outline" className="border-purple-500/20 text-purple-400 hover:bg-purple-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
-              <Layers size={14} className="mr-2" /> Gerar 4 Salas/Módulo
+              <Layers size={14} className="mr-2" /> Gerar 3 Salas/Módulo
             </Button>
             <Button onClick={handleCleanExpired} variant="outline" className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
               Processar Expiradas
@@ -118,16 +118,16 @@ const AdminSystem = () => {
               <div key={mod.id} className="glass-card p-4 rounded-2xl border-white/5 text-center">
                 <p className="text-[10px] font-black text-white/20 uppercase mb-1">{mod.name}</p>
                 <p className="text-lg font-black italic mb-1">{mod.price.toLocaleString()} Kz</p>
-                <p className={`text-[9px] font-bold mb-3 ${activeCount >= 4 ? 'text-green-400' : 'text-amber-500'}`}>
-                  {activeCount}/4 Salas Ativas
+                <p className={`text-[9px] font-bold mb-3 ${activeCount >= 3 ? 'text-green-400' : 'text-amber-500'}`}>
+                  {activeCount}/3 Salas Ativas
                 </p>
                 <Button 
                   size="sm"
-                  disabled={activeCount >= 4}
+                  disabled={activeCount >= 3}
                   onClick={() => handleCreateRoom(mod.id, mod.max_participants)}
                   className="w-full h-8 bg-white/5 hover:bg-purple-600 text-[9px] font-black uppercase rounded-lg"
                 >
-                  {activeCount >= 4 ? 'Limite Atingido' : 'Nova Mesa'}
+                  {activeCount >= 3 ? 'Limite Atingido' : 'Nova Mesa'}
                 </Button>
               </div>
             );
