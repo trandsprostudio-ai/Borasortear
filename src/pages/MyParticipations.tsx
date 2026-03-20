@@ -217,3 +217,6 @@ const MyParticipations = () => {
       <Footer />
     </div>
   );
+};
+
+export default MyParticipations;
