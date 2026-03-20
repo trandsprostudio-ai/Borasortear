@@ -199,7 +199,7 @@ const Index = () => {
               <Zap size={24} className="animate-pulse" />
             </div>
             <div>
-              <h2 className="text-3xl font-black italic tracking-tighter uppercase">MESAS AO VIVO</h2>
+              <h2 className="text-3xl font-black italic tracking-tighter uppercase">MÓDULOS AO VIVO</h2>
               <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Selecione um módulo e entre em uma das 3 salas</p>
             </div>
           </div>
