@@ -1,4 +1,8 @@
--- 1. LIMPEZA RADICAL (CASCADE remove gatilhos dependentes automaticamente)
+-- 1. LIMPEZA TOTAL (Removendo absolutamente tudo que possa conflitar)
+DROP TRIGGER IF EXISTS on_participant_added ON public.participants;
+DROP TRIGGER IF EXISTS on_room_full ON public.rooms;
+DROP TRIGGER IF EXISTS on_room_finished ON public.rooms;
+
 DROP FUNCTION IF EXISTS public.perform_automatic_draw(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.handle_new_participant_trigger() CASCADE;
 DROP FUNCTION IF EXISTS public.tr_auto_draw_on_full() CASCADE;
@@ -6,137 +10,133 @@ DROP FUNCTION IF EXISTS public.process_room_draw(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.update_room_participants() CASCADE;
 DROP FUNCTION IF EXISTS public.replace_finished_room() CASCADE;
 
--- 2. FUNÇÃO DE SORTEIO ULTRA-SEGURA (SEM JOINS E COM NOMES ÚNICOS)
-CREATE OR REPLACE FUNCTION public.perform_automatic_draw(p_target_room_id uuid)
+-- 2. FUNÇÃO DE SORTEIO COM QUALIFICAÇÃO ABSOLUTA
+CREATE OR REPLACE FUNCTION public.perform_automatic_draw(p_room_id uuid)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER AS $function$
 DECLARE
-  -- Variáveis com prefixos únicos para evitar colisão com nomes de colunas
-  var_winner1_id uuid;
-  var_winner2_id uuid;
-  var_mod_id uuid;
-  var_room_max_p int;
-  var_mod_price numeric;
-  var_pool_total numeric;
-  var_prize_share numeric;
-  var_platform_share numeric;
-  var_ref1_id uuid;
-  var_ref2_id uuid;
-  var_winner1_net numeric;
-  var_winner2_net numeric;
-  var_real_participant_count int;
-  var_platform_user_id uuid := '00000000-0000-0000-0000-000000000000';
+  v_mod_id uuid;
+  v_room_max int;
+  v_price numeric;
+  v_p_count int;
+  v_pool numeric;
+  v_win_share numeric;
+  v_plat_share numeric;
+  v_w1_id uuid;
+  v_w2_id uuid;
+  v_ref1 uuid;
+  v_ref2 uuid;
+  v_w1_net numeric;
+  v_w2_net numeric;
+  v_plat_user uuid := '00000000-0000-0000-0000-000000000000';
 BEGIN
   -- Garante perfil da plataforma
   INSERT INTO public.profiles (id, first_name, balance)
-  VALUES (var_platform_user_id, 'PLATAFORMA', 0)
+  VALUES (v_plat_user, 'PLATAFORMA', 0)
   ON CONFLICT (id) DO NOTHING;
 
-  -- Bloqueio de segurança (Usa o nome da tabela explicitamente no WHERE)
-  IF NOT EXISTS (SELECT 1 FROM public.rooms WHERE public.rooms.id = p_target_room_id AND public.rooms.status = 'open' FOR UPDATE) THEN
+  -- Bloqueio de segurança com alias explícito
+  IF NOT EXISTS (SELECT 1 FROM public.rooms AS r WHERE r.id = p_room_id AND r.status = 'open' FOR UPDATE) THEN
     RETURN;
   END IF;
 
-  -- Busca dados da sala (Sem JOIN para evitar ambiguidade de colunas)
-  SELECT module_id, max_participants INTO var_mod_id, var_room_max_p
-  FROM public.rooms
-  WHERE public.rooms.id = p_target_room_id;
+  -- Busca dados da sala usando alias 'r'
+  SELECT r.module_id, r.max_participants INTO v_mod_id, v_room_max
+  FROM public.rooms AS r
+  WHERE r.id = p_room_id;
 
-  -- Busca preço do módulo em consulta separada
-  SELECT price INTO var_mod_price
-  FROM public.modules
-  WHERE public.modules.id = var_mod_id;
+  -- Busca preço do módulo usando alias 'm'
+  SELECT m.price INTO v_price
+  FROM public.modules AS m
+  WHERE m.id = v_mod_id;
 
-  -- Conta participantes reais na sala
-  SELECT count(*) INTO var_real_participant_count 
-  FROM public.participants 
-  WHERE public.participants.room_id = p_target_room_id;
+  -- Conta participantes usando alias 'p'
+  SELECT count(*) INTO v_p_count 
+  FROM public.participants AS p 
+  WHERE p.room_id = p_room_id;
 
-  -- Se a mesa estiver vazia, apenas finaliza e abre nova
-  IF var_real_participant_count = 0 THEN
-    UPDATE public.rooms SET status = 'finished' WHERE public.rooms.id = p_target_room_id;
+  -- Mesa vazia: finaliza e abre nova
+  IF v_p_count = 0 THEN
+    UPDATE public.rooms AS r SET status = 'finished' WHERE r.id = p_room_id;
     INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
-    VALUES (var_mod_id, var_room_max_p, 'open', now() + interval '3 hours');
+    VALUES (v_mod_id, v_room_max, 'open', now() + interval '3 hours');
     RETURN;
   END IF;
 
-  -- Cálculos de prêmios (33% para cada vencedor real, 34% plataforma)
-  var_pool_total := COALESCE(var_mod_price, 0) * var_real_participant_count;
-  var_prize_share := var_pool_total * 0.33;
-  var_platform_share := var_pool_total * 0.34;
+  v_pool := COALESCE(v_price, 0) * v_p_count;
+  v_win_share := v_pool * 0.33;
+  v_plat_share := v_pool * 0.34;
 
-  -- Sorteio aleatório de vencedores
-  IF var_real_participant_count >= 2 THEN
-    SELECT user_id INTO var_winner1_id FROM public.participants WHERE room_id = p_target_room_id ORDER BY random() LIMIT 1;
-    SELECT user_id INTO var_winner2_id FROM public.participants WHERE room_id = p_target_room_id AND user_id != var_winner1_id ORDER BY random() LIMIT 1;
+  -- Sorteio
+  IF v_p_count >= 2 THEN
+    SELECT p.user_id INTO v_w1_id FROM public.participants AS p WHERE p.room_id = p_room_id ORDER BY random() LIMIT 1;
+    SELECT p.user_id INTO v_w2_id FROM public.participants AS p WHERE p.room_id = p_room_id AND p.user_id != v_w1_id ORDER BY random() LIMIT 1;
   ELSE
-    SELECT user_id INTO var_winner1_id FROM public.participants WHERE room_id = p_target_room_id LIMIT 1;
-    var_winner2_id := NULL;
+    SELECT p.user_id INTO v_w1_id FROM public.participants AS p WHERE p.room_id = p_room_id LIMIT 1;
+    v_w2_id := NULL;
   END IF;
 
-  -- Processamento Vencedor 1
-  IF var_winner1_id IS NOT NULL THEN
-    var_winner1_net := var_prize_share;
-    SELECT referred_by INTO var_ref1_id FROM public.profiles WHERE id = var_winner1_id;
-    IF var_ref1_id IS NOT NULL THEN
-      UPDATE public.profiles SET balance = balance + (var_prize_share * 0.05) WHERE id = var_ref1_id;
-      var_winner1_net := var_prize_share * 0.95;
+  -- Vencedor 1
+  IF v_w1_id IS NOT NULL THEN
+    v_w1_net := v_win_share;
+    SELECT prof.referred_by INTO v_ref1 FROM public.profiles AS prof WHERE prof.id = v_w1_id;
+    IF v_ref1 IS NOT NULL THEN
+      UPDATE public.profiles AS prof SET balance = prof.balance + (v_win_share * 0.05) WHERE prof.id = v_ref1;
+      v_w1_net := v_win_share * 0.95;
       INSERT INTO public.transactions (user_id, type, amount, status, payment_method)
-      VALUES (var_ref1_id, 'deposit', var_prize_share * 0.05, 'completed', 'Bônus de Indicação');
+      VALUES (v_ref1, 'deposit', v_win_share * 0.05, 'completed', 'Bônus de Indicação');
     END IF;
-    UPDATE public.profiles SET balance = balance + var_winner1_net WHERE id = var_winner1_id;
-    INSERT INTO public.winners (draw_id, user_id, prize_amount, position) VALUES (p_target_room_id, var_winner1_id, var_winner1_net, 1);
+    UPDATE public.profiles AS prof SET balance = prof.balance + v_w1_net WHERE prof.id = v_w1_id;
+    INSERT INTO public.winners (draw_id, user_id, prize_amount, position) VALUES (p_room_id, v_w1_id, v_w1_net, 1);
   END IF;
 
-  -- Processamento Vencedor 2
-  IF var_winner2_id IS NOT NULL THEN
-    var_winner2_net := var_prize_share;
-    SELECT referred_by INTO var_ref2_id FROM public.profiles WHERE id = var_winner2_id;
-    IF var_ref2_id IS NOT NULL THEN
-      UPDATE public.profiles SET balance = balance + (var_prize_share * 0.05) WHERE id = var_ref2_id;
-      var_winner2_net := var_prize_share * 0.95;
+  -- Vencedor 2
+  IF v_w2_id IS NOT NULL THEN
+    v_w2_net := v_win_share;
+    SELECT prof.referred_by INTO v_ref2 FROM public.profiles AS prof WHERE prof.id = v_w2_id;
+    IF v_ref2 IS NOT NULL THEN
+      UPDATE public.profiles AS prof SET balance = prof.balance + (v_win_share * 0.05) WHERE prof.id = v_ref2;
+      v_w2_net := v_win_share * 0.95;
       INSERT INTO public.transactions (user_id, type, amount, status, payment_method)
-      VALUES (var_ref2_id, 'deposit', var_prize_share * 0.05, 'completed', 'Bônus de Indicação');
+      VALUES (v_ref2, 'deposit', v_win_share * 0.05, 'completed', 'Bônus de Indicação');
     END IF;
-    UPDATE public.profiles SET balance = balance + var_winner2_net WHERE id = var_winner2_id;
-    INSERT INTO public.winners (draw_id, user_id, prize_amount, position) VALUES (p_target_room_id, var_winner2_id, var_winner2_net, 2);
+    UPDATE public.profiles AS prof SET balance = prof.balance + v_w2_net WHERE prof.id = v_w2_id;
+    INSERT INTO public.winners (draw_id, user_id, prize_amount, position) VALUES (p_room_id, v_w2_id, v_w2_net, 2);
   ELSE
-    -- Se não houver 2º vencedor, a parte dele vai para a plataforma
-    var_platform_share := var_platform_share + var_prize_share;
+    v_plat_share := v_plat_share + v_win_share;
   END IF;
 
-  -- Registro da Plataforma (3º Vencedor)
+  -- Plataforma
   INSERT INTO public.winners (draw_id, user_id, prize_amount, position) 
-  VALUES (p_target_room_id, var_platform_user_id, var_platform_share, 3);
+  VALUES (p_room_id, v_plat_user, v_plat_share, 3);
 
-  -- Finalização da sala
-  UPDATE public.rooms SET status = 'finished' WHERE public.rooms.id = p_target_room_id;
+  -- Finaliza e abre nova
+  UPDATE public.rooms AS r SET status = 'finished' WHERE r.id = p_room_id;
   
-  -- Abre nova sala para o módulo
-  IF NOT EXISTS (SELECT 1 FROM public.rooms WHERE module_id = var_mod_id AND status = 'open') THEN
+  IF NOT EXISTS (SELECT 1 FROM public.rooms AS r WHERE r.module_id = v_mod_id AND r.status = 'open') THEN
     INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
-    VALUES (var_mod_id, var_room_max_p, 'open', now() + interval '3 hours');
+    VALUES (v_mod_id, v_room_max, 'open', now() + interval '3 hours');
   END IF;
 END;
 $function$;
 
--- 3. GATILHO DE PARTICIPAÇÃO (REESCRITO PARA EVITAR AMBIGUIDADE)
+-- 3. GATILHO COM QUALIFICAÇÃO ABSOLUTA NO RETURNING
 CREATE OR REPLACE FUNCTION public.handle_new_participant_trigger()
  RETURNS trigger
  LANGUAGE plpgsql AS $function$
 DECLARE
-  var_current_p int;
-  var_max_p int;
+  v_curr int;
+  v_max_limit int;
 BEGIN
-  -- Atualiza o contador da sala de forma isolada
-  UPDATE public.rooms 
-  SET current_participants = public.rooms.current_participants + 1 
-  WHERE public.rooms.id = NEW.room_id
-  RETURNING current_participants, max_participants INTO var_current_p, var_max_p;
+  -- Atualiza usando alias 'rm' e qualifica o RETURNING
+  UPDATE public.rooms AS rm
+  SET current_participants = rm.current_participants + 1 
+  WHERE rm.id = NEW.room_id
+  RETURNING rm.current_participants, rm.max_participants INTO v_curr, v_max_limit;
 
-  -- Se atingiu o limite, sorteia
-  IF var_current_p >= var_max_p THEN
+  -- Dispara sorteio se atingir o limite
+  IF v_curr >= v_max_limit THEN
     PERFORM public.perform_automatic_draw(NEW.room_id);
   END IF;
 
@@ -144,7 +144,7 @@ BEGIN
 END;
 $function$;
 
--- 4. RE-ANEXAR GATILHO ÚNICO
+-- 4. RE-ANEXAR GATILHO
 CREATE TRIGGER on_participant_added
   AFTER INSERT ON public.participants
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_participant_trigger();
