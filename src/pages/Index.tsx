@@ -167,7 +167,8 @@ const Index = () => {
           <div className="flex items-center gap-6 w-full md:w-auto">
             <PrizeCarousel />
           </div>
-                    <div className="flex items-center gap-4 w-full md:w-auto justify-center">
+          
+          <div className="flex items-center gap-4 w-full md:w-auto justify-center">
             <div className="flex items-center gap-2 bg-green-500/10 px-4 py-2 rounded-xl border border-green-500/20">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
               <span className="text-[10px] font-black uppercase tracking-widest text-green-400">
@@ -193,7 +194,8 @@ const Index = () => {
 
           <AnimatePresence mode="wait">
             {activeModuleId && (
-              <motion.section                 key={activeModuleId}
+              <motion.section
+                key={activeModuleId}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-16"
@@ -232,7 +234,8 @@ const Index = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {activeModuleRooms.map((room, index) => (
-                      <RoomCard                         key={room.id} 
+                      <RoomCard 
+                        key={room.id} 
                         roomNumber={index + 1}
                         room={{
                           id: room.id,
@@ -252,14 +255,15 @@ const Index = () => {
               </motion.section>
             )}
           </AnimatePresence>
-        </div>
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-[#151823]/50 backdrop-blur-sm border border-white/5 rounded-[2.5rem] p-8">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
-                  <Trophy size={16} className="text-amber-500" /> Hall da Fama                </h3>
+                  <Trophy size={16} className="text-amber-500" /> Hall da Fama
+                </h3>
                 <Button variant="ghost" onClick={() => navigate('/leaderboard')} className="text-[10px] font-black text-purple-400 uppercase">
                   Ver Ranking
                 </Button>
@@ -274,7 +278,8 @@ const Index = () => {
               <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4">Afiliados</h4>
               <p className="text-[11px] font-bold text-white/40 mb-6">Convide amigos e ganhe 5% sobre cada prêmio que eles ganharem!</p>
               <Button onClick={() => navigate('/affiliates')} className="w-full h-12 rounded-xl bg-purple-600 font-black text-[10px] uppercase">
-                SABER MAIS              </Button>
+                SABER MAIS
+              </Button>
             </div>
           </div>
         </div>
