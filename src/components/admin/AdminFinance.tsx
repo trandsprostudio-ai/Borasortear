@@ -56,35 +56,66 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
 
   const handleApprove = async () => {
     const { tx } = confirmConfig;
-    if (!tx) return;
+    if (!tx || !tx.user_id) {
+      toast.error("Dados da transação incompletos.");
+      return;
+    }
 
     try {
       if (tx.type === 'deposit') {
-        const { data: profile } = await supabase.from('profiles').select('balance').eq('id', tx.user_id).single();
-        await supabase.from('profiles').update({ balance: Number(profile?.balance || 0) + Number(tx.amount) }).eq('id', tx.user_id);
-        
+        // 1. Buscar saldo atualizado com segurança
+        const { data: profile, error: fetchError } = await supabase
+          .from('profiles')
+          .select('balance')
+          .eq('id', tx.user_id)
+          .single();
+
+        if (fetchError) throw new Error("Erro ao buscar perfil do usuário.");
+
+        const currentBalance = Number(profile?.balance || 0);
+        const depositAmount = Number(tx.amount);
+        const newBalance = currentBalance + depositAmount;
+
+        // 2. Atualizar o saldo PRIMEIRO
+        const { error: balanceError } = await supabase
+          .from('profiles')
+          .update({ balance: newBalance })
+          .eq('id', tx.user_id);
+
+        if (balanceError) throw new Error("Falha ao atualizar o saldo disponível.");
+
+        // 3. Inserir notificação
         await supabase.from('notifications').insert({
           user_id: tx.user_id,
           title: 'Depósito Confirmado! ✅',
-          message: `Sua recarga de ${tx.amount.toLocaleString()} Kz foi validada.`,
+          message: `Sua recarga de ${depositAmount.toLocaleString()} Kz foi validada.`,
           type: 'success'
         });
       } else {
+        // Lógica de Saque (O saldo já foi deduzido na solicitação)
         await supabase.from('notifications').insert({
           user_id: tx.user_id,
           title: 'Saque Concluído! 💸',
-          message: `Seu saque de ${tx.amount.toLocaleString()} Kz foi processado com sucesso.`,
+          message: `Seu saque de ${Number(tx.amount).toLocaleString()} Kz foi processado com sucesso.`,
           type: 'success'
         });
       }
 
-      await supabase.from('transactions').update({ status: 'completed' }).eq('id', tx.id);
+      // 4. SÓ AGORA marcar a transação como completa
+      const { error: txError } = await supabase
+        .from('transactions')
+        .update({ status: 'completed' })
+        .eq('id', tx.id);
+
+      if (txError) throw new Error("Saldo atualizado, mas erro ao fechar a transação.");
+
       toast.success("Operação finalizada com sucesso!");
       setConfirmConfig({ isOpen: false, tx: null });
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
-      toast.error("Erro ao processar: " + error.message);
+      console.error("Erro na aprovação:", error);
+      toast.error(error.message || "Erro crítico ao processar.");
     }
   };
 
@@ -168,7 +199,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                           <span className="text-[9px] text-white/20">{new Date(tx.created_at).toLocaleString()}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="p-6 font-black text-green-400 text-lg">{tx.amount.toLocaleString()} Kz</TableCell>
+                      <TableCell className="p-6 font-black text-green-400 text-lg">{Number(tx.amount).toLocaleString()} Kz</TableCell>
                       <TableCell className="p-6">
                         {tx.proof_url && (
                           <Button asChild variant="outline" size="sm" className="h-8 border-purple-500/30 bg-purple-500/10 text-purple-400 text-[9px] font-black uppercase">
@@ -183,7 +214,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                             tx, 
                             action: 'approve', 
                             title: 'APROVAR DEPÓSITO', 
-                            description: `Deseja creditar ${tx.amount.toLocaleString()} Kz para ${tx.profiles?.first_name}?`,
+                            description: `Deseja creditar ${Number(tx.amount).toLocaleString()} Kz para ${tx.profiles?.first_name}?`,
                             variant: 'success'
                           })} className="h-8 bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-3 rounded-lg">Aprovar</Button>
                           
@@ -193,7 +224,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                             action: 'reject', 
                             isFalse: false,
                             title: 'REJEITAR DEPÓSITO', 
-                            description: `Deseja recusar o depósito de ${tx.amount.toLocaleString()} Kz?`,
+                            description: `Deseja recusar o depósito de ${Number(tx.amount).toLocaleString()} Kz?`,
                             variant: 'info'
                           })} variant="ghost" className="h-8 text-white/40 text-[9px] font-black uppercase px-3">Rejeitar</Button>
                           
@@ -241,14 +272,14 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="p-6 font-black text-amber-500 text-lg">{tx.amount.toLocaleString()} Kz</TableCell>
+                      <TableCell className="p-6 font-black text-amber-500 text-lg">{Number(tx.amount).toLocaleString()} Kz</TableCell>
                       <TableCell className="p-6 text-right">
                         <Button onClick={() => setConfirmConfig({ 
                           isOpen: true, 
                           tx, 
                           action: 'approve', 
                           title: 'CONFIRMAR PAGAMENTO', 
-                          description: `Você confirma que enviou ${tx.amount.toLocaleString()} Kz para ${tx.profiles?.first_name}?`,
+                          description: `Você confirma que enviou ${Number(tx.amount).toLocaleString()} Kz para ${tx.profiles?.first_name}?`,
                           variant: 'warning'
                         })} className="h-9 bg-amber-600 hover:bg-amber-700 text-white font-black text-[10px] uppercase px-6 rounded-xl">Validar Pagamento</Button>
                       </TableCell>
@@ -271,7 +302,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                     <TableRow key={tx.id} className="border-white/5">
                       <TableCell className="p-4 text-[10px] font-bold text-white/40">{new Date(tx.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="p-4 font-black uppercase text-xs">{tx.profiles?.first_name} {tx.profiles?.last_name}</TableCell>
-                      <TableCell className="p-4 font-black text-xs">{tx.type === 'deposit' ? '+' : '-'}{tx.amount.toLocaleString()} Kz</TableCell>
+                      <TableCell className="p-4 font-black text-xs">{tx.type === 'deposit' ? '+' : '-'}{Number(tx.amount).toLocaleString()} Kz</TableCell>
                       <TableCell className="p-4 text-right">
                         <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${tx.status === 'completed' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                           {tx.status}
