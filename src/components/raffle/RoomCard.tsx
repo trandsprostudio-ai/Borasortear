@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, Trophy, TrendingUp, Radio, Loader2 } from 'lucide-react';
+import { Users, Clock, Trophy, TrendingUp, Radio, Loader2, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
@@ -20,6 +20,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
   const [triggering, setTriggering] = useState(false);
   
   const progress = room.maxParticipants > 0 ? (room.currentParticipants / room.maxParticipants) * 100 : 0;
+  const totalPool = module.price * room.maxParticipants;
   const isAlmostFull = progress > 80;
   
   const isRoomOpen = room.status === 'open';
@@ -39,7 +40,6 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
       const diff = expiry - now;
       
       if (diff <= 0) {
-        // GATILHO CRÍTICO: Se o tempo acabou mas o banco ainda diz 'open'
         if (!triggering && isRoomOpen) {
           setTriggering(true);
           supabase.rpc('perform_automatic_draw', { p_room_id: room.id }).then(() => setTriggering(false));
@@ -79,11 +79,6 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">LIVE</span>
           </div>
         )}
-        {(isRoomProcessing || triggering) && (
-          <div className="bg-purple-600/10 px-2 py-0.5 rounded-lg border border-purple-500/20">
-            <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">SORTEANDO</span>
-          </div>
-        )}
       </div>
 
       <div className="flex justify-between items-start mb-6 pt-6">
@@ -101,9 +96,9 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
 
       <div className="space-y-5">
         <div className="flex justify-between items-end text-[11px] font-black uppercase tracking-widest">
-          <div className="flex items-center gap-2 text-white/40">
-            <Users size={14} />
-            <span>{room.currentParticipants} / {room.maxParticipants}</span>
+          <div className="flex items-center gap-2 text-green-400">
+            <TrendingUp size={14} />
+            <span>PRÊMIO: {totalPool.toLocaleString()} Kz</span>
           </div>
           <div className={`flex items-center gap-2 transition-colors duration-300 ${
             isRoomFinished ? 'text-green-500' : 

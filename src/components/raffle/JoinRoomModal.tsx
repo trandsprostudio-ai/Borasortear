@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Clock, Loader2, Ticket, Copy, CheckCircle2, Share2, Users, TrendingUp, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Clock, Loader2, Ticket, Copy, CheckCircle2, Share2, Users, TrendingUp, AlertCircle, DollarSign } from 'lucide-react';
 import { Module, Room } from '@/types/raffle';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -38,7 +38,6 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
   const loadUserData = async () => {
     setLoadingData(true);
     try {
-      // Buscar saldo atualizado e status de restrição simultaneamente
       const [profileRes, pendingRes] = await Promise.all([
         supabase.from('profiles').select('balance').eq('id', userId).single(),
         supabase.from('transactions')
@@ -74,7 +73,6 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
     
     setIsJoining(true);
     try {
-      // Verificação final de status da sala
       const { data: currentRoom } = await supabase
         .from('rooms')
         .select('status, current_participants, max_participants')
@@ -87,7 +85,6 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
         return;
       }
 
-      // Processar entrada
       const { data, error } = await supabase.rpc('join_room_secure', {
         p_room_id: room.id,
         p_user_id: userId,
@@ -95,11 +92,7 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
       });
 
       if (error) {
-        if (error.message.includes('insufficient')) {
-          toast.error("Saldo insuficiente. Faça uma recarga!");
-        } else {
-          toast.error(error.message);
-        }
+        toast.error(error.message);
         return;
       }
 
@@ -118,8 +111,7 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
     toast.success(message);
   };
 
-  const maxPrizeEstimate = (module.price * room.maxParticipants) * 0.33;
-  const inviteLink = `${window.location.origin}/?room=${room.id}&ref=${userId}`;
+  const totalPool = module.price * room.maxParticipants;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -138,12 +130,6 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
             <p className="text-xs text-white/40 font-bold mb-8 leading-relaxed uppercase tracking-widest">
               Aguarde a validação do seu último depósito para participar de novas mesas.
             </p>
-            <div className="bg-white/5 p-4 rounded-2xl mb-8">
-              <p className="text-[10px] font-black text-white/20 uppercase mb-1">Tempo Restante</p>
-              <p className="text-2xl font-black text-amber-500">
-                {Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}
-              </p>
-            </div>
             <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-white/5 text-white font-black">
               ENTENDIDO
             </Button>
@@ -173,21 +159,15 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
                 </div>
               </div>
 
-              {currentBalance < module.price && (
-                <div className="flex items-center gap-2 text-red-500 bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-                  <AlertCircle size={16} />
-                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">Saldo insuficiente</span>
-                </div>
-              )}
-
               <div className="bg-green-500/5 rounded-2xl p-5 border border-green-500/20">
                 <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp size={14} className="text-green-400" />
-                  <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Estimativa de Prêmio</span>
+                  <DollarSign size={14} className="text-green-400" />
+                  <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Volume da Mesa</span>
                 </div>
                 <p className="text-2xl font-black text-white italic tracking-tighter">
-                  Até {maxPrizeEstimate.toLocaleString()} <span className="text-xs not-italic opacity-40">Kz</span>
+                  {totalPool.toLocaleString()} <span className="text-xs not-italic opacity-40">Kz</span>
                 </p>
+                <p className="text-[8px] font-bold text-white/20 uppercase mt-1">Prêmio total a ser distribuído entre ganhadores</p>
               </div>
             </div>
 
