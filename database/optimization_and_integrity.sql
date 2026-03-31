@@ -1,100 +1,58 @@
--- 1. Garantir que o perfil do Sistema/Admin existe para receber os lucros da plataforma
-INSERT INTO public.profiles (id, first_name, balance)
-VALUES ('00000000-0000-0000-0000-000000000000', 'PLATAFORMA BORA', 0)
-ON CONFLICT (id) DO NOTHING;
-
--- 2. Refatorar o sorteio para priorizar a criação da nova sala
-CREATE OR REPLACE FUNCTION public.perform_automatic_draw(p_room_id uuid)
+-- Garantir que a função de limpeza possa ser chamada com segurança
+CREATE OR REPLACE FUNCTION public.check_and_draw_expired_rooms()
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
 DECLARE
-  v_winner1_id uuid;
-  v_winner2_id uuid;
-  v_module_id uuid;
-  v_max_p int;
-  v_module_price numeric;
-  v_total_pool numeric;
-  v_share_winner numeric;
-  v_share_platform numeric;
-  v_room_ref1_id uuid;
-  v_room_ref2_id uuid;
-  v_winner1_final numeric;
-  v_winner2_final numeric;
-  v_status text;
+  r_id uuid;
 BEGIN
-  -- Bloqueio e verificação atômica
-  SELECT status, module_id, max_participants, m.price
-  INTO v_status, v_module_id, v_max_p, v_module_price
-  FROM public.rooms r
-  JOIN public.modules m ON r.module_id = m.id
-  WHERE r.id = p_room_id
+  -- Seleciona salas abertas que já passaram do tempo e as sorteia
+  FOR r_id IN (
+    SELECT id FROM public.rooms 
+    WHERE status = 'open' AND expires_at <= now()
+  ) LOOP
+    PERFORM public.perform_automatic_draw(r_id);
+  END LOOP;
+END;
+$function$;
+
+-- Ajustar o gatilho de entrada para impedir entrada em salas expiradas
+CREATE OR REPLACE FUNCTION public.handle_new_participant_trigger()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  v_current int;
+  v_max int;
+  v_status text;
+  v_expires timestamp with time zone;
+BEGIN
+  SELECT current_participants, max_participants, status, expires_at 
+  INTO v_current, v_max, v_status, v_expires
+  FROM public.rooms 
+  WHERE id = NEW.room_id 
   FOR UPDATE;
 
-  -- Se não estiver aberta, sair para evitar duplicidade
-  IF v_status != 'open' THEN
-    RETURN;
+  -- Se a sala expirou mas ainda está 'open', força o sorteio e cancela a entrada
+  IF v_status = 'open' AND v_expires <= now() THEN
+    PERFORM public.perform_automatic_draw(NEW.room_id);
+    RAISE EXCEPTION 'Esta mesa acaba de expirar e está sendo sorteada. Por favor, entre na nova mesa criada.';
   END IF;
 
-  -- PASSO 1: Marcar como processando e CRIAR NOVA SALA IMEDIATAMENTE
-  -- Isso garante que o frontend mostre a nova sala sem delay
-  UPDATE public.rooms SET status = 'processing' WHERE id = p_room_id;
-  
-  INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
-  VALUES (v_module_id, v_max_p, 'open', now() + interval '3 hours');
-
-  -- PASSO 2: Cálculos de premiação
-  v_total_pool := v_module_price * (SELECT current_participants FROM public.rooms WHERE id = p_room_id);
-  
-  -- Se não houve participantes, apenas finaliza
-  IF v_total_pool <= 0 THEN
-    UPDATE public.rooms SET status = 'finished' WHERE id = p_room_id;
-    RETURN;
+  IF v_status != 'open' OR v_current >= v_max THEN
+    RAISE EXCEPTION 'Esta mesa já foi encerrada ou está cheia.';
   END IF;
 
-  v_share_winner := v_total_pool * 0.33;
-  v_share_platform := v_total_pool * 0.34;
+  UPDATE public.rooms 
+  SET current_participants = current_participants + 1 
+  WHERE id = NEW.room_id
+  RETURNING current_participants INTO v_current;
 
-  -- PASSO 3: Seleção aleatória dos vencedores
-  -- Vencedor 1
-  SELECT user_id, referred_by INTO v_winner1_id, v_room_ref1_id 
-  FROM public.participants WHERE room_id = p_room_id ORDER BY random() LIMIT 1;
-  
-  -- Vencedor 2 (se houver mais de 1 participante)
-  SELECT user_id, referred_by INTO v_winner2_id, v_room_ref2_id 
-  FROM public.participants WHERE room_id = p_room_id AND user_id != v_winner1_id ORDER BY random() LIMIT 1;
-
-  -- PASSO 4: Pagamentos
-  -- Vencedor 1
-  IF v_winner1_id IS NOT NULL THEN
-    v_winner1_final := v_share_winner;
-    IF v_room_ref1_id IS NOT NULL THEN
-      UPDATE public.profiles SET balance = balance + (v_share_winner * 0.15) WHERE id = v_room_ref1_id;
-      v_winner1_final := v_share_winner * 0.85;
-    END IF;
-    UPDATE public.profiles SET balance = balance + v_winner1_final WHERE id = v_winner1_id;
-    INSERT INTO public.winners (draw_id, user_id, prize_amount, position) VALUES (p_room_id, v_winner1_id, v_winner1_final, 1);
+  IF v_current >= v_max THEN
+    PERFORM public.perform_automatic_draw(NEW.room_id);
   END IF;
 
-  -- Vencedor 2
-  IF v_winner2_id IS NOT NULL THEN
-    v_winner2_final := v_share_winner;
-    IF v_room_ref2_id IS NOT NULL THEN
-      UPDATE public.profiles SET balance = balance + (v_share_winner * 0.15) WHERE id = v_room_ref2_id;
-      v_winner2_final := v_share_winner * 0.85;
-    END IF;
-    UPDATE public.profiles SET balance = balance + v_winner2_final WHERE id = v_winner2_id;
-    INSERT INTO public.winners (draw_id, user_id, prize_amount, position) VALUES (p_room_id, v_winner2_id, v_winner2_final, 2);
-  END IF;
-
-  -- PASSO 5: Crédito à Plataforma (Admin)
-  UPDATE public.profiles SET balance = balance + v_share_platform WHERE id = '00000000-0000-0000-0000-000000000000';
-  INSERT INTO public.winners (draw_id, user_id, prize_amount, position) 
-  VALUES (p_room_id, '00000000-0000-0000-0000-000000000000', v_share_platform, 3);
-
-  -- FINALIZAÇÃO
-  UPDATE public.rooms SET status = 'finished' WHERE id = p_room_id;
-
+  RETURN NEW;
 END;
 $function$;

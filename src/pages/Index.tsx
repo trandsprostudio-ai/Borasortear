@@ -31,6 +31,9 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
+      // Limpeza de segurança: Sorteia salas expiradas logo ao abrir o site
+      await supabase.rpc('check_and_draw_expired_rooms');
+
       const { data: modData } = await supabase
         .from('modules')
         .select('*')
