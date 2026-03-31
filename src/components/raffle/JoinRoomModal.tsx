@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Clock, Loader2, Ticket, Copy, CheckCircle2, Share2, Users, TrendingUp } from 'lucide-react';
+import { ShieldCheck, Clock, Loader2, Ticket, Copy, CheckCircle2, Share2, Users, TrendingUp, AlertCircle } from 'lucide-react';
 import { Module, Room } from '@/types/raffle';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -18,89 +18,96 @@ interface JoinRoomModalProps {
   onSuccess: () => void;
 }
 
-const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onSuccess }: JoinRoomModalProps) => {
+const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBalance, userId, onSuccess }: JoinRoomModalProps) => {
   const [isJoining, setIsJoining] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [currentBalance, setCurrentBalance] = useState(initialBalance);
   const [ticketCode, setTicketCode] = useState<string | null>(null);
   const [isRestricted, setIsRestricted] = useState(false);
   const [cooldownTime, setCooldownTime] = useState<number>(0);
 
   useEffect(() => {
     if (isOpen && userId) {
-      checkPendingTransactions();
+      loadUserData();
+    } else {
+      setTicketCode(null);
+      setIsJoining(false);
     }
   }, [isOpen, userId]);
 
-  const checkPendingTransactions = async () => {
-    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-    const { data } = await supabase
-      .from('transactions')
-      .select('created_at')
-      .eq('user_id', userId)
-      .eq('type', 'deposit')
-      .eq('status', 'pending')
-      .gt('created_at', fifteenMinsAgo)
-      .limit(1);
+  const loadUserData = async () => {
+    setLoadingData(true);
+    try {
+      // Buscar saldo atualizado e status de restrição simultaneamente
+      const [profileRes, pendingRes] = await Promise.all([
+        supabase.from('profiles').select('balance').eq('id', userId).single(),
+        supabase.from('transactions')
+          .select('created_at')
+          .eq('user_id', userId)
+          .eq('type', 'deposit')
+          .eq('status', 'pending')
+          .gt('created_at', new Date(Date.now() - 15 * 60 * 1000).toISOString())
+          .limit(1)
+      ]);
 
-    if (data && data.length > 0) {
-      setIsRestricted(true);
-      const createdAt = new Date(data[0].created_at).getTime();
-      const diff = Math.ceil((15 * 60 * 1000 - (Date.now() - createdAt)) / 1000);
-      setCooldownTime(diff > 0 ? diff : 0);
-    } else {
-      setIsRestricted(false);
+      if (profileRes.data) {
+        setCurrentBalance(profileRes.data.balance);
+      }
+
+      if (pendingRes.data && pendingRes.data.length > 0) {
+        setIsRestricted(true);
+        const createdAt = new Date(pendingRes.data[0].created_at).getTime();
+        const diff = Math.ceil((15 * 60 * 1000 - (Date.now() - createdAt)) / 1000);
+        setCooldownTime(diff > 0 ? diff : 0);
+      } else {
+        setIsRestricted(false);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados do usuário:", error);
+    } finally {
+      setLoadingData(false);
     }
   };
 
   const handleJoin = async () => {
-    if (isRestricted) return;
+    if (isRestricted || currentBalance < module.price) return;
     
     setIsJoining(true);
     try {
-      // VERIFICAÇÃO DE ÚLTIMO SEGUNDO: A sala ainda está aberta?
-      const { data: currentRoom, error: roomError } = await supabase
+      // Verificação final de status da sala
+      const { data: currentRoom } = await supabase
         .from('rooms')
         .select('status, current_participants, max_participants')
         .eq('id', room.id)
         .single();
 
-      if (roomError || currentRoom.status !== 'open' || currentRoom.current_participants >= currentRoom.max_participants) {
-        toast.error("Esta mesa acabou de fechar! Escolha outra.");
+      if (!currentRoom || currentRoom.status !== 'open' || currentRoom.current_participants >= currentRoom.max_participants) {
+        toast.error("Esta mesa não está mais disponível.");
         onClose();
         return;
       }
 
-      if (userBalance < module.price) {
-        toast.error("Saldo insuficiente!");
-        setIsJoining(false);
+      // Processar entrada
+      const { data, error } = await supabase.rpc('join_room_secure', {
+        p_room_id: room.id,
+        p_user_id: userId,
+        p_price: module.price
+      });
+
+      if (error) {
+        if (error.message.includes('insufficient')) {
+          toast.error("Saldo insuficiente. Faça uma recarga!");
+        } else {
+          toast.error(error.message);
+        }
         return;
       }
 
-      // Deduzir saldo
-      const { error: balanceError } = await supabase
-        .from('profiles')
-        .update({ balance: userBalance - module.price })
-        .eq('id', userId);
-      
-      if (balanceError) throw balanceError;
-
-      // Inserir participante (O trigger do banco cuidará do resto com segurança)
-      const { data, error: participantError } = await supabase
-        .from('participants')
-        .insert({ user_id: userId, room_id: room.id })
-        .select('ticket_code')
-        .single();
-
-      if (participantError) {
-        // Reembolsar se falhar a inserção
-        await supabase.from('profiles').update({ balance: userBalance }).eq('id', userId);
-        throw participantError;
-      }
-
-      setTicketCode(data.ticket_code);
-      toast.success("Participação confirmada!");
+      setTicketCode(data);
+      toast.success("Entrada confirmada!");
       onSuccess();
     } catch (error: any) {
-      toast.error("Erro: " + error.message);
+      toast.error("Falha ao entrar na mesa.");
     } finally {
       setIsJoining(false);
     }
@@ -111,30 +118,31 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
     toast.success(message);
   };
 
-  const formatCooldown = (s: number) => {
-    const mins = Math.floor(s / 60);
-    const secs = s % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
   const maxPrizeEstimate = (module.price * room.maxParticipants) * 0.33;
   const inviteLink = `${window.location.origin}/?room=${room.id}&ref=${userId}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-sm p-0 overflow-hidden">
-        {isRestricted ? (
+        {loadingData ? (
+          <div className="p-20 flex flex-col items-center justify-center">
+            <Loader2 className="animate-spin text-purple-500 mb-4" size={40} />
+            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Validando Acesso...</p>
+          </div>
+        ) : isRestricted ? (
           <div className="p-8 text-center">
             <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500">
               <Clock size={48} className="animate-pulse" />
             </div>
-            <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase">VERIFICAÇÃO EM CURSO</h3>
+            <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase text-white">VERIFICAÇÃO EM CURSO</h3>
             <p className="text-xs text-white/40 font-bold mb-8 leading-relaxed uppercase tracking-widest">
               Aguarde a validação do seu último depósito para participar de novas mesas.
             </p>
             <div className="bg-white/5 p-4 rounded-2xl mb-8">
               <p className="text-[10px] font-black text-white/20 uppercase mb-1">Tempo Restante</p>
-              <p className="text-2xl font-black text-amber-500">{formatCooldown(cooldownTime)}</p>
+              <p className="text-2xl font-black text-amber-500">
+                {Math.floor(cooldownTime / 60)}:{(cooldownTime % 60).toString().padStart(2, '0')}
+              </p>
             </div>
             <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-white/5 text-white font-black">
               ENTENDIDO
@@ -146,7 +154,7 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
               <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-purple-400">
                 <ShieldCheck size={32} />
               </div>
-              <DialogTitle className="text-2xl font-black italic tracking-tighter uppercase">
+              <DialogTitle className="text-2xl font-black italic tracking-tighter uppercase text-white">
                 CONFIRMAR ENTRADA
               </DialogTitle>
             </DialogHeader>
@@ -155,13 +163,22 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
               <div className="bg-white/5 rounded-2xl p-5 border border-white/5 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Custo da Mesa</span>
-                  <span className="font-black text-lg">{module.price.toLocaleString()} Kz</span>
+                  <span className="font-black text-lg text-white">{module.price.toLocaleString()} Kz</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Seu Saldo</span>
-                  <span className="font-black text-purple-400">{userBalance.toLocaleString()} Kz</span>
+                  <span className={`font-black text-lg ${currentBalance < module.price ? 'text-red-500' : 'text-purple-400'}`}>
+                    {currentBalance.toLocaleString()} Kz
+                  </span>
                 </div>
               </div>
+
+              {currentBalance < module.price && (
+                <div className="flex items-center gap-2 text-red-500 bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                  <AlertCircle size={16} />
+                  <span className="text-[10px] font-black uppercase tracking-widest leading-none">Saldo insuficiente</span>
+                </div>
+              )}
 
               <div className="bg-green-500/5 rounded-2xl p-5 border border-green-500/20">
                 <div className="flex items-center gap-2 mb-1">
@@ -171,16 +188,13 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
                 <p className="text-2xl font-black text-white italic tracking-tighter">
                   Até {maxPrizeEstimate.toLocaleString()} <span className="text-xs not-italic opacity-40">Kz</span>
                 </p>
-                <p className="text-[8px] font-bold text-white/20 uppercase mt-2 leading-tight">
-                  * Valor estimado com base na lotação máxima da sala (1/3 do total). O ganho real depende do número final de participantes.
-                </p>
               </div>
             </div>
 
             <DialogFooter className="flex flex-col gap-2 sm:flex-col">
               <Button 
                 onClick={handleJoin} 
-                disabled={isJoining || userBalance < module.price} 
+                disabled={isJoining || currentBalance < module.price} 
                 className="w-full premium-gradient h-16 rounded-2xl font-black text-lg shadow-xl shadow-purple-500/20"
               >
                 {isJoining ? <Loader2 className="animate-spin" /> : 'SORTEAR AGORA'}
@@ -199,7 +213,7 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
             <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-green-400">
               <CheckCircle2 size={48} />
             </div>
-            <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase">BILHETE GERADO!</h3>
+            <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase text-white">BILHETE GERADO!</h3>
             
             <div 
               className="bg-white/5 p-6 rounded-3xl border border-purple-500/20 mb-6 relative group cursor-pointer" 
@@ -210,23 +224,6 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance, userId, onS
               <div className="absolute top-2 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Copy size={14} className="text-purple-500" />
               </div>
-            </div>
-
-            <div className="bg-purple-600/10 p-6 rounded-3xl border border-purple-500/20 mb-8">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <Users size={16} className="text-purple-400" />
-                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Acelere o Sorteio</span>
-              </div>
-              <p className="text-[11px] font-bold text-white/40 mb-4 leading-relaxed">
-                Convide amigos para esta mesa! Quanto mais rápido a sala encher, mais cedo sai o resultado.
-              </p>
-              <Button 
-                variant="outline"
-                onClick={() => copyText(inviteLink, "Link de convite da mesa copiado!")}
-                className="w-full h-12 rounded-xl border-purple-500/30 bg-purple-500/5 text-white font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
-              >
-                <Share2 size={14} /> COPIAR LINK DA MESA
-              </Button>
             </div>
 
             <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-white text-black font-black uppercase tracking-widest">
