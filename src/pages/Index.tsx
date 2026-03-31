@@ -31,14 +31,13 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-      // Garantir sessão imediata
+      // Garantir sessão imediata e carregar módulos
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
         fetchProfile(session.user.id);
       }
 
-      // Auto-reparo do sistema
       await supabase.rpc('ensure_active_rooms');
       await supabase.rpc('check_and_draw_expired_rooms');
 
@@ -58,8 +57,8 @@ const Index = () => {
         setActiveModuleId(mappedModules[0].id);
       }
       
-      await fetchTopWinners();
-      await fetchRecentWins();
+      fetchTopWinners();
+      fetchRecentWins();
     };
     initializeData();
 
@@ -76,11 +75,9 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Monitorar salas finalizadas para mostrar o overlay de resultado
   useEffect(() => {
     const finishedRooms = rooms.filter(r => r.status === 'finished');
     const newFinished = finishedRooms.filter(r => !shownDrawRooms.has(r.id));
-    
     if (newFinished.length > 0) {
       const roomToShow = newFinished.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
       fetchWinnersForRoom(roomToShow);
@@ -88,12 +85,7 @@ const Index = () => {
   }, [rooms, shownDrawRooms]);
 
   const fetchWinnersForRoom = async (room: Room) => {
-    const { data: winners } = await supabase
-      .from('winners')
-      .select('*, profiles(first_name)')
-      .eq('draw_id', room.id)
-      .order('position', { ascending: true });
-
+    const { data: winners } = await supabase.from('winners').select('*, profiles(first_name)').eq('draw_id', room.id).order('position', { ascending: true });
     if (winners && winners.length > 0) {
       setDrawResult({
         isOpen: true,
@@ -111,20 +103,12 @@ const Index = () => {
   };
 
   const fetchTopWinners = async () => {
-    const { data } = await supabase
-      .from('winners')
-      .select('*, profiles(first_name)')
-      .order('prize_amount', { ascending: false })
-      .limit(10);
+    const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('prize_amount', { ascending: false }).limit(10);
     if (data) setTopWinners(data);
   };
 
   const fetchRecentWins = async () => {
-    const { data } = await supabase
-      .from('winners')
-      .select('*, profiles(first_name)')
-      .order('created_at', { ascending: false })
-      .limit(15);
+    const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('created_at', { ascending: false }).limit(15);
     if (data) setRecentWins(data);
   };
 
@@ -138,6 +122,7 @@ const Index = () => {
       navigate(`/auth?mode=login&room=${room.id}`);
       return;
     }
+    // Abrimos o modal apenas com o usuário autenticado, sem esperar o carregamento do profile.
     setSelectedRoom({ room, module });
   };
 
@@ -159,28 +144,25 @@ const Index = () => {
         roomInfo={drawResult.roomInfo}
       />
 
-      {selectedRoom && user && profile && (
+      {selectedRoom && user && (
         <JoinRoomModal 
           isOpen={!!selectedRoom}
           onClose={() => setSelectedRoom(null)}
           room={selectedRoom.room}
           module={selectedRoom.module}
-          userBalance={profile.balance}
+          userBalance={profile?.balance || 0}
           userId={user.id}
-          onSuccess={() => {
-            fetchProfile(user.id);
-          }}
+          onSuccess={() => fetchProfile(user.id)}
         />
       )}
 
-      {/* Barra de Notificações de Vitórias */}
       <div className="pt-16 bg-purple-600/5 border-b border-white/5 overflow-hidden whitespace-nowrap py-2">
         <motion.div 
           animate={{ x: [0, -1000] }}
           transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
           className="inline-flex gap-12 items-center"
         >
-          {[...recentWins, ...recentWins].map((win, i) => (
+          {recentWins.map((win, i) => (
             <div key={i} className="flex items-center gap-2">
               <Trophy size={10} className="text-amber-500" />
               <span className="text-[10px] font-black uppercase tracking-widest">
