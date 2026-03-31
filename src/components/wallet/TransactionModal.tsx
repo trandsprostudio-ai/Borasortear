@@ -43,7 +43,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'method' | 'form' | 'details' | 'confirm'>(type === 'deposit' ? 'method' : 'method');
+  const [step, setStep] = useState<'method' | 'form' | 'details' | 'confirm'>(type === 'deposit' ? 'method' : 'form');
   const [file, setFile] = useState<File | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
