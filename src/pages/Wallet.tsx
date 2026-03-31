@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 
 const Wallet = () => {
   const [profile, setProfile] = useState<any>(null);
-  const [participations, setParticipations] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -25,21 +24,44 @@ const Wallet = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchData(session.user.id);
+        setupRealtime(session.user.id);
       }
     };
     getSession();
   }, []);
 
+  const setupRealtime = (userId: string) => {
+    const channel = supabase.channel(`wallet-updates-${userId}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'profiles', 
+        filter: `id=eq.${userId}` 
+      }, (payload) => {
+        setProfile(payload.new);
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'transactions', 
+        filter: `user_id=eq.${userId}` 
+      }, () => {
+        fetchData(userId);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
   const fetchData = async (userId: string) => {
-    setLoading(true);
-    const [profRes, partRes, transRes] = await Promise.all([
+    const [profRes, transRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('participants').select('*, rooms(*, modules(*))').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false })
     ]);
 
     if (profRes.data) setProfile(profRes.data);
-    if (partRes.data) setParticipations(partRes.data);
     if (transRes.data) setTransactions(transRes.data);
     setLoading(false);
   };
@@ -66,7 +88,6 @@ const Wallet = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-24 relative overflow-hidden">
-      {/* Imagem de Fundo Premium */}
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
         <img 
           src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=2832&auto=format&fit=crop" 
@@ -106,7 +127,6 @@ const Wallet = () => {
             animate={{ opacity: 1, y: 0 }}
             className="lg:col-span-2 bg-[#1A1D29]/40 backdrop-blur-3xl p-8 md:p-10 rounded-[3rem] border border-white/10 relative overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]"
           >
-            {/* Efeito de Brilho */}
             <div className="absolute -top-24 -right-24 w-64 h-64 bg-purple-600/20 blur-[100px] rounded-full" />
             
             <div className="relative z-10">
@@ -141,7 +161,7 @@ const Wallet = () => {
               <div className="grid grid-cols-2 gap-6 mb-12">
                 <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5">
                   <span className="text-[9px] font-black text-white/20 uppercase tracking-widest block mb-2">Disponível</span>
-                  <span className="text-2xl font-black text-green-400 italic">{profile?.balance?.toLocaleString()} <span className="text-xs opacity-60">Kz</span></span>
+                  <span className="text-2xl font-black text-green-400 italic">{(profile?.balance || 0).toLocaleString()} <span className="text-xs opacity-60">Kz</span></span>
                 </div>
                 <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5">
                   <span className="text-[9px] font-black text-white/20 uppercase tracking-widest block mb-2">Pendente</span>
