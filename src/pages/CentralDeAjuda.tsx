@@ -26,7 +26,7 @@ const CentralDeAjuda = () => {
     },
     {
       q: "Como faço recarga de créditos?",
-      a: "Acesse 'Carteira' e clique em 'DEPOSITAR AGORA'. Escolha o método de pagamento (IBAN, Afrimoney, Unitel Money ou PayPay), informe o valor e anexe o comprovativo. O crédito é liberado após validação (até 15 minutos)."
+      a: "Acesse 'Carteira' e clique em 'DEPOSITAR AGORA'. Escolha o método de pagamento (Multicaixa Express ou Unitel Money), informe o valor e anexe o comprovativo. O crédito é liberado após validação (até 15 minutos)."
     },
     {
       q: "Meu crédito não foi creditado, o que fazer?",
@@ -34,7 +34,7 @@ const CentralDeAjuda = () => {
     },
     {
       q: "Como solicito um saque?",
-      a: "Acesse 'Carteira' > 'SOLICITAR SAQUE'. Escolha IBAN ou Multicaixa Express (ambos devem estar cadastrados no perfil). O saque é processado em até 24 horas úteis após aprovação."
+      a: "Acesse 'Carteira' > 'SOLICITAR SAQUE'. Escolha Multicaixa Express (o número deve estar cadastrado no perfil). O saque é processado em até 24 horas úteis após aprovação."
     },
     {
       q: "Posso participar em várias salas simultaneamente?",
@@ -46,7 +46,7 @@ const CentralDeAjuda = () => {
     },
     {
       q: "Meus dados bancários estão seguros?",
-      a: "Absolutamente. Utilizamos criptografia de ponta a ponta, não armazenamos senhas e todos os dados são protegidos conforme a Lei de Proteção de Dados. Seus dados bancários são usados apenas para processar saques."
+      a: "Absolutamente. Utilizamos criptografia de ponta a ponta, não armazenamos senhas e todos os dados são protegidos conforme a Lei de Proteção de Dados. Seus dados de pagamento são usados apenas para processar saques."
     },
     {
       q: "Como funciona o sistema de afiliados?",

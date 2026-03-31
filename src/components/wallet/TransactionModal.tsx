@@ -39,9 +39,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
 
   const depositMethods = [
     { id: 'express', name: 'Multicaixa Express', icon: Smartphone, color: 'text-blue-400', details: { label: 'Número Express', value: '933 271 690', owner: 'BORA SORTEIAR' } },
-    { id: 'afrimoney', name: 'Afrimoney', icon: Smartphone, color: 'text-yellow-400', details: { label: 'Número Afrimoney', value: '933 271 690', owner: 'BORA SORTEIAR' } },
     { id: 'unitel', name: 'Unitel Money', icon: Smartphone, color: 'text-orange-400', details: { label: 'Número Unitel Money', value: '933 271 690', owner: 'BORA SORTEIAR' } },
-    { id: 'paypay', name: 'PayPay', icon: Smartphone, color: 'text-blue-500', details: { label: 'Número PayPay', value: '933 271 690', owner: 'BORA SORTEIAR' } },
   ];
 
   const withdrawalMethods = [
