@@ -5,9 +5,31 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Wallet, ArrowUpRight, ArrowDownLeft, Copy, CheckCircle2, Loader2, CreditCard, AlertCircle, Smartphone, Banknote, Upload, Globe, Lock, Info, Clock } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownLeft, Copy, CheckCircle2, Loader2, CreditCard, AlertCircle, Smartphone, Banknote, Upload, Globe, Lock, Info, Clock, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+interface DepositMethod {
+  id: string;
+  name: string;
+  icon: any;
+  color: string;
+  available: boolean;
+  message?: string;
+  details?: {
+    label?: string;
+    value?: string;
+    owner?: string;
+    entity?: string;
+    reference?: string;
+    notice?: string;
+  };
+}
+
+interface DepositGroup {
+  group: string;
+  methods: DepositMethod[];
+}
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -37,7 +59,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
     setProfile(data);
   };
 
-  const depositMethods = [
+  const depositMethods: DepositGroup[] = [
     { 
       group: "🌍 ÁFRICA",
       methods: [
@@ -142,9 +164,9 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
   const allDepositMethods = depositMethods.flatMap(g => g.methods);
   const selectedMethodData = allDepositMethods.find(m => m.id === method);
 
-  const handleSelectMethod = (m: any) => {
+  const handleSelectMethod = (m: DepositMethod) => {
     if (!m.available) {
-      toast.error(m.message);
+      toast.error(m.message || "Método indisponível.");
       return;
     }
     setMethod(m.id);
@@ -268,42 +290,42 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
             <div className="bg-white/5 p-6 rounded-3xl border border-white/10 space-y-5 mb-6">
               {selectedMethodData.id === 'unitel' ? (
                 <>
-                  <div className="flex justify-between items-center group cursor-pointer" onClick={() => copyToClipboard(selectedMethodData.details.entity)}>
+                  <div className="flex justify-between items-center group cursor-pointer" onClick={() => copyToClipboard(selectedMethodData.details?.entity || '')}>
                     <div>
                       <p className="text-[9px] font-black text-white/20 uppercase mb-1">Entidade</p>
-                      <p className="text-sm font-black tracking-wider text-purple-400">{selectedMethodData.details.entity}</p>
+                      <p className="text-sm font-black tracking-wider text-purple-400">{selectedMethodData.details?.entity}</p>
                     </div>
                     <Copy size={12} className="text-white/10 group-hover:text-white" />
                   </div>
-                  <div className="flex justify-between items-center group cursor-pointer" onClick={() => copyToClipboard(selectedMethodData.details.reference)}>
+                  <div className="flex justify-between items-center group cursor-pointer" onClick={() => copyToClipboard(selectedMethodData.details?.reference || '')}>
                     <div>
                       <p className="text-[9px] font-black text-white/20 uppercase mb-1">Referência</p>
-                      <p className="text-sm font-black tracking-wider text-purple-400">{selectedMethodData.details.reference}</p>
+                      <p className="text-sm font-black tracking-wider text-purple-400">{selectedMethodData.details?.reference}</p>
                     </div>
                     <Copy size={12} className="text-white/10 group-hover:text-white" />
                   </div>
                 </>
               ) : (
-                <div className="flex justify-between items-center group cursor-pointer" onClick={() => copyToClipboard(selectedMethodData.details.value)}>
+                <div className="flex justify-between items-center group cursor-pointer" onClick={() => copyToClipboard(selectedMethodData.details?.value || '')}>
                   <div>
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">{selectedMethodData.details.label}</p>
-                    <p className="text-sm font-black tracking-wider text-purple-400">{selectedMethodData.details.value}</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">{selectedMethodData.details?.label}</p>
+                    <p className="text-sm font-black tracking-wider text-purple-400">{selectedMethodData.details?.value}</p>
                   </div>
                   <Copy size={12} className="text-white/10 group-hover:text-white" />
                 </div>
               )}
               
-              {selectedMethodData.details.owner && (
+              {selectedMethodData.details?.owner && (
                 <div>
                   <p className="text-[9px] font-black text-white/20 uppercase mb-1">Beneficiário</p>
-                  <p className="text-[11px] font-bold">{selectedMethodData.details.owner}</p>
+                  <p className="text-[11px] font-bold">{selectedMethodData.details?.owner}</p>
                 </div>
               )}
 
-              {selectedMethodData.details.notice && (
+              {selectedMethodData.details?.notice && (
                 <div className="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20 flex gap-2">
                   <Info size={14} className="text-blue-400 shrink-0" />
-                  <p className="text-[9px] font-bold text-blue-400 leading-tight">{selectedMethodData.details.notice}</p>
+                  <p className="text-[9px] font-bold text-blue-400 leading-tight">{selectedMethodData.details?.notice}</p>
                 </div>
               )}
             </div>
