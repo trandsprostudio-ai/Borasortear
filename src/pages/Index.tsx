@@ -31,9 +31,11 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-      // Limpeza de segurança: Sorteia salas expiradas logo ao abrir o site
+      // 1. Garantir que existam salas (Auto-reparo)
+      await supabase.rpc('ensure_active_rooms');
       await supabase.rpc('check_and_draw_expired_rooms');
 
+      // 2. Buscar módulos
       const { data: modData } = await supabase
         .from('modules')
         .select('*')
@@ -65,6 +67,17 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Monitorar se não há salas abertas para o módulo atual e tentar forçar criação
+  useEffect(() => {
+    if (!roomsLoading && modules.length > 0 && activeModuleId) {
+      const currentRooms = rooms.filter(r => r.moduleId === activeModuleId && r.status === 'open');
+      if (currentRooms.length === 0) {
+        console.log("[Index] Nenhuma sala detectada. Forçando reparo...");
+        supabase.rpc('ensure_active_rooms');
+      }
+    }
+  }, [rooms, activeModuleId, roomsLoading, modules]);
 
   useEffect(() => {
     const finishedRooms = rooms.filter(r => r.status === 'finished');
@@ -130,7 +143,7 @@ const Index = () => {
 
   const activeModuleRooms = rooms
     .filter(r => r.moduleId === activeModuleId && r.status === 'open')
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .slice(0, 3);
 
   const activeModule = modules.find(m => m.id === activeModuleId);
