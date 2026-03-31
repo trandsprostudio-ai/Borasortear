@@ -32,7 +32,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       const { data: txData } = await supabase.from('transactions').select('*').order('created_at', { ascending: false });
       if (txData && txData.length > 0) {
         const userIds = [...new Set(txData.map(t => t.user_id))];
-        const { data: profileData } = await supabase.from('profiles').select('id, first_name, last_name, bank_info, false_proof_count').in('id', userIds);
+        const { data: profileData } = await supabase.from('profiles').select('id, first_name, last_name, bank_info, false_proof_count, balance').in('id', userIds);
         const mergedData = txData.map(tx => ({
           ...tx,
           profiles: profileData?.find(p => p.id === tx.user_id) || null
@@ -63,28 +63,33 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
 
     try {
       if (tx.type === 'deposit') {
-        // 1. Buscar saldo atualizado com segurança
+        // 1. Buscar saldo atualizado (Garantir que pegamos o mais recente)
         const { data: profile, error: fetchError } = await supabase
           .from('profiles')
           .select('balance')
           .eq('id', tx.user_id)
-          .single();
+          .maybeSingle();
 
-        if (fetchError) throw new Error("Erro ao buscar perfil do usuário.");
+        if (fetchError) {
+          console.error("Erro Supabase Profile:", fetchError);
+          throw new Error(`Erro ao acessar perfil: ${fetchError.message}`);
+        }
 
-        const currentBalance = Number(profile?.balance || 0);
+        if (!profile) throw new Error("Perfil do jogador não encontrado no sistema.");
+
+        const currentBalance = Number(profile.balance || 0);
         const depositAmount = Number(tx.amount);
         const newBalance = currentBalance + depositAmount;
 
-        // 2. Atualizar o saldo PRIMEIRO
+        // 2. Atualizar o saldo
         const { error: balanceError } = await supabase
           .from('profiles')
           .update({ balance: newBalance })
           .eq('id', tx.user_id);
 
-        if (balanceError) throw new Error("Falha ao atualizar o saldo disponível.");
+        if (balanceError) throw new Error("Falha ao creditar saldo na conta do jogador.");
 
-        // 3. Inserir notificação
+        // 3. Notificar o jogador
         await supabase.from('notifications').insert({
           user_id: tx.user_id,
           title: 'Depósito Confirmado! ✅',
@@ -92,30 +97,30 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
           type: 'success'
         });
       } else {
-        // Lógica de Saque (O saldo já foi deduzido na solicitação)
+        // No Saque, o saldo já foi deduzido no pedido. Apenas notificamos.
         await supabase.from('notifications').insert({
           user_id: tx.user_id,
           title: 'Saque Concluído! 💸',
-          message: `Seu saque de ${Number(tx.amount).toLocaleString()} Kz foi processado com sucesso.`,
+          message: `Seu saque de ${Number(tx.amount).toLocaleString()} Kz foi processado.`,
           type: 'success'
         });
       }
 
-      // 4. SÓ AGORA marcar a transação como completa
+      // 4. Finalizar transação
       const { error: txError } = await supabase
         .from('transactions')
         .update({ status: 'completed' })
         .eq('id', tx.id);
 
-      if (txError) throw new Error("Saldo atualizado, mas erro ao fechar a transação.");
+      if (txError) throw new Error("Saldo atualizado, mas erro ao registrar conclusão da transação.");
 
-      toast.success("Operação finalizada com sucesso!");
+      toast.success("Operação concluída com sucesso!");
       setConfirmConfig({ isOpen: false, tx: null });
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
-      console.error("Erro na aprovação:", error);
-      toast.error(error.message || "Erro crítico ao processar.");
+      console.error("Erro Crítico na Aprovação:", error);
+      toast.error(error.message || "Erro desconhecido ao processar.");
     }
   };
 
@@ -132,16 +137,22 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         }).eq('id', tx.user_id);
       }
 
+      // Se for saque rejeitado, devolvemos o dinheiro
+      if (tx.type === 'withdrawal') {
+        const { data: profile } = await supabase.from('profiles').select('balance').eq('id', tx.user_id).single();
+        await supabase.from('profiles').update({ balance: Number(profile?.balance || 0) + Number(tx.amount) }).eq('id', tx.user_id);
+      }
+
       await supabase.from('transactions').update({ status: 'rejected' }).eq('id', tx.id);
       
       await supabase.from('notifications').insert({
         user_id: tx.user_id,
-        title: 'Depósito Rejeitado ❌',
-        message: isFalse ? 'Seu comprovativo foi identificado como falso.' : 'Seu depósito não pôde ser validado.',
+        title: tx.type === 'deposit' ? 'Depósito Rejeitado ❌' : 'Saque Rejeitado ❌',
+        message: isFalse ? 'Seu comprovativo foi identificado como falso.' : 'Sua operação não pôde ser validada.',
         type: 'error'
       });
 
-      toast.error("Depósito rejeitado.");
+      toast.error("Operação rejeitada.");
       setConfirmConfig({ isOpen: false, tx: null });
       fetchTransactions();
       onUpdate();
