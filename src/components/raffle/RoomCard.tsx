@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, Share2, Trophy, TrendingUp, Radio } from 'lucide-react';
+import { Users, Clock, Trophy, TrendingUp, Radio, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
-import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 interface RoomCardProps {
@@ -18,6 +17,7 @@ interface RoomCardProps {
 const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) => {
   const [timeLeft, setTimeLeft] = useState("");
   const [isUrgent, setIsUrgent] = useState(false);
+  const [triggering, setTriggering] = useState(false);
   
   const progress = room.maxParticipants > 0 ? (room.currentParticipants / room.maxParticipants) * 100 : 0;
   const isAlmostFull = progress > 80;
@@ -39,14 +39,16 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
       const diff = expiry - now;
       
       if (diff <= 0) {
-        return "PROCESSANDO...";
+        // GATILHO CRÍTICO: Se o tempo acabou mas o banco ainda diz 'open'
+        if (!triggering && isRoomOpen) {
+          setTriggering(true);
+          supabase.rpc('perform_automatic_draw', { p_room_id: room.id }).then(() => setTriggering(false));
+        }
+        return "FINALIZANDO...";
       }
 
-      if (diff < 30 * 60 * 1000) {
-        setIsUrgent(true);
-      } else {
-        setIsUrgent(false);
-      }
+      if (diff < 30 * 60 * 1000) setIsUrgent(true);
+      else setIsUrgent(false);
       
       const h = Math.floor(diff / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -57,7 +59,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
     const timer = setInterval(() => setTimeLeft(calculateTime()), 1000);
     setTimeLeft(calculateTime());
     return () => clearInterval(timer);
-  }, [room.expiresAt, isRoomOpen, isRoomProcessing, isRoomFinished]);
+  }, [room.expiresAt, isRoomOpen, triggering, room.id]);
 
   return (
     <motion.div 
@@ -77,14 +79,9 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
             <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">LIVE</span>
           </div>
         )}
-        {isRoomProcessing && (
+        {(isRoomProcessing || triggering) && (
           <div className="bg-purple-600/10 px-2 py-0.5 rounded-lg border border-purple-500/20">
             <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">SORTEANDO</span>
-          </div>
-        )}
-        {isAlmostFull && isRoomOpen && (
-          <div className="bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded-lg flex items-center gap-1 animate-pulse">
-            <TrendingUp size={10} /> QUENTE
           </div>
         )}
       </div>
@@ -110,21 +107,11 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
           </div>
           <div className={`flex items-center gap-2 transition-colors duration-300 ${
             isRoomFinished ? 'text-green-500' : 
-            isRoomProcessing ? 'text-purple-500' : 
+            (isRoomProcessing || triggering) ? 'text-purple-500' : 
             isUrgent ? 'text-red-500 animate-pulse' : 'text-amber-500'
           }`}>
             <Clock size={14} />
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={timeLeft}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                transition={{ duration: 0.2 }}
-              >
-                {timeLeft}
-              </motion.span>
-            </AnimatePresence>
+            <span className="font-bold">{timeLeft}</span>
           </div>
         </div>
         
@@ -140,7 +127,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
 
         <Button 
           onClick={() => onParticipate(room, module)}
-          disabled={!isRoomOpen}
+          disabled={!isRoomOpen || triggering}
           className={`w-full h-14 rounded-2xl font-black text-lg uppercase tracking-tighter italic transition-all active:scale-95 ${
             isRoomOpen 
               ? isAlmostFull 
@@ -149,7 +136,12 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
               : 'bg-gray-600 text-gray-300 cursor-not-allowed opacity-50'
           }`}
         >
-          {isRoomProcessing ? 'SORTEANDO...' : isRoomFinished ? 'ENCERRADO' : 'SORTEAR'}
+          {(isRoomProcessing || triggering) ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="animate-spin" size={20} />
+              SORTEANDO...
+            </div>
+          ) : isRoomFinished ? 'ENCERRADO' : 'SORTEAR'}
         </Button>
       </div>
     </motion.div>
