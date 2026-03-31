@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 interface RoomCardProps {
   room: Room;
@@ -32,7 +31,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
       if (!isRoomOpen) {
         if (isRoomProcessing) return "SORTEANDO...";
         if (isRoomFinished) return "ENCERRADO";
-        return "FINALIZADO";
+        return "CONCLUÍDO";
       }
 
       const expiry = new Date(room.expiresAt).getTime();
@@ -40,7 +39,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
       const diff = expiry - now;
       
       if (diff <= 0) {
-        return "FINALIZANDO...";
+        return "PROCESSANDO...";
       }
 
       if (diff < 30 * 60 * 1000) {
@@ -81,11 +80,6 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
         {isRoomProcessing && (
           <div className="bg-purple-600/10 px-2 py-0.5 rounded-lg border border-purple-500/20">
             <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">SORTEANDO</span>
-          </div>
-        )}
-        {isRoomFinished && (
-          <div className="bg-green-500/10 px-2 py-0.5 rounded-lg border border-green-500/20">
-            <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">ENCERRADO</span>
           </div>
         )}
         {isAlmostFull && isRoomOpen && (
@@ -152,7 +146,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
               ? isAlmostFull 
                 ? 'bg-amber-500 hover:bg-amber-600 text-black shadow-lg shadow-amber-500/20' 
                 : 'premium-gradient text-white shadow-lg shadow-purple-500/20'
-              : 'bg-gray-600 text-gray-300 cursor-not-allowed'
+              : 'bg-gray-600 text-gray-300 cursor-not-allowed opacity-50'
           }`}
         >
           {isRoomProcessing ? 'SORTEANDO...' : isRoomFinished ? 'ENCERRADO' : 'SORTEAR'}
