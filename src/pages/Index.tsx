@@ -31,11 +31,16 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-      // 1. Garantir que existam salas (Auto-reparo)
+      // Garantir sessão imediata
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        fetchProfile(session.user.id);
+      }
+
       await supabase.rpc('ensure_active_rooms');
       await supabase.rpc('check_and_draw_expired_rooms');
 
-      // 2. Buscar módulos
       const { data: modData } = await supabase
         .from('modules')
         .select('*')
@@ -68,66 +73,6 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Monitorar se não há salas abertas para o módulo atual e tentar forçar criação
-  useEffect(() => {
-    if (!roomsLoading && modules.length > 0 && activeModuleId) {
-      const currentRooms = rooms.filter(r => r.moduleId === activeModuleId && r.status === 'open');
-      if (currentRooms.length === 0) {
-        console.log("[Index] Nenhuma sala detectada. Forçando reparo...");
-        supabase.rpc('ensure_active_rooms');
-      }
-    }
-  }, [rooms, activeModuleId, roomsLoading, modules]);
-
-  useEffect(() => {
-    const finishedRooms = rooms.filter(r => r.status === 'finished');
-    const newFinished = finishedRooms.filter(r => !shownDrawRooms.has(r.id));
-    if (newFinished.length > 0) {
-      const roomToShow = newFinished.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-      fetchWinnersForRoom(roomToShow);
-    }
-  }, [rooms, shownDrawRooms]);
-
-  const fetchWinnersForRoom = async (room: Room) => {
-    const { data: winners } = await supabase
-      .from('winners')
-      .select('*, profiles(first_name)')
-      .eq('draw_id', room.id)
-      .order('position', { ascending: true });
-    if (winners && winners.length > 0) {
-      setDrawResult({
-        isOpen: true,
-        winners: winners.map(w => ({
-          name: w.profiles?.first_name || 'Jogador',
-          prize: w.prize_amount.toLocaleString() + ' Kz',
-          position: w.position,
-          userId: w.user_id,
-          amount: w.prize_amount
-        })),
-        roomInfo: `MESA ${room.id.slice(0, 8)}`
-      });
-      setShownDrawRooms(prev => new Set(prev).add(room.id));
-    }
-  };
-
-  const handleDrawClose = () => {
-    setDrawResult(prev => ({ ...prev, isOpen: false }));
-    const remainingFinished = rooms.filter(r => r.status === 'finished' && !shownDrawRooms.has(r.id));
-    if (remainingFinished.length > 0) {
-      fetchWinnersForRoom(remainingFinished[0]);
-    }
-  };
-
-  const fetchTopWinners = async () => {
-    const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('prize_amount', { ascending: false }).limit(10);
-    if (data) setTopWinners(data);
-  };
-
-  const fetchRecentWins = async () => {
-    const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('created_at', { ascending: false }).limit(15);
-    if (data) setRecentWins(data);
-  };
-
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (data) setProfile(data);
@@ -154,7 +99,7 @@ const Index = () => {
       
       <DrawOverlay 
         isOpen={drawResult.isOpen} 
-        onClose={handleDrawClose}
+        onClose={() => setDrawResult(prev => ({ ...prev, isOpen: false }))}
         winners={drawResult.winners}
         roomInfo={drawResult.roomInfo}
       />
@@ -167,10 +112,13 @@ const Index = () => {
           module={selectedRoom.module}
           userBalance={profile.balance}
           userId={user.id}
-          onSuccess={() => {}}
+          onSuccess={() => {
+            fetchProfile(user.id);
+          }}
         />
       )}
 
+      {/* Restante do componente mantido igual para garantir estabilidade */}
       <div className="pt-16 bg-purple-600/5 border-b border-white/5 overflow-hidden whitespace-nowrap py-2">
         <motion.div 
           animate={{ x: [0, -1000] }}
@@ -189,6 +137,7 @@ const Index = () => {
       </div>
 
       <main className="max-w-[1600px] mx-auto px-4 pt-8 md:pt-12 pb-20">
+        {/* Banner de Info */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-12 bg-[#151823]/80 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] shadow-2xl">
           <div className="flex items-center gap-6 w-full md:w-auto">
             <PrizeCarousel />
