@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Loader2, ShieldAlert, RefreshCw, CreditCard, History, Phone, ExternalLink, Copy } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Loader2, RefreshCw, ExternalLink, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
@@ -16,7 +16,7 @@ interface AdminFinanceProps {
 const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, tx: null, isFalse: false });
+  const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, tx: null, action: null });
 
   useEffect(() => {
     fetchTransactions();
@@ -51,76 +51,29 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
   const copyIban = (iban: string) => {
     if (!iban) return;
     navigator.clipboard.writeText(iban);
-    toast.success("IBAN copiado para transferência!");
+    toast.success("IBAN copiado!");
   };
 
   const handleApprove = async () => {
     const { tx } = confirmConfig;
-    if (!tx || !tx.user_id) {
-      toast.error("Dados da transação incompletos.");
-      return;
-    }
+    if (!tx) return;
 
     try {
-      if (tx.type === 'deposit') {
-        // 1. Buscar saldo atualizado (Garantir que pegamos o mais recente)
-        const { data: profile, error: fetchError } = await supabase
-          .from('profiles')
-          .select('balance')
-          .eq('id', tx.user_id)
-          .maybeSingle();
+      // Usamos uma RPC (Stored Procedure) para garantir que a atualização de saldo e status seja atômica
+      // e ignore restrições de RLS do lado do cliente.
+      const { error } = await supabase.rpc('approve_transaction_admin', {
+        p_transaction_id: tx.id
+      });
 
-        if (fetchError) {
-          console.error("Erro Supabase Profile:", fetchError);
-          throw new Error(`Erro ao acessar perfil: ${fetchError.message}`);
-        }
+      if (error) throw error;
 
-        if (!profile) throw new Error("Perfil do jogador não encontrado no sistema.");
-
-        const currentBalance = Number(profile.balance || 0);
-        const depositAmount = Number(tx.amount);
-        const newBalance = currentBalance + depositAmount;
-
-        // 2. Atualizar o saldo
-        const { error: balanceError } = await supabase
-          .from('profiles')
-          .update({ balance: newBalance })
-          .eq('id', tx.user_id);
-
-        if (balanceError) throw new Error("Falha ao creditar saldo na conta do jogador.");
-
-        // 3. Notificar o jogador
-        await supabase.from('notifications').insert({
-          user_id: tx.user_id,
-          title: 'Depósito Confirmado! ✅',
-          message: `Sua recarga de ${depositAmount.toLocaleString()} Kz foi validada.`,
-          type: 'success'
-        });
-      } else {
-        // No Saque, o saldo já foi deduzido no pedido. Apenas notificamos.
-        await supabase.from('notifications').insert({
-          user_id: tx.user_id,
-          title: 'Saque Concluído! 💸',
-          message: `Seu saque de ${Number(tx.amount).toLocaleString()} Kz foi processado.`,
-          type: 'success'
-        });
-      }
-
-      // 4. Finalizar transação
-      const { error: txError } = await supabase
-        .from('transactions')
-        .update({ status: 'completed' })
-        .eq('id', tx.id);
-
-      if (txError) throw new Error("Saldo atualizado, mas erro ao registrar conclusão da transação.");
-
-      toast.success("Operação concluída com sucesso!");
+      toast.success("Operação aprovada com sucesso!");
       setConfirmConfig({ isOpen: false, tx: null });
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
-      console.error("Erro Crítico na Aprovação:", error);
-      toast.error(error.message || "Erro desconhecido ao processar.");
+      console.error("Erro na aprovação:", error);
+      toast.error(error.message || "Falha ao processar aprovação.");
     }
   };
 
@@ -129,35 +82,20 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     if (!tx) return;
 
     try {
-      if (isFalse) {
-        const currentCount = tx.profiles?.false_proof_count || 0;
-        await supabase.from('profiles').update({ 
-          false_proof_count: currentCount + 1,
-          is_banned: (currentCount + 1) >= 3
-        }).eq('id', tx.user_id);
-      }
-
-      // Se for saque rejeitado, devolvemos o dinheiro
-      if (tx.type === 'withdrawal') {
-        const { data: profile } = await supabase.from('profiles').select('balance').eq('id', tx.user_id).single();
-        await supabase.from('profiles').update({ balance: Number(profile?.balance || 0) + Number(tx.amount) }).eq('id', tx.user_id);
-      }
-
-      await supabase.from('transactions').update({ status: 'rejected' }).eq('id', tx.id);
-      
-      await supabase.from('notifications').insert({
-        user_id: tx.user_id,
-        title: tx.type === 'deposit' ? 'Depósito Rejeitado ❌' : 'Saque Rejeitado ❌',
-        message: isFalse ? 'Seu comprovativo foi identificado como falso.' : 'Sua operação não pôde ser validada.',
-        type: 'error'
+      const { error } = await supabase.rpc('reject_transaction_admin', {
+        p_transaction_id: tx.id,
+        p_is_false: isFalse || false
       });
 
-      toast.error("Operação rejeitada.");
+      if (error) throw error;
+
+      toast.error(isFalse ? "Jogador penalizado e transação rejeitada." : "Transação rejeitada.");
       setConfirmConfig({ isOpen: false, tx: null });
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
-      toast.error("Erro ao rejeitar.");
+      console.error("Erro na rejeição:", error);
+      toast.error("Erro ao processar rejeição.");
     }
   };
 
@@ -177,7 +115,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       />
 
       <Tabs defaultValue="deposits" className="w-full">
-        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-12 mb-6 w-full md:w-auto overflow-x-auto no-scrollbar">
+        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-12 mb-6 w-full md:w-auto">
           <TabsTrigger value="deposits" className="flex-1 md:flex-none rounded-lg px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-green-600">
             Depósitos ({pendingDeposits.length})
           </TabsTrigger>
