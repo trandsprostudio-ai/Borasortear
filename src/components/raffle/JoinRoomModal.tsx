@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Clock, Loader2, Ticket, Copy, CheckCircle2, Share2, Users, TrendingUp, AlertCircle, DollarSign } from 'lucide-react';
+import { ShieldCheck, Clock, Loader2, Ticket, Copy, CheckCircle2, Share2, Users, TrendingUp, AlertCircle, DollarSign, PieChart } from 'lucide-react';
 import { Module, Room } from '@/types/raffle';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -24,7 +24,6 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
   const [currentBalance, setCurrentBalance] = useState(initialBalance);
   const [ticketCode, setTicketCode] = useState<string | null>(null);
   const [isRestricted, setIsRestricted] = useState(false);
-  const [cooldownTime, setCooldownTime] = useState<number>(0);
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -55,9 +54,6 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
 
       if (pendingRes.data && pendingRes.data.length > 0) {
         setIsRestricted(true);
-        const createdAt = new Date(pendingRes.data[0].created_at).getTime();
-        const diff = Math.ceil((15 * 60 * 1000 - (Date.now() - createdAt)) / 1000);
-        setCooldownTime(diff > 0 ? diff : 0);
       } else {
         setIsRestricted(false);
       }
@@ -112,6 +108,7 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
   };
 
   const totalPool = module.price * room.maxParticipants;
+  const prizePerWinner = totalPool * 0.3333;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -126,9 +123,9 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
             <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500">
               <Clock size={48} className="animate-pulse" />
             </div>
-            <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase text-white">VERIFICAÇÃO EM CURSO</h3>
+            <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase text-white">VERIFICAÇÃO PENDENTE</h3>
             <p className="text-xs text-white/40 font-bold mb-8 leading-relaxed uppercase tracking-widest">
-              Aguarde a validação do seu último depósito para participar de novas mesas.
+              Aguarde a validação do seu depósito atual antes de participar de novas mesas.
             </p>
             <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-white/5 text-white font-black">
               ENTENDIDO
@@ -141,14 +138,14 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
                 <ShieldCheck size={32} />
               </div>
               <DialogTitle className="text-2xl font-black italic tracking-tighter uppercase text-white">
-                CONFIRMAR ENTRADA
+                DETALHES DA MESA
               </DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4 my-6">
               <div className="bg-white/5 rounded-2xl p-5 border border-white/5 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Custo da Mesa</span>
+                  <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Preço da Entrada</span>
                   <span className="font-black text-lg text-white">{module.price.toLocaleString()} Kz</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -159,15 +156,28 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
                 </div>
               </div>
 
-              <div className="bg-green-500/5 rounded-2xl p-5 border border-green-500/20">
+              <div className="bg-purple-500/5 rounded-2xl p-5 border border-purple-500/20 space-y-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <DollarSign size={14} className="text-green-400" />
-                  <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Volume da Mesa</span>
+                  <PieChart size={14} className="text-purple-400" />
+                  <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Estimativa de Prêmios</span>
                 </div>
-                <p className="text-2xl font-black text-white italic tracking-tighter">
-                  {totalPool.toLocaleString()} <span className="text-xs not-italic opacity-40">Kz</span>
-                </p>
-                <p className="text-[8px] font-bold text-white/20 uppercase mt-1">Prêmio total a ser distribuído entre ganhadores</p>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <p className="text-[8px] font-black text-white/20 uppercase">1º Lugar (33%)</p>
+                    <p className="text-sm font-black text-green-400">{prizePerWinner.toLocaleString()} Kz</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[8px] font-black text-white/20 uppercase">2º Lugar (33%)</p>
+                    <p className="text-sm font-black text-blue-400">{prizePerWinner.toLocaleString()} Kz</p>
+                  </div>
+                </div>
+                
+                <div className="pt-2 border-t border-white/5">
+                  <p className="text-[8px] font-bold text-white/20 uppercase leading-tight italic">
+                    * Valores baseados em uma mesa 100% preenchida.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -177,14 +187,14 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
                 disabled={isJoining || currentBalance < module.price} 
                 className="w-full premium-gradient h-16 rounded-2xl font-black text-lg shadow-xl shadow-purple-500/20"
               >
-                {isJoining ? <Loader2 className="animate-spin" /> : 'SORTEAR AGORA'}
+                {isJoining ? <Loader2 className="animate-spin" /> : 'CONFIRMAR ENTRADA'}
               </Button>
               <Button 
                 variant="ghost" 
                 onClick={onClose} 
                 className="w-full h-12 text-white/20 font-black text-[10px] uppercase tracking-widest"
               >
-                Cancelar
+                Voltar
               </Button>
             </DialogFooter>
           </div>
@@ -193,17 +203,14 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
             <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-green-400">
               <CheckCircle2 size={48} />
             </div>
-            <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase text-white">BILHETE GERADO!</h3>
+            <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase text-white">BILHETE ATIVO!</h3>
             
             <div 
               className="bg-white/5 p-6 rounded-3xl border border-purple-500/20 mb-6 relative group cursor-pointer" 
-              onClick={() => copyText(ticketCode, "Código do bilhete copiado!")}
+              onClick={() => copyText(ticketCode, "Bilhete copiado!")}
             >
-              <p className="text-[9px] font-black text-white/20 uppercase mb-2">Seu Código de Sorteio</p>
+              <p className="text-[9px] font-black text-white/20 uppercase mb-2">Código do Sorteio</p>
               <p className="text-3xl font-black text-purple-400 tracking-[0.3em]">{ticketCode}</p>
-              <div className="absolute top-2 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Copy size={14} className="text-purple-500" />
-              </div>
             </div>
 
             <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-white text-black font-black uppercase tracking-widest">
