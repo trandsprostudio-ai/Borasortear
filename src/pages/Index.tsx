@@ -38,6 +38,7 @@ const Index = () => {
         fetchProfile(session.user.id);
       }
 
+      // Auto-reparo do sistema
       await supabase.rpc('ensure_active_rooms');
       await supabase.rpc('check_and_draw_expired_rooms');
 
@@ -67,11 +68,65 @@ const Index = () => {
       setUser(currentUser);
       if (currentUser) {
         fetchProfile(currentUser.id);
+      } else {
+        setProfile(null);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Monitorar salas finalizadas para mostrar o overlay de resultado
+  useEffect(() => {
+    const finishedRooms = rooms.filter(r => r.status === 'finished');
+    const newFinished = finishedRooms.filter(r => !shownDrawRooms.has(r.id));
+    
+    if (newFinished.length > 0) {
+      const roomToShow = newFinished.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+      fetchWinnersForRoom(roomToShow);
+    }
+  }, [rooms, shownDrawRooms]);
+
+  const fetchWinnersForRoom = async (room: Room) => {
+    const { data: winners } = await supabase
+      .from('winners')
+      .select('*, profiles(first_name)')
+      .eq('draw_id', room.id)
+      .order('position', { ascending: true });
+
+    if (winners && winners.length > 0) {
+      setDrawResult({
+        isOpen: true,
+        winners: winners.map(w => ({
+          name: w.profiles?.first_name || 'Jogador',
+          prize: w.prize_amount.toLocaleString() + ' Kz',
+          position: w.position,
+          userId: w.user_id,
+          amount: w.prize_amount
+        })),
+        roomInfo: `MESA ${room.id.slice(0, 8)}`
+      });
+      setShownDrawRooms(prev => new Set(prev).add(room.id));
+    }
+  };
+
+  const fetchTopWinners = async () => {
+    const { data } = await supabase
+      .from('winners')
+      .select('*, profiles(first_name)')
+      .order('prize_amount', { ascending: false })
+      .limit(10);
+    if (data) setTopWinners(data);
+  };
+
+  const fetchRecentWins = async () => {
+    const { data } = await supabase
+      .from('winners')
+      .select('*, profiles(first_name)')
+      .order('created_at', { ascending: false })
+      .limit(15);
+    if (data) setRecentWins(data);
+  };
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
@@ -118,14 +173,14 @@ const Index = () => {
         />
       )}
 
-      {/* Restante do componente mantido igual para garantir estabilidade */}
+      {/* Barra de Notificações de Vitórias */}
       <div className="pt-16 bg-purple-600/5 border-b border-white/5 overflow-hidden whitespace-nowrap py-2">
         <motion.div 
           animate={{ x: [0, -1000] }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
           className="inline-flex gap-12 items-center"
         >
-          {recentWins.map((win, i) => (
+          {[...recentWins, ...recentWins].map((win, i) => (
             <div key={i} className="flex items-center gap-2">
               <Trophy size={10} className="text-amber-500" />
               <span className="text-[10px] font-black uppercase tracking-widest">
@@ -137,7 +192,6 @@ const Index = () => {
       </div>
 
       <main className="max-w-[1600px] mx-auto px-4 pt-8 md:pt-12 pb-20">
-        {/* Banner de Info */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-12 bg-[#151823]/80 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] shadow-2xl">
           <div className="flex items-center gap-6 w-full md:w-auto">
             <PrizeCarousel />
@@ -167,13 +221,13 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-10">
+          <div className="flex flex-wrap gap-2 mb-10 overflow-x-auto no-scrollbar pb-2">
             {modules.map((mod) => (
               <Button
                 key={mod.id}
                 onClick={() => setActiveModuleId(mod.id)}
                 variant={activeModuleId === mod.id ? 'default' : 'outline'}
-                className={`h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
+                className={`h-14 px-8 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shrink-0 ${
                   activeModuleId === mod.id ? 'premium-gradient border-none shadow-lg shadow-purple-500/20' : 'border-white/10 bg-white/5 hover:bg-white/10'
                 }`}
               >
