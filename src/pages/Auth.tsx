@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Phone, Lock, User, CreditCard, ShieldCheck, UserCheck, ZapOff } from 'lucide-react';
+import { ArrowLeft, Phone, Lock, User, CreditCard, ShieldCheck, UserCheck, Smartphone } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -55,7 +55,6 @@ const Auth = () => {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email: internalEmail, password });
         if (authError) throw authError;
 
-        // Verificar se está banido
         const { data: profile } = await supabase.from('profiles').select('is_banned').eq('id', authData.user.id).single();
         if (profile?.is_banned) {
           await supabase.auth.signOut();
@@ -64,7 +63,6 @@ const Auth = () => {
           return;
         }
       } else {
-        // Cadastro
         if (!age || parseInt(age) < 18) throw new Error("Mínimo 18 anos.");
         if (password !== confirmPassword) throw new Error("Senhas diferentes.");
         if (!acceptTerms) throw new Error("Aceite os termos.");
@@ -76,7 +74,7 @@ const Auth = () => {
             data: { 
               full_name: fullName,
               phone_number: cleanPhone,
-              bank_info: bankInfo
+              express_number: bankInfo
             }
           }
         });
@@ -89,7 +87,8 @@ const Auth = () => {
             first_name: fullName.split(' ')[0],
             last_name: fullName.split(' ').slice(1).join(' '),
             balance: 0,
-            referred_by: refId || null
+            referred_by: refId || null,
+            express_number: bankInfo
           });
         }
       }
@@ -129,14 +128,13 @@ const Auth = () => {
         </div>
 
         <form className="space-y-4" onSubmit={handleAuth}>
-          {/* ... campos de formulário mantidos ... */}
           {!isLogin ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome Completo</Label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nome Completo" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
               
@@ -157,10 +155,10 @@ const Auth = () => {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">IBAN / Conta</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Número Multicaixa Express</Label>
                 <div className="relative">
-                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Dados para saque" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Para receber prêmios" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
 

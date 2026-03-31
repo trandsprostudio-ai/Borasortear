@@ -38,15 +38,14 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
   };
 
   const depositMethods = [
-    { id: 'iban', name: 'Transferência (IBAN)', icon: Banknote, color: 'text-blue-400', details: { label: 'IBAN (BANCO BAI)', value: 'AO06 0040 0000 1234 5678 9012 3', owner: 'BORA SORTEIAR SERVIÇOS LTDA' } },
+    { id: 'express', name: 'Multicaixa Express', icon: Smartphone, color: 'text-blue-400', details: { label: 'Número Express', value: '933 271 690', owner: 'BORA SORTEIAR' } },
     { id: 'afrimoney', name: 'Afrimoney', icon: Smartphone, color: 'text-yellow-400', details: { label: 'Número Afrimoney', value: '933 271 690', owner: 'BORA SORTEIAR' } },
     { id: 'unitel', name: 'Unitel Money', icon: Smartphone, color: 'text-orange-400', details: { label: 'Número Unitel Money', value: '933 271 690', owner: 'BORA SORTEIAR' } },
     { id: 'paypay', name: 'PayPay', icon: Smartphone, color: 'text-blue-500', details: { label: 'Número PayPay', value: '933 271 690', owner: 'BORA SORTEIAR' } },
   ];
 
   const withdrawalMethods = [
-    { id: 'iban', name: 'Transferência Bancária', icon: Banknote, available: !!profile?.bank_info },
-    { id: 'express', name: 'Multicaixa Express', icon: Smartphone, available: !!profile?.express_number },
+    { id: 'express', name: 'Multicaixa Express', icon: Smartphone, available: !!profile?.express_number || !!profile?.bank_info },
   ];
 
   const handleAction = async () => {
@@ -79,34 +78,30 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
           return;
         }
         
-        // Verificar se o método selecionado tem dados
-        if (method === 'iban' && !profile?.bank_info) throw new Error("IBAN não cadastrado no perfil.");
-        if (method === 'express' && !profile?.express_number) throw new Error("Número Express não cadastrado.");
+        const targetAccount = profile?.express_number || profile?.bank_info;
+        if (!targetAccount) throw new Error("Dados de saque não cadastrados no perfil.");
 
-        // DEDUÇÃO IMEDIATA DO SALDO
         const { error: balanceError } = await supabase.from('profiles').update({ balance: currentBalance - val }).eq('id', user.id);
         if (balanceError) throw balanceError;
       }
 
-      // CRIAR TRANSAÇÃO
       const { error } = await supabase.from('transactions').insert({
         user_id: user.id,
         type: type,
         amount: val,
         status: 'pending',
-        payment_method: method === 'express' ? `Express: ${profile?.express_number}` : method === 'iban' ? `IBAN: ${profile?.bank_info}` : method,
+        payment_method: type === 'withdrawal' ? `Express: ${profile?.express_number || profile?.bank_info}` : method,
         proof_url: proofUrl
       });
 
       if (error) throw error;
 
-      // NOTIFICAÇÃO
       await supabase.from('notifications').insert({
         user_id: user.id,
         title: type === 'deposit' ? 'Depósito Solicitado ⏳' : 'Saque Solicitado 💸',
         message: type === 'deposit' 
           ? `Sua recarga de ${val.toLocaleString()} Kz foi enviada para análise.` 
-          : `Seu saque de ${val.toLocaleString()} Kz via ${method.toUpperCase()} foi solicitado.`,
+          : `Seu saque de ${val.toLocaleString()} Kz via EXPRESS foi solicitado.`,
         type: 'info'
       });
 
