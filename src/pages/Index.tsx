@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LayoutGrid, Loader2, Sparkles, HelpCircle, Gift, ArrowRight } from 'lucide-react';
+import { LayoutGrid, Loader2, Sparkles, HelpCircle, Gift, ArrowRight, ShieldCheck } from 'lucide-react';
 import ModuleCard from '@/components/raffle/ModuleCard';
 import RoomItem from '@/components/raffle/RoomItem';
 import NewsTicker from '@/components/layout/NewsTicker';
@@ -76,7 +76,6 @@ const Index = () => {
       });
 
       if (error) {
-        // Tratamento para entrada duplicada na mesma mesa
         if (error.message.includes('participants_user_id_room_id_key')) {
           toast.error("Já estás nesta mesa! Por favor, escolhe outra sala para participar novamente.");
         } else {
@@ -123,6 +122,10 @@ const Index = () => {
                 <div className="flex items-center gap-2 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                   <span className="text-[9px] font-black uppercase tracking-widest text-green-400">ATIVO AGORA</span>
+                </div>
+                <div className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20">
+                  <ShieldCheck size={12} className="text-blue-400" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-blue-400">SISTEMA SEGURO</span>
                 </div>
               </div>
               
