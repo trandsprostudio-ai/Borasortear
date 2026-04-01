@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
   const [timeLeft, setTimeLeft] = useState("");
-  const [triggering, setTriggering] = useState(false);
+  const [isDrawDispatched, setIsDrawDispatched] = useState(false);
   
   const progress = room.maxParticipants > 0 ? (room.currentParticipants / room.maxParticipants) * 100 : 0;
   const isRoomOpen = room.status === 'open';
@@ -17,20 +17,23 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
 
   useEffect(() => {
     const calculateTime = () => {
-      if (!isRoomOpen) {
-        if (isRoomProcessing) return "SORTEANDO...";
-        return "FINALIZADO";
-      }
+      // Se a sala já está sendo sorteada no banco
+      if (isRoomProcessing) return "SORTEANDO...";
+      if (!isRoomOpen) return "FINALIZADO";
 
       const expiry = new Date(room.expiresAt).getTime();
       const now = new Date().getTime();
       const diff = expiry - now;
       
+      // Se o tempo acabou
       if (diff <= 0) {
-        if (!triggering && isRoomOpen) {
-          setTriggering(true);
-          // Chama o sorteio no servidor caso ele ainda não tenha acontecido
-          supabase.rpc('check_and_draw_expired_rooms').then(() => setTriggering(false));
+        if (!isDrawDispatched && isRoomOpen) {
+          setIsDrawDispatched(true);
+          // Chama o sorteio no servidor
+          supabase.rpc('check_and_draw_expired_rooms').catch(err => {
+            console.error("Erro ao disparar sorteio:", err);
+            setIsDrawDispatched(false);
+          });
         }
         return "SORTEANDO...";
       }
@@ -44,12 +47,12 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
     const timer = setInterval(() => setTimeLeft(calculateTime()), 1000);
     setTimeLeft(calculateTime());
     return () => clearInterval(timer);
-  }, [room.expiresAt, isRoomOpen, triggering, room.id]);
+  }, [room.expiresAt, isRoomOpen, isRoomProcessing, isDrawDispatched, room.id]);
 
   return (
     <motion.div 
-      className={`bg-[#151823] border-2 rounded-[2.5rem] p-6 relative overflow-hidden ${
-        isRoomProcessing ? 'border-purple-500/40 shadow-xl' : 'border-white/5'
+      className={`bg-[#151823] border-2 rounded-[2.5rem] p-6 relative overflow-hidden transition-colors ${
+        isRoomProcessing || timeLeft === "SORTEANDO..." ? 'border-purple-500/40 shadow-xl' : 'border-white/5'
       }`}
     >
       <div className="absolute top-0 left-0 bg-purple-600 text-[10px] font-black px-4 py-1.5 rounded-br-2xl uppercase tracking-widest">
@@ -64,7 +67,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
             <span className="text-sm font-black text-purple-500">Kz</span>
           </div>
         </div>
-        <Trophy size={24} className="text-white/10" />
+        <Trophy size={24} className={isRoomProcessing ? 'text-purple-500 animate-bounce' : 'text-white/10'} />
       </div>
 
       <div className="space-y-5">
@@ -79,17 +82,22 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
         <div className="h-3 w-full bg-black/60 rounded-full overflow-hidden border border-white/5 p-0.5">
           <motion.div 
             animate={{ width: `${progress}%` }}
-            className="h-full rounded-full bg-gradient-to-r from-purple-600 to-blue-500"
+            className={`h-full rounded-full ${
+              isRoomProcessing ? 'bg-gradient-to-r from-purple-400 to-blue-400 animate-pulse' : 'bg-gradient-to-r from-purple-600 to-blue-500'
+            }`}
           />
         </div>
 
         <Button 
           onClick={() => onParticipate(room, module)}
-          disabled={!isRoomOpen || timeLeft === "SORTEANDO..."}
+          disabled={!isRoomOpen || timeLeft === "SORTEANDO..." || isRoomProcessing}
           className="w-full h-14 rounded-2xl font-black text-lg premium-gradient"
         >
-          {timeLeft === "SORTEANDO..." ? <Loader2 className="animate-spin mr-2" /> : 'SORTEAR'}
-          {timeLeft === "SORTEANDO..." ? 'SORTEANDO' : ''}
+          {(isRoomProcessing || timeLeft === "SORTEANDO...") ? (
+            <>
+              <Loader2 className="animate-spin mr-2" /> SORTEANDO...
+            </>
+          ) : 'SORTEAR'}
         </Button>
       </div>
     </motion.div>
