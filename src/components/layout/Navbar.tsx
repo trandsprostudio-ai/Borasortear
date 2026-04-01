@@ -37,21 +37,6 @@ const Navbar = () => {
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchPendingAmount(session.user.id);
-        
-        const profileChannel = supabase.channel(`navbar-profile-${session.user.id}`)
-          .on('postgres_changes', { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'profiles', 
-            filter: `id=eq.${session.user.id}` 
-          }, (payload) => {
-            setProfile(payload.new);
-          })
-          .subscribe();
-
-        return () => {
-          supabase.removeChannel(profileChannel);
-        };
       }
     };
     checkSession();
@@ -62,9 +47,6 @@ const Navbar = () => {
       if (currentUser) {
         fetchProfile(currentUser.id);
         fetchPendingAmount(currentUser.id);
-      } else {
-        setProfile(null);
-        setPendingAmount(0);
       }
     });
 
@@ -96,7 +78,7 @@ const Navbar = () => {
       await supabase.auth.signOut();
       setShowExitSplash(false);
       navigate('/');
-    }, 1800); // Tempo otimizado para dinamismo
+    }, 1500);
   };
 
   const currentBalance = Number(profile?.balance || 0);
@@ -105,7 +87,7 @@ const Navbar = () => {
   return (
     <>
       <AnimatePresence>
-        {showExitSplash && <SplashScreen message="Encerrando a sua sessão com segurança..." />}
+        {showExitSplash && <SplashScreen message="Saindo..." />}
       </AnimatePresence>
 
       {user && (
@@ -118,79 +100,57 @@ const Navbar = () => {
         />
       )}
 
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F111A]/90 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-2 md:px-4">
-        <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1 md:gap-8 shrink-0">
-            <Link to="/" className="hover:opacity-80 transition-opacity">
-              <Logo className="scale-[0.7] md:scale-100 origin-left" />
-            </Link>
-          </div>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F111A]/95 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-4">
+        <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between">
+          <Link to="/" className="shrink-0 scale-75 md:scale-100 origin-left">
+            <Logo />
+          </Link>
 
-          <div className="flex items-center gap-1.5 md:gap-2">
+          <div className="flex items-center gap-2">
             {user ? (
               <>
                 <NotificationBell userId={user.id} />
                 
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex items-center bg-[#1A1D29] rounded-xl p-0.5 md:p-1 border border-white/5"
-                >
-                  <Link to="/wallet" className="px-1.5 md:px-4 py-1 flex flex-col items-end">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[6px] md:text-[9px] text-white/30 font-black uppercase tracking-tighter">Saldo Total</span>
-                      {pendingAmount > 0 && <Clock size={8} className="text-amber-500 animate-pulse" />}
-                    </div>
-                    <span className="text-[10px] md:text-sm font-black text-green-400 whitespace-nowrap transition-all">
-                      {totalDisplayBalance.toLocaleString()} <span className="text-[7px] md:text-[10px]">Kz</span>
+                <div className="flex items-center bg-[#1A1D29] rounded-xl p-1 border border-white/5">
+                  <Link to="/wallet" className="px-2 md:px-4 py-1 flex flex-col items-end">
+                    <span className="text-[7px] md:text-[9px] text-white/30 font-black uppercase">Saldo</span>
+                    <span className="text-[10px] md:text-sm font-black text-green-400">
+                      {totalDisplayBalance.toLocaleString()} <span className="text-[7px] md:text-[8px]">Kz</span>
                     </span>
                   </Link>
                   <Button 
                     size="icon" 
                     onClick={() => setIsDepositOpen(true)}
-                    disabled={profile?.is_banned}
-                    className="bg-purple-600 hover:bg-purple-700 text-white h-7 w-7 md:h-9 md:w-9 rounded-lg shadow-lg shrink-0 transition-transform active:scale-90"
+                    className="bg-purple-600 hover:bg-purple-700 h-7 w-7 md:h-9 md:w-9 rounded-lg"
                   >
                     <Plus size={14} />
                   </Button>
-                </motion.div>
+                </div>
                 
                 <div className="relative group">
-                  <div className="flex items-center gap-1 md:gap-2 bg-[#1A1D29] px-1.5 py-1 rounded-xl border border-white/5 cursor-pointer hover:border-purple-500/30 transition-colors">
-                    <div className="w-7 h-7 md:w-9 md:h-9 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white shrink-0 relative">
-                      <User size={14} />
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-[#1A1D29] flex items-center justify-center">
-                        <Trophy size={6} className="text-black" />
-                      </div>
-                    </div>
-                    <ChevronDown size={10} className="text-white/20" />
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white cursor-pointer">
+                    <User size={16} />
                   </div>
-                  
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-[#1A1D29] border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2 z-50 transform origin-top-right scale-95 group-hover:scale-100 duration-200">
-                    <Link to="/profile" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
-                      <Settings size={14} className="text-white/40" /> Perfil
+                  <div className="absolute top-full right-0 mt-2 w-44 bg-[#1A1D29] border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2 z-50">
+                    <Link to="/profile" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-[10px] font-black uppercase">
+                      <Settings size={14} /> Perfil
                     </Link>
-                    <Link to="/affiliates" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
-                      <Trophy size={14} className="text-amber-500" /> Afiliados
+                    <Link to="/wallet" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-[10px] font-black uppercase">
+                      <Wallet size={14} /> Carteira
                     </Link>
-                    <Link to="/wallet" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors">
-                      <Wallet size={14} className="text-purple-500" /> Carteira
-                    </Link>
-                    <div className="h-px bg-white/5 my-1 mx-2" />
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <button className="w-full flex items-center gap-3 p-3 hover:bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 uppercase tracking-widest transition-colors">
+                        <button className="w-full flex items-center gap-3 p-3 hover:bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 uppercase">
                           <LogOut size={14} /> Sair
                         </button>
                       </AlertDialogTrigger>
                       <AlertDialogContent className="glass-card border-white/10 rounded-3xl">
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="text-xl font-black italic tracking-tighter">SAIR AGORA?</AlertDialogTitle>
-                          <AlertDialogDescription className="text-white/40 font-bold">Você precisará logar novamente para participar das mesas.</AlertDialogDescription>
+                          <AlertDialogTitle className="text-xl font-black italic">SAIR AGORA?</AlertDialogTitle>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="rounded-xl border-white/10 bg-transparent font-bold">VOLTAR</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleLogout} className="rounded-xl bg-red-500 font-black">CONFIRMAR SAÍDA</AlertDialogAction>
+                          <AlertDialogCancel className="rounded-xl">VOLTAR</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleLogout} className="rounded-xl bg-red-500">CONFIRMAR</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -198,10 +158,7 @@ const Navbar = () => {
                 </div>
               </>
             ) : (
-              <div className="flex items-center gap-1 md:gap-2">
-                <Button variant="ghost" onClick={() => navigate('/auth?mode=login')} className="text-white/60 font-black text-[9px] md:text-[10px] uppercase tracking-widest h-8 px-3">Entrar</Button>
-                <Button onClick={() => navigate('/auth?mode=signup')} className="bg-purple-600 hover:bg-purple-700 text-white font-black px-3 md:px-5 rounded-xl text-[9px] md:text-[10px] uppercase tracking-widest h-8 whitespace-nowrap shadow-lg shadow-purple-500/20 transition-transform active:scale-95">CRIAR CONTA</Button>
-              </div>
+              <Button onClick={() => navigate('/auth?mode=login')} className="bg-purple-600 font-black px-4 md:px-6 rounded-xl text-[10px] uppercase">ENTRAR</Button>
             )}
           </div>
         </div>
