@@ -18,47 +18,58 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
 
+  // 1. Carregar módulos apenas no mount
   useEffect(() => {
-    fetchInitialData();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+    const fetchModules = async () => {
+      const { data: modData } = await supabase
+        .from('modules')
+        .select('*')
+        .order('price', { ascending: true });
+      
+      if (modData && modData.length > 0) {
+        setModules(modData);
+        setSelectedModule(modData[0]); // Seleciona o primeiro apenas no início
+      }
+      setLoading(false);
+    };
 
-    const roomsChannel = supabase.channel('lobby-rooms')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms' }, () => {
-        if (selectedModule) fetchRooms(selectedModule.id);
+    fetchModules();
+  }, []);
+
+  // 2. Carregar salas e subscrever quando o módulo selecionado mudar
+  useEffect(() => {
+    if (!selectedModule) return;
+
+    const fetchRooms = async (moduleId: string) => {
+      const { data } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('module_id', moduleId)
+        .eq('status', 'open')
+        .order('created_at', { ascending: true })
+        .limit(3);
+      if (data) setRooms(data);
+    };
+
+    fetchRooms(selectedModule.id);
+
+    // Subscrever apenas a mudanças neste módulo específico para performance
+    const roomsChannel = supabase.channel(`lobby-rooms-${selectedModule.id}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'rooms',
+        filter: `module_id=eq.${selectedModule.id}`
+      }, () => {
+        fetchRooms(selectedModule.id);
       })
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
       supabase.removeChannel(roomsChannel);
     };
   }, [selectedModule]);
-
-  const fetchInitialData = async () => {
-    const { data: modData } = await supabase.from('modules').select('*').order('price', { ascending: true });
-    if (modData && modData.length > 0) {
-      setModules(modData);
-      setSelectedModule(modData[0]);
-      await fetchRooms(modData[0].id);
-    }
-    setLoading(false);
-  };
-
-  const fetchRooms = async (moduleId: string) => {
-    const { data } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('module_id', moduleId)
-      .eq('status', 'open')
-      .order('created_at', { ascending: true })
-      .limit(3);
-    if (data) setRooms(data);
-  };
 
   const handleJoinRoom = async (room: any) => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -134,10 +145,7 @@ const Index = () => {
                 key={mod.id} 
                 module={mod} 
                 isSelected={selectedModule?.id === mod.id}
-                onSelect={() => {
-                  setSelectedModule(mod);
-                  fetchRooms(mod.id);
-                }}
+                onSelect={() => setSelectedModule(mod)}
               />
             ))}
           </div>
@@ -182,7 +190,7 @@ const Index = () => {
               ))}
             </AnimatePresence>
             
-            {rooms.length === 0 && (
+            {rooms.length === 0 && !loading && (
               <div className="col-span-full py-20 text-center glass-card rounded-[3rem] border-dashed">
                 <Loader2 className="animate-spin text-white/10 mx-auto mb-4" size={40} />
                 <p className="text-white/20 font-black uppercase text-[10px] tracking-widest">Preparando novas mesas...</p>
