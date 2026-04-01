@@ -76,7 +76,12 @@ const Index = () => {
       });
 
       if (error) {
-        toast.error(`Erro: ${error.message}`);
+        // Tratamento para entrada duplicada na mesma mesa
+        if (error.message.includes('participants_user_id_room_id_key')) {
+          toast.error("Já estás nesta mesa! Por favor, escolhe outra sala para participar novamente.");
+        } else {
+          toast.error(`Erro: ${error.message}`);
+        }
         return;
       }
 
