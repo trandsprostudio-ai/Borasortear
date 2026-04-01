@@ -19,7 +19,6 @@ const Index = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // 1. Carregar módulos apenas no mount
   useEffect(() => {
     const fetchModules = async () => {
       const { data: modData } = await supabase
@@ -28,12 +27,8 @@ const Index = () => {
         .order('price', { ascending: true });
       
       if (modData && modData.length > 0) {
-        // FILTRAR módulos de teste para não aparecerem no lançamento oficial
-        const publicModules = modData.filter(m => !m.name.startsWith('TEST_'));
-        setModules(publicModules);
-        if (publicModules.length > 0) {
-          setSelectedModule(publicModules[0]);
-        }
+        setModules(modData);
+        setSelectedModule(modData[0]);
       }
       setLoading(false);
     };
@@ -41,7 +36,6 @@ const Index = () => {
     fetchModules();
   }, []);
 
-  // 2. Carregar salas e subscrever quando o módulo selecionado mudar
   useEffect(() => {
     if (!selectedModule) return;
 
