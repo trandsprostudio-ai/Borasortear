@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Users, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { Users, Clock, ArrowRight, Loader2, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -25,9 +25,9 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
           <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">MESA ATIVA</p>
           <h3 className="text-xl font-black italic tracking-tighter">#{room.id.slice(0, 8)}</h3>
         </div>
-        <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-          <Clock size={12} className="text-amber-500" />
-          <span className="text-[10px] font-black text-amber-500 uppercase">Automático</span>
+        <div className="flex items-center gap-2 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
+          <Globe size={12} className="text-green-500" />
+          <span className="text-[10px] font-black text-green-500 uppercase">Online</span>
         </div>
       </div>
 
