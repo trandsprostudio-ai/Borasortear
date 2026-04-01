@@ -14,33 +14,21 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
   const isRoomOpen = room.status === 'open';
   const isRoomProcessing = room.status === 'processing';
 
-  const dispatchDraw = async () => {
-    // Só dispara se estiver aberta e ainda não estivermos tentando disparar
-    if (isDispatching.current || !isRoomOpen) return;
-    
-    isDispatching.current = true;
-    try {
-      await supabase.rpc('check_and_draw_expired_rooms');
-    } catch (err) {
-      console.error("Erro ao solicitar sorteio:", err);
-    } finally {
-      // Pequeno intervalo antes de permitir nova tentativa manual silenciosa
-      setTimeout(() => { isDispatching.current = false; }, 10000);
-    }
-  };
-
   useEffect(() => {
     const calculateTime = () => {
-      if (isRoomProcessing) return "EM SORTEIO...";
-      if (!isRoomOpen) return "ENCERRADO";
+      if (isRoomProcessing) return "SORTEANDO...";
+      if (room.status === 'finished') return "ENCERRADA";
 
       const expiry = new Date(room.expiresAt).getTime();
       const now = Date.now();
       const diff = expiry - now;
       
       if (diff <= 0) {
-        dispatchDraw();
-        return "FINALIZANDO...";
+        if (!isDispatching.current) {
+          isDispatching.current = true;
+          supabase.rpc('check_and_draw_expired_rooms');
+        }
+        return "SORTEANDO...";
       }
       
       const h = Math.floor(diff / (1000 * 60 * 60));
@@ -95,7 +83,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            className={`h-full rounded-full transition-all duration-1000 ${
+            className={`h-full rounded-full ${
               isRoomProcessing ? 'bg-gradient-to-r from-purple-400 to-blue-400 animate-pulse' : 'bg-gradient-to-r from-purple-600 to-blue-500'
             }`}
           />
@@ -110,7 +98,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
             <span className="flex items-center gap-2">
               <Loader2 className="animate-spin" size={20} /> SORTEANDO...
             </span>
-          ) : isRoomOpen ? 'ENTRAR NA MESA' : 'MESA ENCERRADA'}
+          ) : 'ENTRAR NA MESA'}
         </Button>
       </div>
     </motion.div>
