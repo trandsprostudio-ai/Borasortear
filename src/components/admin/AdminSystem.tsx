@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Plus, Activity, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock, Layers, Zap } from 'lucide-react';
+import { Plus, Activity, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock, Layers, Zap, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
@@ -43,12 +43,26 @@ const AdminSystem = () => {
     }
   };
 
+  const handleEmergencyReset = async () => {
+    setLoading(true);
+    try {
+      // Destrava todas as mesas que não estão finalizadas
+      await supabase.from('rooms').update({ status: 'open' }).neq('status', 'finished');
+      toast.success("Sistema destravado com sucesso!");
+      fetchSystemData();
+    } catch (err) {
+      toast.error("Erro ao resetar sistema");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCreateRoom = async (moduleId: string, maxParticipants: number) => {
     const { error } = await supabase.from('rooms').insert({
       module_id: moduleId,
       max_participants: maxParticipants,
       status: 'open',
-      expires_at: new Date(Date.now() + 1 * 60 * 1000).toISOString() // 1 MINUTO (TESTE)
+      expires_at: new Date(Date.now() + 1 * 60 * 1000).toISOString()
     });
 
     if (error) toast.error("Erro ao criar mesa");
@@ -62,7 +76,7 @@ const AdminSystem = () => {
     setLoading(true);
     try {
       for (const mod of modules) {
-        const activeRoomsCount = rooms.filter(r => r.module_id === mod.id && r.status === 'open').length;
+        const activeRoomsCount = rooms.filter(r => r.module_id === mod.id && (r.status === 'open' || r.status === 'processing')).length;
         const needed = 3 - activeRoomsCount;
         
         if (needed > 0) {
@@ -70,7 +84,7 @@ const AdminSystem = () => {
             module_id: mod.id,
             max_participants: mod.max_participants,
             status: 'open',
-            expires_at: new Date(Date.now() + 1 * 60 * 1000).toISOString() // 1 MINUTO (TESTE)
+            expires_at: new Date(Date.now() + 1 * 60 * 1000).toISOString()
           });
           await supabase.from('rooms').insert(newRooms);
         }
@@ -102,7 +116,10 @@ const AdminSystem = () => {
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
             <LayoutGrid className="text-purple-500" /> Módulos de Jogo
           </h3>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={handleEmergencyReset} variant="outline" className="border-red-500/20 text-red-500 hover:bg-red-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
+              <RotateCcw size={14} className="mr-2" /> Reset Emergência
+            </Button>
             <Button onClick={() => setConfirmConfig({ isOpen: true })} variant="outline" className="border-purple-500/20 text-purple-400 hover:bg-purple-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
               <Layers size={14} className="mr-2" /> Gerar 3 Salas/Módulo
             </Button>
@@ -113,7 +130,7 @@ const AdminSystem = () => {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {modules.map((mod) => {
-            const activeCount = rooms.filter(r => r.module_id === mod.id && r.status === 'open').length;
+            const activeCount = rooms.filter(r => r.module_id === mod.id && (r.status === 'open' || r.status === 'processing')).length;
             return (
               <div key={mod.id} className="glass-card p-4 rounded-2xl border-white/5 text-center">
                 <p className="text-[10px] font-black text-white/20 uppercase mb-1">{mod.name}</p>
@@ -153,6 +170,7 @@ const AdminSystem = () => {
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Módulo</TableHead>
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Progresso</TableHead>
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Expira em</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <tbody className="divide-y divide-white/5">
@@ -176,6 +194,13 @@ const AdminSystem = () => {
                       <TableCell className="p-6">
                         <span className={`text-[10px] font-black uppercase ${isExpired ? 'text-red-500' : 'text-white/40'}`}>
                           {isExpired ? 'Expirada' : new Date(room.expires_at).toLocaleTimeString()}
+                        </span>
+                      </TableCell>
+                      <TableCell className="p-6">
+                        <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${
+                          room.status === 'processing' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'
+                        }`}>
+                          {room.status}
                         </span>
                       </TableCell>
                     </TableRow>
