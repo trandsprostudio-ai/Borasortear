@@ -49,14 +49,14 @@ const Index = () => {
         setActiveModuleId(mappedModules[0].id);
       }
       
-      // Check inicial para garantir mesas e processar expiradas
+      // Sincronização inicial
       await supabase.rpc('check_and_draw_expired_rooms');
       fetchTopWinners();
     };
     
     initializeData();
 
-    // Monitor de Saúde do Sistema (Roda a cada 5 segundos)
+    // Loop de automação: Garante rotação a cada 5 segundos
     const monitorInterval = setInterval(() => {
       supabase.rpc('check_and_draw_expired_rooms');
     }, 5000);
@@ -82,11 +82,11 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
-  // FILTRO CRÍTICO: Só mostra mesas OPEN que pertencem ao módulo ativo
+  // SÓ MOSTRA MESAS COM STATUS 'OPEN'
   const activeModuleRooms = rooms
     .filter(r => r.moduleId === activeModuleId && r.status === 'open')
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .slice(0, 3); // Sempre mostra as 3 mais recentes/vivas
+    .slice(0, 3); 
 
   const activeModule = modules.find(m => m.id === activeModuleId);
 
