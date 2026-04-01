@@ -56,7 +56,7 @@ const Index = () => {
       fetchTopWinners();
       fetchRecentWins();
       
-      // Trigger automático de limpeza/verificação silenciosa
+      // Manutenção automática silenciosa
       supabase.rpc('ensure_active_rooms');
       supabase.rpc('check_and_draw_expired_rooms');
     };
@@ -71,11 +71,11 @@ const Index = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Monitorar salas finalizadas para exibir o overlay de sorteio apenas se for recente
   useEffect(() => {
     const finishedRooms = rooms.filter(r => r.status === 'finished');
     const newFinished = finishedRooms.filter(r => !shownDrawRooms.has(r.id));
     
-    // Só mostramos o popup se a sala terminou nos últimos 60 segundos (evita spam de salas antigas ao carregar)
     if (newFinished.length > 0) {
       const roomToShow = newFinished.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
       const isFresh = (Date.now() - new Date(roomToShow.createdAt).getTime()) < 60000;
@@ -126,8 +126,9 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
+  // Filtramos apenas as salas abertas para a visualização principal
   const activeModuleRooms = rooms
-    .filter(r => r.moduleId === activeModuleId && r.status === 'open')
+    .filter(r => r.moduleId === activeModuleId && (r.status === 'open' || r.status === 'processing'))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .slice(0, 3);
 
@@ -199,7 +200,7 @@ const Index = () => {
             </div>
             <div>
               <h2 className="text-3xl font-black italic tracking-tighter uppercase">MÓDULOS AO VIVO</h2>
-              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Selecione um módulo e entre em uma das 3 salas</p>
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Sorteios Automáticos • Novas salas instantâneas</p>
             </div>
           </div>
 

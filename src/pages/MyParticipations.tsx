@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, Activity, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, Copy, Wallet, DollarSign } from 'lucide-react';
+import { LayoutGrid, Activity, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, Copy, Wallet, DollarSign, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
@@ -77,17 +77,34 @@ const MyParticipations = () => {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
-  const activeRooms = participations.filter(p => p.rooms.status === 'open');
-  const finishedRooms = participations.filter(p => p.rooms.status === 'finished');
+  const activeRooms = participations.filter(p => p.rooms.status === 'open' || p.rooms.status === 'processing');
+  
+  // Regra: Histórico desaparece após 24h do encerramento (usando expires_at como referência de conclusão)
+  const finishedRooms = participations.filter(p => {
+    if (p.rooms.status !== 'finished') return false;
+    const completionDate = new Date(p.rooms.expires_at);
+    const now = new Date();
+    const hoursSinceFinished = (now.getTime() - completionDate.getTime()) / (1000 * 60 * 60);
+    return hoursSinceFinished < 24;
+  });
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
       <Navbar />
       
       <main className="max-w-5xl mx-auto px-4 pt-28">
-        <header className="mb-12">
-          <h1 className="text-4xl font-black italic tracking-tighter uppercase mb-2">Minhas Mesas</h1>
-          <p className="text-white/40 font-bold text-xs uppercase tracking-widest">Acompanhe o progresso dos seus sorteios em tempo real</p>
+        <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-black italic tracking-tighter uppercase mb-2">Minhas Mesas</h1>
+            <p className="text-white/40 font-bold text-xs uppercase tracking-widest">Acompanhe o progresso e veja seus resultados (últimas 24h)</p>
+          </div>
+          <Button 
+            onClick={() => navigate('/consult-draw')}
+            variant="outline"
+            className="border-purple-500/20 bg-purple-500/5 text-purple-400 hover:bg-purple-600 hover:text-white h-12 rounded-xl font-black text-[10px] uppercase tracking-widest"
+          >
+            <Search size={14} className="mr-2" /> CONSULTAR BILHETE ANTIGO
+          </Button>
         </header>
 
         <section className="mb-16">
@@ -104,21 +121,25 @@ const MyParticipations = () => {
                 activeRooms.map((p) => {
                   const progress = (p.rooms.current_participants / p.rooms.max_participants) * 100;
                   const valorTotalSorteio = p.rooms.modules.price * p.rooms.max_participants;
+                  const isProcessing = p.rooms.status === 'processing';
+                  
                   return (
                     <motion.div 
                       key={p.id}
                       layout
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="glass-card p-6 rounded-[2rem] border-white/5 relative overflow-hidden group"
+                      className={`glass-card p-6 rounded-[2rem] border-white/5 relative overflow-hidden group ${isProcessing ? 'border-purple-500/30' : ''}`}
                     >
                       <div className="flex justify-between items-start mb-6">
                         <div>
                           <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Mesa #{p.rooms.id.slice(0,8)}</p>
                           <h3 className="text-2xl font-black italic tracking-tighter">{p.rooms.modules.price.toLocaleString()} Kz</h3>
                         </div>
-                        <div className="bg-purple-600/20 text-purple-400 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-purple-500/20">
-                          {p.rooms.modules.name}
+                        <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${
+                          isProcessing ? 'bg-blue-600/20 text-blue-400 border-blue-500/20' : 'bg-purple-600/20 text-purple-400 border-purple-500/20'
+                        }`}>
+                          {isProcessing ? 'SORTEANDO' : p.rooms.modules.name}
                         </div>
                       </div>
 
@@ -126,7 +147,7 @@ const MyParticipations = () => {
                         <div className="flex justify-between items-end">
                           <div className="flex items-center gap-2 text-xs font-bold text-green-400">
                             <DollarSign size={14} />
-                            <span>Valor de Sorteio: {valorTotalSorteio.toLocaleString()} Kz</span>
+                            <span>VALOR DE SORTEIO: {valorTotalSorteio.toLocaleString()} Kz</span>
                           </div>
                           <span className="text-sm font-black text-purple-500">{Math.round(progress)}%</span>
                         </div>
@@ -135,7 +156,9 @@ const MyParticipations = () => {
                           <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
-                            className="h-full bg-gradient-to-r from-purple-600 to-blue-500 shadow-[0_0_15px_rgba(124,58,237,0.5)]"
+                            className={`h-full rounded-full shadow-[0_0_15px_rgba(124,58,237,0.5)] ${
+                              isProcessing ? 'bg-gradient-to-r from-blue-600 to-purple-500 animate-pulse' : 'bg-gradient-to-r from-purple-600 to-blue-500'
+                            }`}
                           />
                         </div>
 
@@ -146,8 +169,8 @@ const MyParticipations = () => {
                             </span>
                             <span className="text-sm font-black text-white tracking-widest">{p.ticket_code}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-[10px] font-black text-amber-500 uppercase">
-                            <Clock size={12} />
+                          <div className={`flex items-center gap-2 text-[10px] font-black uppercase ${isProcessing ? 'text-blue-400' : 'text-amber-500'}`}>
+                            {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Clock size={12} />}
                             <CountdownItem expiresAt={p.rooms.expires_at} />
                           </div>
                         </div>
@@ -171,7 +194,7 @@ const MyParticipations = () => {
             <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-white/20 border border-white/10">
               <Trophy size={20} />
             </div>
-            <h2 className="text-xl font-black italic tracking-tighter uppercase">Histórico Recente</h2>
+            <h2 className="text-xl font-black italic tracking-tighter uppercase">Resultados das últimas 24h</h2>
           </div>
 
           <div className="space-y-3">
@@ -199,17 +222,20 @@ const MyParticipations = () => {
                   <div className="flex items-center gap-6">
                     <div className="text-right hidden sm:block">
                       <p className="text-xs font-black text-white/60">{p.rooms.modules.price.toLocaleString()} Kz</p>
-                      <p className="text-[9px] font-bold text-white/20 uppercase">{new Date(p.created_at).toLocaleDateString()}</p>
+                      <p className="text-[9px] font-bold text-white/20 uppercase">Encerrado em {new Date(p.rooms.expires_at).toLocaleTimeString()}</p>
                     </div>
                     <div className="bg-green-500/10 text-green-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                      Finalizado
+                      Ver Resultado
                     </div>
                     <ChevronRight size={16} className="text-white/10 group-hover:text-white transition-colors" />
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-center py-10 text-white/10 font-black text-xs uppercase tracking-widest">Nenhum sorteio finalizado ainda.</p>
+              <div className="py-20 text-center bg-white/5 rounded-[2rem] border border-white/5">
+                <p className="text-white/10 font-black text-[10px] uppercase tracking-widest">Nenhum resultado nas últimas 24 horas.</p>
+                <p className="text-white/5 text-[8px] font-bold uppercase mt-2">Bilhetes antigos só podem ser vistos via consulta direta.</p>
+              </div>
             )}
           </div>
         </section>
