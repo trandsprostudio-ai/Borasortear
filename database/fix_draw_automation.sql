@@ -1,8 +1,34 @@
--- 1. Limpar funções antigas para evitar conflitos
-DROP TRIGGER IF EXISTS trigger_auto_draw ON public.rooms;
-DROP FUNCTION IF EXISTS public.handle_room_auto_draw();
+-- 1. Função que garante 3 mesas ativas por módulo SEMPRE
+CREATE OR REPLACE FUNCTION public.ensure_active_rooms()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+    v_mod RECORD;
+    v_open_count INTEGER;
+    v_needed INTEGER;
+BEGIN
+    FOR v_mod IN SELECT id, max_participants FROM modules LOOP
+        -- Conta quantas mesas estão abertas ou processando para este módulo
+        SELECT COUNT(*) INTO v_open_count 
+        FROM rooms 
+        WHERE module_id = v_mod.id AND (status = 'open' OR status = 'processing');
+        
+        v_needed := 3 - v_open_count;
+        
+        -- Se faltarem mesas, cria as novas instantaneamente
+        IF v_needed > 0 THEN
+            FOR i IN 1..v_needed LOOP
+                INSERT INTO rooms (module_id, max_participants, status, expires_at)
+                VALUES (v_mod.id, v_mod.max_participants, 'open', NOW() + INTERVAL '3 hours');
+            END LOOP;
+        END IF;
+    END LOOP;
+END;
+$function$;
 
--- 2. Função de Sorteio Otimizada (Garante Lucro e Vencedores)
+-- 2. Função de Sorteio Robusta (Lida com 0 participantes)
 CREATE OR REPLACE FUNCTION public.perform_automatic_draw(p_room_id uuid)
  RETURNS void
  LANGUAGE plpgsql
@@ -16,58 +42,50 @@ DECLARE
     v_prize_share DECIMAL;
     v_winner_1 UUID;
     v_winner_2 UUID;
+    v_p_count INTEGER;
 BEGIN
-    -- Tenta bloquear a mesa. Se já estiver processando ou finalizada, sai.
-    UPDATE public.rooms 
-    SET status = 'processing', updated_at = NOW()
+    -- Bloqueio preventivo
+    UPDATE public.rooms SET status = 'processing', updated_at = NOW()
     WHERE id = p_room_id AND status = 'open'
     RETURNING module_id, max_participants INTO v_module_id, v_max_p;
     
     IF NOT FOUND THEN RETURN; END IF;
 
-    -- Pega o preço do módulo
+    -- Conta participantes reais
+    SELECT COUNT(*) INTO v_p_count FROM public.participants WHERE room_id = p_room_id;
+
+    -- Cálculos de prêmio baseados na lotação máxima
     SELECT price INTO v_module_price FROM public.modules WHERE id = v_module_id;
     v_total_pool := v_module_price * v_max_p;
     v_prize_share := v_total_pool / 3.0;
 
-    -- Sorteia 2 jogadores únicos
-    SELECT user_id INTO v_winner_1 FROM public.participants WHERE room_id = p_room_id ORDER BY RANDOM() LIMIT 1;
-    SELECT user_id INTO v_winner_2 FROM public.participants WHERE room_id = p_room_id AND user_id != v_winner_1 ORDER BY RANDOM() LIMIT 1;
+    -- Se houver participantes, sorteia. Se não, apenas finaliza.
+    IF v_p_count > 0 THEN
+        -- Sorteia 1º Lugar
+        SELECT user_id INTO v_winner_1 FROM public.participants WHERE room_id = p_room_id ORDER BY RANDOM() LIMIT 1;
+        -- Sorteia 2º Lugar (se houver mais de 1 pessoa)
+        SELECT user_id INTO v_winner_2 FROM public.participants WHERE room_id = p_room_id AND user_id != v_winner_1 ORDER BY RANDOM() LIMIT 1;
 
-    -- Registra os 3 prêmios (1º, 2º e Lucro do Sistema)
-    INSERT INTO public.winners (draw_id, user_id, prize_amount, position) VALUES 
-    (p_room_id, v_winner_1, v_prize_share, 1),
-    (p_room_id, v_winner_2, v_prize_share, 2),
-    (p_room_id, NULL, v_prize_share, 3); -- NULL é a Plataforma
+        -- Grava vencedores (NULL para plataforma)
+        INSERT INTO public.winners (draw_id, user_id, prize_amount, position) VALUES 
+        (p_room_id, v_winner_1, v_prize_share, 1),
+        (p_room_id, v_winner_2, v_prize_share, 2),
+        (p_room_id, NULL, v_prize_share, 3);
 
-    -- Paga os vencedores reais
-    IF v_winner_1 IS NOT NULL THEN UPDATE public.profiles SET balance = COALESCE(balance, 0) + v_prize_share WHERE id = v_winner_1; END IF;
-    IF v_winner_2 IS NOT NULL THEN UPDATE public.profiles SET balance = COALESCE(balance, 0) + v_prize_share WHERE id = v_winner_2; END IF;
+        -- Paga vencedores
+        IF v_winner_1 IS NOT NULL THEN UPDATE public.profiles SET balance = COALESCE(balance, 0) + v_prize_share WHERE id = v_winner_1; END IF;
+        IF v_winner_2 IS NOT NULL THEN UPDATE public.profiles SET balance = COALESCE(balance, 0) + v_prize_share WHERE id = v_winner_2; END IF;
+    END IF;
 
-    -- Finaliza a mesa e gera a substituta instantaneamente
+    -- Marca como finalizada (Ela sairá da vitrine do site)
     UPDATE public.rooms SET status = 'finished' WHERE id = p_room_id;
     
-    INSERT INTO public.rooms (module_id, max_participants, status, expires_at)
-    VALUES (v_module_id, v_max_p, 'open', NOW() + INTERVAL '3 hours');
+    -- Garante que o sistema reponha a mesa imediatamente
+    PERFORM public.ensure_active_rooms();
 END;
 $function$;
 
--- 3. Gatilho para Sorteio por Lotação (Instantâneo)
-CREATE OR REPLACE FUNCTION public.handle_room_auto_draw()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.current_participants >= NEW.max_participants AND NEW.status = 'open' THEN
-        PERFORM public.perform_automatic_draw(NEW.id);
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_auto_draw
-AFTER UPDATE ON public.rooms
-FOR EACH ROW EXECUTE FUNCTION public.handle_room_auto_draw();
-
--- 4. Função de Manutenção (Destrava mesas presas)
+-- 3. Monitor Global de Tempo e Lotação
 CREATE OR REPLACE FUNCTION public.check_and_draw_expired_rooms()
  RETURNS void
  LANGUAGE plpgsql
@@ -76,14 +94,16 @@ AS $function$
 DECLARE
   r_id uuid;
 BEGIN
-  -- Reseta mesas que ficaram em 'processing' por mais de 15 segundos (erro de execução)
-  UPDATE public.rooms 
-  SET status = 'open' 
-  WHERE status = 'processing' AND updated_at < (NOW() - INTERVAL '15 seconds');
+  -- 1. Destrava mesas presas em processamento (crash de rede)
+  UPDATE public.rooms SET status = 'open' 
+  WHERE status = 'processing' AND updated_at < (NOW() - INTERVAL '30 seconds');
 
-  -- Sorteia por tempo expirado
+  -- 2. Sorteia mesas expiradas
   FOR r_id IN (SELECT id FROM public.rooms WHERE status = 'open' AND expires_at <= now()) LOOP
     PERFORM public.perform_automatic_draw(r_id);
   END LOOP;
+  
+  -- 3. Garante que sempre existam 3 mesas por módulo
+  PERFORM public.ensure_active_rooms();
 END;
 $function$;

@@ -49,14 +49,14 @@ const Index = () => {
         setActiveModuleId(mappedModules[0].id);
       }
       
-      // Check inicial
+      // Check inicial para garantir mesas e processar expiradas
       await supabase.rpc('check_and_draw_expired_rooms');
       fetchTopWinners();
     };
     
     initializeData();
 
-    // Monitor de Sorteio Ativo (Roda a cada 5 segundos)
+    // Monitor de Saúde do Sistema (Roda a cada 5 segundos)
     const monitorInterval = setInterval(() => {
       supabase.rpc('check_and_draw_expired_rooms');
     }, 5000);
@@ -82,10 +82,11 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
+  // FILTRO CRÍTICO: Só mostra mesas OPEN que pertencem ao módulo ativo
   const activeModuleRooms = rooms
-    .filter(r => r.moduleId === activeModuleId && (r.status === 'open' || r.status === 'processing'))
+    .filter(r => r.moduleId === activeModuleId && r.status === 'open')
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-    .slice(0, 3);
+    .slice(0, 3); // Sempre mostra as 3 mais recentes/vivas
 
   const activeModule = modules.find(m => m.id === activeModuleId);
 
@@ -154,7 +155,7 @@ const Index = () => {
             </div>
             <div>
               <h2 className="text-xl md:text-3xl font-black italic uppercase tracking-tighter">SALAS AO VIVO</h2>
-              <p className="text-[8px] md:text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Sorteios Estilo Bet</p>
+              <p className="text-[8px] md:text-[10px] font-bold text-white/20 uppercase tracking-[0.2em]">Sorteios Automáticos 24/7</p>
             </div>
           </div>
 
@@ -176,15 +177,22 @@ const Index = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {roomsLoading ? (
               <div className="col-span-full py-20 flex justify-center"><Loader2 className="animate-spin text-purple-500" size={32} /></div>
-            ) : activeModuleRooms.map((room, index) => (
-              <RoomCard 
-                key={room.id} 
-                roomNumber={index + 1}
-                room={room}
-                module={activeModule!}
-                onParticipate={handleParticipateClick}
-              />
-            ))}
+            ) : activeModuleRooms.length > 0 ? (
+              activeModuleRooms.map((room, index) => (
+                <RoomCard 
+                  key={room.id} 
+                  roomNumber={index + 1}
+                  room={room}
+                  module={activeModule!}
+                  onParticipate={handleParticipateClick}
+                />
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                 <Loader2 className="animate-spin text-purple-500 mx-auto mb-4" size={32} />
+                 <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Iniciando Mesas do Módulo...</p>
+              </div>
+            )}
           </div>
         </section>
 
