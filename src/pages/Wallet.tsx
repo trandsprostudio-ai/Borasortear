@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Activity, ArrowUpRight, CreditCard, ArrowDownLeft, Clock, CheckCircle2, XCircle, AlertTriangle, ShieldAlert, ShieldCheck, Zap } from 'lucide-react';
+import { Wallet as WalletIcon, History, Plus, Loader2, Trophy, Activity, ArrowUpRight, CreditCard, ArrowDownLeft, Clock, CheckCircle2, XCircle, AlertTriangle, ShieldAlert, ShieldCheck, Zap, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
@@ -15,56 +15,65 @@ const Wallet = () => {
   const [profile, setProfile] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [modalConfig, setModalConfig] = useState<{ open: boolean, type: 'deposit' | 'withdrawal' }>({ open: false, type: 'deposit' });
 
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchData(session.user.id);
-        setupRealtime(session.user.id);
-      }
-    };
-    getSession();
+  const fetchData = useCallback(async (userId: string, isManual = false) => {
+    if (isManual) setRefreshing(true);
+    
+    try {
+      const [profRes, transRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', userId).single(),
+        supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+      ]);
+
+      if (profRes.data) setProfile(profRes.data);
+      if (transRes.data) setTransactions(transRes.data);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
 
-  const setupRealtime = (userId: string) => {
-    const channel = supabase.channel(`wallet-updates-${userId}`)
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'profiles', 
-        filter: `id=eq.${userId}` 
-      }, (payload) => {
-        setProfile(payload.new);
-      })
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'transactions', 
-        filter: `user_id=eq.${userId}` 
-      }, () => {
-        fetchData(userId);
-      })
-      .subscribe();
+  useEffect(() => {
+    let channel: any;
+
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        fetchData(currentUser.id);
+
+        // Sincronização em tempo real simplificada e ultra-robusta
+        // Qualquer mudança em transações ou perfil do usuário força o recarregamento total
+        channel = supabase.channel(`wallet-sync-${currentUser.id}`)
+          .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'profiles', 
+            filter: `id=eq.${currentUser.id}` 
+          }, () => fetchData(currentUser.id))
+          .on('postgres_changes', { 
+            event: '*', 
+            schema: 'public', 
+            table: 'transactions', 
+            filter: `user_id=eq.${currentUser.id}` 
+          }, () => fetchData(currentUser.id))
+          .subscribe();
+      }
+    };
+
+    getSession();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
-  };
-
-  const fetchData = async (userId: string) => {
-    const [profRes, transRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false })
-    ]);
-
-    if (profRes.data) setProfile(profRes.data);
-    if (transRes.data) setTransactions(transRes.data);
-    setLoading(false);
-  };
+  }, [fetchData]);
 
   const handleAccelerate = async (txId: string) => {
     const { error } = await supabase
@@ -143,12 +152,22 @@ const Wallet = () => {
                     </span>
                   </div>
                 </div>
-                {pendingDepositAmount > 0 && (
-                  <div className="bg-amber-500/10 px-4 py-2 rounded-2xl border border-amber-500/20 flex items-center gap-2">
-                    <Clock size={14} className="text-amber-500 animate-pulse" />
-                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Processando</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {pendingDepositAmount > 0 && (
+                    <div className="bg-amber-500/10 px-4 py-2 rounded-2xl border border-amber-500/20 flex items-center gap-2">
+                      <Clock size={14} className="text-amber-500 animate-pulse" />
+                      <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Processando</span>
+                    </div>
+                  )}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => user && fetchData(user.id, true)}
+                    className="text-white/20 hover:text-white"
+                  >
+                    <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+                  </Button>
+                </div>
               </div>
               
               <div className="mb-12">
