@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Index = () => {
-  const { rooms, loading: roomsLoading } = useRooms();
+  const { rooms, loading: roomsLoading, refresh: refreshRooms } = useRooms();
   const [modules, setModules] = useState<Module[]>([]);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
@@ -25,7 +25,6 @@ const Index = () => {
   const [onlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   const navigate = useNavigate();
 
-  // Gerador de 30 IDs para o letreiro
   const tickerItems = useMemo(() => {
     const prizes = [16500, 33000, 82500, 66000, 13200, 41250];
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -37,12 +36,14 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
+      // 1. Verificar Sessão
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
         fetchProfile(session.user.id);
       }
 
+      // 2. Carregar Módulos
       const { data: modData } = await supabase
         .from('modules')
         .select('*')
@@ -59,11 +60,14 @@ const Index = () => {
         setActiveModuleId(mappedModules[0].id);
       }
       
-      fetchTopWinners();
+      // 3. FORÇAR CRIAÇÃO DE SALAS (O Coração da Correção)
+      await supabase.rpc('ensure_active_rooms');
+      await supabase.rpc('check_and_draw_expired_rooms');
+      refreshRooms(); // Atualiza a lista após garantir que existem
       
-      supabase.rpc('ensure_active_rooms');
-      supabase.rpc('check_and_draw_expired_rooms');
+      fetchTopWinners();
     };
+    
     initializeData();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -73,7 +77,7 @@ const Index = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [refreshRooms]);
 
   const fetchTopWinners = async () => {
     const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('prize_amount', { ascending: false }).limit(10);
@@ -204,7 +208,7 @@ const Index = () => {
                 ) : (
                   <div className="col-span-full py-20 flex flex-col items-center justify-center text-white/20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
                     <Loader2 className="animate-spin mb-4" size={32} />
-                    <p className="text-[10px] font-black uppercase tracking-widest">Sincronizando Salas Live...</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest">Gerando Salas em Tempo Real...</p>
                   </div>
                 )}
               </motion.div>
