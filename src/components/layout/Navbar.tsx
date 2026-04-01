@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Wallet, User, LogOut, ChevronDown, Settings, Plus, Clock, Trophy } from 'lucide-react';
+import { User, LogOut, Settings, Plus, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '@/components/ui/SplashScreen';
 import TransactionModal from '@/components/wallet/TransactionModal';
 import NotificationBell from './NotificationBell';
@@ -100,35 +100,35 @@ const Navbar = () => {
         />
       )}
 
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F111A]/95 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-4">
-        <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between">
-          <Link to="/" className="shrink-0 scale-75 md:scale-100 origin-left">
-            <Logo />
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F111A]/95 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-2 md:px-6">
+        <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-2">
+          <Link to="/" className="shrink-0 scale-90 sm:scale-100 origin-left">
+            <Logo className="text-xl md:text-2xl" />
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 md:gap-4">
             {user ? (
               <>
                 <NotificationBell userId={user.id} />
                 
-                <div className="flex items-center bg-[#1A1D29] rounded-xl p-1 border border-white/5">
-                  <Link to="/wallet" className="px-2 md:px-4 py-1 flex flex-col items-end">
-                    <span className="text-[7px] md:text-[9px] text-white/30 font-black uppercase">Saldo</span>
-                    <span className="text-[10px] md:text-sm font-black text-green-400">
+                <div className="flex items-center bg-[#1A1D29] rounded-xl p-0.5 md:p-1 border border-white/5 max-w-[120px] md:max-w-none">
+                  <Link to="/wallet" className="px-2 md:px-4 py-0.5 flex flex-col items-end overflow-hidden">
+                    <span className="text-[6px] md:text-[9px] text-white/30 font-black uppercase truncate">Saldo</span>
+                    <span className="text-[10px] md:text-sm font-black text-green-400 truncate">
                       {totalDisplayBalance.toLocaleString()} <span className="text-[7px] md:text-[8px]">Kz</span>
                     </span>
                   </Link>
                   <Button 
                     size="icon" 
                     onClick={() => setIsDepositOpen(true)}
-                    className="bg-purple-600 hover:bg-purple-700 h-7 w-7 md:h-9 md:w-9 rounded-lg"
+                    className="bg-purple-600 hover:bg-purple-700 h-6 w-6 md:h-9 md:w-9 rounded-lg shrink-0"
                   >
-                    <Plus size={14} />
+                    <Plus size={12} className="md:size-4" />
                   </Button>
                 </div>
                 
                 <div className="relative group">
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white cursor-pointer">
+                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white cursor-pointer shrink-0">
                     <User size={16} />
                   </div>
                   <div className="absolute top-full right-0 mt-2 w-44 bg-[#1A1D29] border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2 z-50">
@@ -144,12 +144,12 @@ const Navbar = () => {
                           <LogOut size={14} /> Sair
                         </button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="glass-card border-white/10 rounded-3xl">
+                      <AlertDialogContent className="glass-card border-white/10 rounded-3xl w-[90vw] max-w-sm">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="text-xl font-black italic">SAIR AGORA?</AlertDialogTitle>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="rounded-xl">VOLTAR</AlertDialogCancel>
+                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                          <AlertDialogCancel className="rounded-xl mt-0">VOLTAR</AlertDialogCancel>
                           <AlertDialogAction onClick={handleLogout} className="rounded-xl bg-red-500">CONFIRMAR</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -158,7 +158,7 @@ const Navbar = () => {
                 </div>
               </>
             ) : (
-              <Button onClick={() => navigate('/auth?mode=login')} className="bg-purple-600 font-black px-4 md:px-6 rounded-xl text-[10px] uppercase">ENTRAR</Button>
+              <Button onClick={() => navigate('/auth?mode=login')} className="bg-purple-600 font-black px-4 md:px-6 rounded-xl text-[10px] uppercase h-10">ENTRAR</Button>
             )}
           </div>
         </div>

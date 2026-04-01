@@ -18,7 +18,6 @@ interface WinnersCarouselProps {
 const WinnersCarousel = ({ winners: initialWinners }: WinnersCarouselProps) => {
   const [index, setIndex] = useState(0);
 
-  // Geração de 30 IDs fictícios com prémios baseados nos módulos
   const displayWinners = useMemo(() => {
     if (initialWinners && initialWinners.length > 0) return initialWinners;
 
@@ -38,14 +37,14 @@ const WinnersCarousel = ({ winners: initialWinners }: WinnersCarouselProps) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % displayWinners.length);
-    }, 3500); // Rotação ligeiramente mais rápida
+    }, 3500);
     return () => clearInterval(timer);
   }, [displayWinners.length]);
 
   const current = displayWinners[index];
 
   return (
-    <div className="relative h-32 w-full overflow-hidden">
+    <div className="relative h-28 md:h-32 w-full overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
           key={`${current.id}-${index}`}
@@ -53,52 +52,40 @@ const WinnersCarousel = ({ winners: initialWinners }: WinnersCarouselProps) => {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="absolute inset-0 flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5"
+          className="absolute inset-0 flex items-center justify-between p-4 md:p-6 bg-white/5 rounded-2xl md:rounded-3xl border border-white/5"
         >
-          <div className="flex items-center gap-5">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 flex items-center justify-center text-purple-400 border border-purple-500/20">
-                <Hash size={24} />
+          <div className="flex items-center gap-3 md:gap-5 min-w-0">
+            <div className="relative shrink-0">
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 flex items-center justify-center text-purple-400 border border-purple-500/20">
+                <Hash size={20} className="md:size-6" />
               </div>
-              <div className="absolute -top-2 -right-2 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center text-black shadow-lg border-2 border-[#0A0B12]">
-                <Trophy size={12} />
+              <div className="absolute -top-1.5 -right-1.5 w-6 h-6 md:w-7 md:h-7 bg-amber-500 rounded-lg flex items-center justify-center text-black shadow-lg border-2 border-[#0A0B12]">
+                <Trophy size={10} className="md:size-3" />
               </div>
             </div>
             
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em]">Sorteio Confirmado</span>
-                <Star size={8} className="text-amber-500 fill-amber-500" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-[8px] md:text-[10px] font-black text-purple-400 uppercase tracking-widest truncate">Sorteio Confirmado</span>
+                <Star size={8} className="text-amber-500 fill-amber-500 shrink-0" />
               </div>
-              <h4 className="text-xl font-black italic tracking-tighter text-white uppercase">
+              <h4 className="text-base md:text-xl font-black italic tracking-tighter text-white uppercase truncate">
                 #{current.profiles.first_name}
               </h4>
-              <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
-                ID DO BILHETE VENCEDOR
+              <p className="text-[8px] md:text-[10px] font-bold text-white/20 uppercase tracking-widest truncate">
+                ID DO BILHETE
               </p>
             </div>
           </div>
 
-          <div className="text-right">
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Valor Creditado</p>
-            <p className="text-3xl font-black text-green-400 italic tracking-tighter">
-              {current.prize_amount.toLocaleString()} <span className="text-sm not-italic opacity-60">Kz</span>
+          <div className="text-right shrink-0">
+            <p className="text-[8px] md:text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Ganhou</p>
+            <p className="text-lg md:text-3xl font-black text-green-400 italic tracking-tighter">
+              {current.prize_amount.toLocaleString()} <span className="text-[10px] md:text-sm not-italic opacity-60">Kz</span>
             </p>
           </div>
         </motion.div>
       </AnimatePresence>
-
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 items-center">
-        <span className="text-[8px] font-black text-white/10 uppercase mr-2">{index + 1}/30</span>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div 
-            key={i} 
-            className={`h-1 rounded-full transition-all duration-300 ${
-              Math.floor(index / 6) === i ? 'w-4 bg-purple-500' : 'w-1 bg-white/10'
-            }`} 
-          />
-        ))}
-      </div>
     </div>
   );
 };
