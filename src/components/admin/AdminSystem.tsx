@@ -48,7 +48,7 @@ const AdminSystem = () => {
       module_id: moduleId,
       max_participants: maxParticipants,
       status: 'open',
-      expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // 3 horas
+      expires_at: new Date(Date.now() + 1 * 60 * 1000).toISOString() // 1 MINUTO (TESTE)
     });
 
     if (error) toast.error("Erro ao criar mesa");
@@ -70,7 +70,7 @@ const AdminSystem = () => {
             module_id: mod.id,
             max_participants: mod.max_participants,
             status: 'open',
-            expires_at: new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString() // 3 horas
+            expires_at: new Date(Date.now() + 1 * 60 * 1000).toISOString() // 1 MINUTO (TESTE)
           });
           await supabase.from('rooms').insert(newRooms);
         }
@@ -155,7 +155,7 @@ const AdminSystem = () => {
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Expira em</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <tbody className="divide-y divide-white/5">
                 {rooms.filter(r => r.status !== 'finished').map((room) => {
                   const isExpired = new Date(room.expires_at) <= new Date();
                   return (
@@ -181,7 +181,7 @@ const AdminSystem = () => {
                     </TableRow>
                   );
                 })}
-              </TableBody>
+              </tbody>
             </Table>
           </div>
         </div>
