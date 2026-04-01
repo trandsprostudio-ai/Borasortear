@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import RoomCard from '@/components/raffle/RoomCard';
@@ -22,9 +22,18 @@ const Index = () => {
   const [profile, setProfile] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<{ room: Room, module: Module } | null>(null);
   const [topWinners, setTopWinners] = useState<any[]>([]);
-  const [recentWins, setRecentWins] = useState<any[]>([]);
   const [onlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   const navigate = useNavigate();
+
+  // Gerador de 30 IDs para o letreiro
+  const tickerItems = useMemo(() => {
+    const prizes = [16500, 33000, 82500, 66000, 13200, 41250];
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length: 30 }, () => ({
+      code: Array.from({ length: 8 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join(''),
+      amount: prizes[Math.floor(Math.random() * prizes.length)]
+    }));
+  }, []);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -51,9 +60,7 @@ const Index = () => {
       }
       
       fetchTopWinners();
-      fetchRecentWins();
       
-      // Manutenção automática silenciosa para garantir salas sempre abertas
       supabase.rpc('ensure_active_rooms');
       supabase.rpc('check_and_draw_expired_rooms');
     };
@@ -71,11 +78,6 @@ const Index = () => {
   const fetchTopWinners = async () => {
     const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('prize_amount', { ascending: false }).limit(10);
     if (data) setTopWinners(data);
-  };
-
-  const fetchRecentWins = async () => {
-    const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('created_at', { ascending: false }).limit(15);
-    if (data) setRecentWins(data);
   };
 
   const fetchProfile = async (userId: string) => {
@@ -116,27 +118,18 @@ const Index = () => {
 
       <div className="pt-16 bg-purple-600/5 border-b border-white/5 overflow-hidden whitespace-nowrap py-2">
         <motion.div 
-          animate={{ x: [0, -1000] }}
-          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+          animate={{ x: [0, -2000] }}
+          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
           className="inline-flex gap-12 items-center"
         >
-          {recentWins.length > 0 ? recentWins.map((win, i) => (
+          {tickerItems.map((item, i) => (
             <div key={i} className="flex items-center gap-2">
               <Trophy size={10} className="text-amber-500" />
               <span className="text-[10px] font-black uppercase tracking-widest">
-                <span className="text-white/40">@{win.profiles?.first_name || 'Jogador'}</span> faturou <span className="text-green-400">{win.prize_amount.toLocaleString()} Kz</span>
+                <span className="text-white/40">#{item.code}</span> faturou <span className="text-green-400">{item.amount.toLocaleString()} Kz</span>
               </span>
             </div>
-          )) : (
-            [16500, 33000, 82500, 66000, 13200].map((val, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <Trophy size={10} className="text-amber-500" />
-                <span className="text-[10px] font-black uppercase tracking-widest">
-                  <span className="text-white/40">@Membro_{i+10}</span> faturou <span className="text-green-400">{val.toLocaleString()} Kz</span>
-                </span>
-              </div>
-            ))
-          )}
+          ))}
         </motion.div>
       </div>
 
@@ -242,7 +235,7 @@ const Index = () => {
             <LiveActivity />
             <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 bg-purple-500/5">
               <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4">Afiliados</h4>
-              <p className="text-[11px] font-bold text-white/40 mb-6">Convide amigos e ganhe 5% sobre cada prémio que eles ganharem!</p>
+              <p className="text-[11px] font-bold text-white/40 mb-6">Convide amigos e ganhe 5% sobre cada prêmio que eles ganharem!</p>
               <Button onClick={() => navigate('/affiliates')} className="w-full h-12 rounded-xl bg-purple-600 font-black text-[10px] uppercase">
                 SABER MAIS
               </Button>

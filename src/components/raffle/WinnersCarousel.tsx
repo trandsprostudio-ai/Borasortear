@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Zap, Star } from 'lucide-react';
+import { Trophy, Star, Hash } from 'lucide-react';
 
 interface Winner {
   id: string;
@@ -17,38 +17,30 @@ interface WinnersCarouselProps {
 
 const WinnersCarousel = ({ winners: initialWinners }: WinnersCarouselProps) => {
   const [index, setIndex] = useState(0);
-  const [displayWinners, setDisplayWinners] = useState<Winner[]>([]);
 
-  // Dados fictícios baseados nos módulos (33% do pool total)
-  const fakeWinners: Winner[] = [
-    { id: 'f1', profiles: { first_name: 'António' }, prize_amount: 16500, position: 1 },
-    { id: 'f2', profiles: { first_name: 'Isabel' }, prize_amount: 33000, position: 1 },
-    { id: 'f3', profiles: { first_name: 'Mauro' }, prize_amount: 82500, position: 1 },
-    { id: 'f4', profiles: { first_name: 'Cláudia' }, prize_amount: 66000, position: 1 },
-    { id: 'f5', profiles: { first_name: 'Ricardo' }, prize_amount: 33000, position: 2 },
-    { id: 'f6', profiles: { first_name: 'Sandra' }, prize_amount: 13200, position: 1 },
-  ];
+  // Geração de 30 IDs fictícios com prémios baseados nos módulos
+  const displayWinners = useMemo(() => {
+    if (initialWinners && initialWinners.length > 0) return initialWinners;
 
-  useEffect(() => {
-    // Se tivermos vencedores reais, usamos eles. Se não, usamos os fictícios.
-    if (initialWinners && initialWinners.length > 0) {
-      setDisplayWinners(initialWinners);
-    } else {
-      setDisplayWinners(fakeWinners);
-    }
+    const modules = [16500, 33000, 82500, 66000, 132000, 41250];
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    
+    return Array.from({ length: 30 }, (_, i) => ({
+      id: `fake-${i}`,
+      profiles: { 
+        first_name: Array.from({ length: 8 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join('')
+      },
+      prize_amount: modules[Math.floor(Math.random() * modules.length)],
+      position: Math.random() > 0.5 ? 1 : 2
+    }));
   }, [initialWinners]);
 
   useEffect(() => {
-    if (displayWinners.length <= 1) return;
-    
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % displayWinners.length);
-    }, 4000);
-    
+    }, 3500); // Rotação ligeiramente mais rápida
     return () => clearInterval(timer);
   }, [displayWinners.length]);
-
-  if (displayWinners.length === 0) return null;
 
   const current = displayWinners[index];
 
@@ -57,72 +49,52 @@ const WinnersCarousel = ({ winners: initialWinners }: WinnersCarouselProps) => {
       <AnimatePresence mode="wait">
         <motion.div
           key={`${current.id}-${index}`}
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 1.05, y: -20 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute inset-0 flex items-center justify-between p-6 bg-gradient-to-r from-purple-500/10 via-purple-500/5 to-transparent rounded-3xl border border-white/5"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="absolute inset-0 flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/5"
         >
           <div className="flex items-center gap-5">
             <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white shadow-2xl shadow-purple-500/20 border border-white/10 overflow-hidden">
-                <motion.span 
-                  initial={{ scale: 0.5 }}
-                  animate={{ scale: 1 }}
-                  key={current.profiles?.first_name}
-                  className="text-2xl font-black italic"
-                >
-                  {current.profiles?.first_name?.charAt(0) || 'U'}
-                </motion.span>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600/20 to-blue-600/20 flex items-center justify-center text-purple-400 border border-purple-500/20">
+                <Hash size={24} />
               </div>
-              <motion.div 
-                animate={{ rotate: [0, -10, 10, 0] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute -top-2 -right-2 w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center text-black shadow-lg border-2 border-[#0A0B12]"
-              >
-                <Trophy size={14} />
-              </motion.div>
+              <div className="absolute -top-2 -right-2 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center text-black shadow-lg border-2 border-[#0A0B12]">
+                <Trophy size={12} />
+              </div>
             </div>
             
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em]">Último Resultado</span>
-                <div className="flex gap-0.5">
-                  {[...Array(3)].map((_, i) => (
-                    <Star key={i} size={8} className="text-amber-500 fill-amber-500" />
-                  ))}
-                </div>
+                <span className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em]">Sorteio Confirmado</span>
+                <Star size={8} className="text-amber-500 fill-amber-500" />
               </div>
               <h4 className="text-xl font-black italic tracking-tighter text-white uppercase">
-                @{current.profiles?.first_name || 'Usuário'}
+                #{current.profiles.first_name}
               </h4>
               <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
-                Posição: {current.position}º Lugar na Mesa
+                ID DO BILHETE VENCEDOR
               </p>
             </div>
           </div>
 
           <div className="text-right">
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Prémio Faturado</p>
-            <motion.p 
-              key={current.prize_amount}
-              initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              className="text-3xl font-black text-green-400 italic tracking-tighter"
-            >
+            <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Valor Creditado</p>
+            <p className="text-3xl font-black text-green-400 italic tracking-tighter">
               {current.prize_amount.toLocaleString()} <span className="text-sm not-italic opacity-60">Kz</span>
-            </motion.p>
+            </p>
           </div>
         </motion.div>
       </AnimatePresence>
 
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-        {displayWinners.slice(0, 6).map((_, i) => (
-          <motion.div 
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 items-center">
+        <span className="text-[8px] font-black text-white/10 uppercase mr-2">{index + 1}/30</span>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div 
             key={i} 
-            className={`h-1 rounded-full transition-all duration-500 ${
-              i === index ? 'w-6 bg-purple-500' : 'w-1.5 bg-white/10'
+            className={`h-1 rounded-full transition-all duration-300 ${
+              Math.floor(index / 6) === i ? 'w-4 bg-purple-500' : 'w-1 bg-white/10'
             }`} 
           />
         ))}
