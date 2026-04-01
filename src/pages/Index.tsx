@@ -92,7 +92,6 @@ const Index = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           
           <div className="flex-1 space-y-12">
-            {/* Header Hero Compacto */}
             <header className="space-y-6">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20">
@@ -123,7 +122,6 @@ const Index = () => {
               </div>
             </header>
 
-            {/* Seletor de Módulos Compacto */}
             <section>
               <div className="flex overflow-x-auto no-scrollbar gap-3 pb-2">
                 {modules.map((mod) => (
@@ -137,7 +135,6 @@ const Index = () => {
               </div>
             </section>
 
-            {/* Mesas Ativas - O Coração da Página */}
             <section className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -148,7 +145,6 @@ const Index = () => {
                 </div>
               </div>
 
-              {/* Grelha Tripla Garantida */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <AnimatePresence mode="popLayout">
                   {rooms.map((room) => (
@@ -178,13 +174,11 @@ const Index = () => {
             </section>
           </div>
 
-          {/* Hall of Fame Sidebar Redimensionada */}
           <aside className="w-full lg:w-[320px] shrink-0">
             <HallOfFame />
           </aside>
         </div>
 
-        {/* Affiliate Section compacta e moderna */}
         <section className="mt-24 pt-16 border-t border-white/5">
           <div className="glass-card p-10 rounded-[3rem] border-purple-500/10 bg-gradient-to-br from-purple-600/5 to-transparent relative overflow-hidden">
             <div className="max-w-3xl relative z-10 space-y-6">
@@ -194,72 +188,7 @@ const Index = () => {
               </div>
               
               <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none">Ganhe com <span className="text-green-400">cada vitória</span> dos seus amigos</h2>
-              <p className="text-white/30 font-think
-The user is asking to continue the previous response which was cut off. Looking at the last message:
-- The `Index.tsx` file was being written.
-- It cut off inside the `Index.tsx` file: `<p className="text-white/30 font-`
-- I need to continue the `Index.tsx` file and then finish the rest of the response if any other files or tags were pending.
-
-The previous response had:
-- `src/components/raffle/RoomItem.tsx`
-- `src/components/raffle/ModuleCard.tsx`
-- `src/pages/Index.tsx` (Started, cut off at line ~160)
-
-I will rewrite the `src/pages/Index.tsx` from the beginning of that specific tag to ensure integrity, or just continue the content. The prompt says "Continue exactly where you left off".
-
-Actually, to avoid syntax errors and ensure the file is valid, I should rewrite the whole `src/pages/Index.tsx` block since `dyad-write` requires a complete file.
-
-Wait, the prompt says "Continue exactly where you left off without any preamble".
-If I just output the text, it won't be valid XML. I must use `<dyad-write>` tag for the file.
-
-Let's re-examine the `Index.tsx` content from the previous turn and complete it.
-
-Previous Turn Cutoff:
-`<p className="text-white/30 font-`
-
-I will rewrite the `src/pages/Index.tsx` entirely to be safe and follow the instructions about "ONE write block per file".
-
-Wait, I should also check if `dyad-chat-summary` was included. It was.
-
-Let's finish the `Index.tsx` file.
-
-```tsx
               <p className="text-white/30 font-bold text-[10px] uppercase tracking-widest mb-10 leading-relaxed max-w-xl">
-                Sempre que um indicado seu ganhar um prémio, você recebe automaticamente 5% do valor na sua carteira. Sem limites, sem taxas.
-              </p>
-              
-              <Button onClick={() => navigate('/affiliates')} className="h-14 px-8 rounded-2xl premium-gradient font-black text-sm uppercase tracking-widest shadow-xl shadow-purple-500/20">
-                SABER MAIS <ArrowRight size={18} className="ml-2" />
-              </Button>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      {ticketModal && (
-        <TicketConfirmationModal 
-          isOpen={ticketModal.open}
-          onClose={() => setTicketModal(null)}
-          ticketCode={ticketModal.code}
-          moduleName={selectedModule?.name}
-          price={selectedModule?.price}
-        />
-      )}
-      <Footer />
-    </div>
-  );
-};
-
-export default Index;
-```
-
-I'll provide the full `Index.tsx` file again to ensure it's correct.
-
-Actually, the user asked to "Continue exactly where you left off".
-If I start with `<dyad-write path="src/pages/Index.tsx">...`, I'm continuing the task.
-
-Let's go.bold text-[10px] uppercase tracking-widest mb-10 leading-relaxed max-w-xl">
                 Sempre que um indicado seu ganhar um prémio, você recebe automaticamente 5% do valor na sua carteira. Sem limites, sem taxas.
               </p>
               

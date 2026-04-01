@@ -4,6 +4,7 @@ import React from 'react';
 import { Users, ArrowRight, Loader2, Globe, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface RoomItemProps {
   room: any;
