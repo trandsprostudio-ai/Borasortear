@@ -4,21 +4,21 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%; /* #0A0A0F aproximado */
+    --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 222 47% 11%; /* #111827 */
+    --card: 222 47% 11%;
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 263.4 70% 50.4%; /* #7C3AED */
+    --primary: 263.4 70% 50.4%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 188 91% 43%; /* #06B6D4 */
+    --secondary: 188 91% 43%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 38 92% 50%; /* #F59E0B */
+    --accent: 38 92% 50%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%; /* #EF4444 */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
@@ -38,6 +38,13 @@
       radial-gradient(at 100% 100%, hsla(188, 91%, 43%, 0.1) 0px, transparent 50%);
     background-attachment: fixed;
   }
+}
+
+/* Regra de Ouro: Esconder Footer durante Splash */
+body.splash-active footer {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Custom Scrollbar Styling */
@@ -60,12 +67,6 @@
   background: rgba(124, 58, 237, 0.4);
 }
 
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(124, 58, 237, 0.2) transparent;
-}
-
 .glass-card {
   @apply bg-[#111827]/60 backdrop-blur-xl border border-white/5 shadow-2xl;
 }
@@ -86,10 +87,6 @@
   @apply bg-clip-text text-transparent bg-gradient-to-r from-[#7C3AED] to-[#C084FC];
 }
 
-.text-gradient-cyan {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#06B6D4] to-[#F59E0B];
-}
-
 .shimmer {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
   background-size: 200% 100%;
@@ -103,9 +100,4 @@
 
 .animate-pulse-glow {
   animation: pulse-glow 2s infinite;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 1; filter: drop-shadow(0 0 5px rgba(124, 58, 237, 0.5)); }
-  50% { opacity: 0.8; filter: drop-shadow(0 0 15px rgba(124, 58, 237, 0.8)); }
 }
