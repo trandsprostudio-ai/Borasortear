@@ -16,6 +16,7 @@ import AdminFinance from '@/components/admin/AdminFinance';
 import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '@/components/ui/SplashScreen';
 import { toast } from 'sonner';
+import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -30,6 +31,9 @@ const AdminDashboard = () => {
     platformBalance: 0,
     pendingTxs: 0
   });
+
+  // Estado para controle do modal Premium de confirmação
+  const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, type: null });
 
   useEffect(() => {
     if (localStorage.getItem('admin_session') !== 'true') {
@@ -52,10 +56,7 @@ const AdminDashboard = () => {
       const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
       setTotalUsers(count || 0);
 
-      // Buscar transações completadas
       const { data: txs } = await supabase.from('transactions').select('amount, type, status');
-      
-      // BUSCA DE LUCRO: Soma todos os prêmios onde user_id é NULL (Plataforma)
       const { data: platformEarnings } = await supabase
         .from('winners')
         .select('prize_amount')
@@ -65,8 +66,6 @@ const AdminDashboard = () => {
         const deposits = txs.filter(t => t.type === 'deposit' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
         const withdrawals = txs.filter(t => t.type === 'withdrawal' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
         const pending = txs.filter(t => t.status === 'pending').length;
-        
-        // Soma do lucro real
         const totalPlatformProfit = platformEarnings?.reduce((acc, curr) => acc + Number(curr.prize_amount), 0) || 0;
 
         setStats({
@@ -83,9 +82,9 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleClearHistory = async (type: 'deposit' | 'withdrawal') => {
+  const handleClearHistory = async () => {
+    const { type } = confirmConfig;
     const label = type === 'deposit' ? 'DEPÓSITOS' : 'SAQUES';
-    if (!confirm(`⚠️ ATENÇÃO: Deseja realmente LIMPAR todo o histórico de ${label} CONCLUÍDOS? Esta ação é irreversível.`)) return;
 
     try {
       const { error } = await supabase
@@ -96,10 +95,11 @@ const AdminDashboard = () => {
 
       if (error) throw error;
       
-      toast.success(`Histórico de ${label} limpo!`);
+      toast.success(`Histórico de ${label} limpo com sucesso!`);
+      setConfirmConfig({ isOpen: false });
       fetchGlobalStats();
     } catch (err: any) {
-      toast.error("Erro ao limpar dados.");
+      toast.error("Erro ao limpar dados da plataforma.");
     }
   };
 
@@ -122,6 +122,15 @@ const AdminDashboard = () => {
         {showInitialSplash && <SplashScreen message="Carregando Painel..." />}
         {showExitSplash && <SplashScreen message="Saindo..." />}
       </AnimatePresence>
+
+      <ActionConfirmModal 
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig({ isOpen: false })}
+        onConfirm={handleClearHistory}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        variant="danger"
+      />
 
       {!showInitialSplash && (
         <main className="max-w-[1600px] mx-auto p-4 md:p-10">
@@ -155,7 +164,17 @@ const AdminDashboard = () => {
             <div className="glass-card p-8 rounded-[2.5rem] border-green-500/20">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Depósitos</p>
-                <button onClick={() => handleClearHistory('deposit')} className="text-white/10 hover:text-red-500"><Trash2 size={14} /></button>
+                <button 
+                  onClick={() => setConfirmConfig({
+                    isOpen: true,
+                    type: 'deposit',
+                    title: 'LIMPAR DEPÓSITOS',
+                    description: 'Tens a certeza que pretendes eliminar todo o histórico de depósitos concluídos? Esta ação é irreversível.'
+                  })} 
+                  className="text-white/10 hover:text-red-500"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
               <p className="text-3xl font-black italic tracking-tighter text-green-400">{stats.totalDeposits.toLocaleString()} Kz</p>
             </div>
@@ -163,7 +182,17 @@ const AdminDashboard = () => {
             <div className="glass-card p-8 rounded-[2.5rem] border-amber-500/20">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Saques</p>
-                <button onClick={() => handleClearHistory('withdrawal')} className="text-white/10 hover:text-red-500"><Trash2 size={14} /></button>
+                <button 
+                  onClick={() => setConfirmConfig({
+                    isOpen: true,
+                    type: 'withdrawal',
+                    title: 'LIMPAR SAQUES',
+                    description: 'Tens a certeza que pretendes eliminar todo o histórico de saques concluídos? Esta ação é irreversível.'
+                  })} 
+                  className="text-white/10 hover:text-red-500"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
               <p className="text-3xl font-black italic tracking-tighter text-amber-500">{stats.totalWithdrawals.toLocaleString()} Kz</p>
             </div>
