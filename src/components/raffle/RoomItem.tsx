@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Users, Clock, ArrowRight, Loader2, Globe, TrendingUp } from 'lucide-react';
+import { Users, ArrowRight, Loader2, Globe, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -13,53 +13,42 @@ interface RoomItemProps {
 
 const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
   const percentage = Math.round((room.current_participants / room.max_participants) * 100);
-  
-  // Prémio estimado: 33.3% do total arrecadado quando cheia
   const estimatedPrize = Math.floor((room.modules.price * room.max_participants) * 0.333);
 
   return (
-    <div className="glass-card p-6 rounded-[2.5rem] border-white/5 relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-        <Users size={80} />
-      </div>
-
-      <div className="flex justify-between items-start mb-6 relative z-10">
-        <div>
-          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">MESA ATIVA</p>
-          <h3 className="text-xl font-black italic tracking-tighter">#{room.id.slice(0, 8)}</h3>
+    <div className="glass-card p-5 rounded-[1.5rem] border-white/5 relative overflow-hidden transition-all hover:border-purple-500/30">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col">
+          <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">SALA ATIVA</span>
+          <h3 className="text-sm font-black italic tracking-tighter text-white/80">#{room.id.slice(0, 6)}</h3>
         </div>
-        <div className="flex items-center gap-2 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
-          <Globe size={12} className="text-green-500" />
-          <span className="text-[10px] font-black text-green-500 uppercase">Online</span>
+        <div className="flex items-center gap-1.5 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20">
+          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-[8px] font-black text-green-500 uppercase">Live</span>
         </div>
       </div>
 
-      <div className="bg-purple-500/5 p-4 rounded-2xl border border-purple-500/10 mb-6 flex items-center justify-between">
-        <div>
-          <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">Prémio de 1º Lugar</p>
-          <p className="text-xl font-black text-white italic">{estimatedPrize.toLocaleString()} <span className="text-[10px] not-italic opacity-40">Kz</span></p>
+      <div className="bg-white/5 p-3 rounded-xl border border-white/5 mb-4">
+        <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest mb-0.5">Prémio Estimado</p>
+        <div className="flex items-center justify-between">
+          <span className="text-lg font-black text-white italic">{estimatedPrize.toLocaleString()} <span className="text-[10px] not-italic opacity-30">Kz</span></span>
+          <TrendingUp size={14} className="text-purple-500/40" />
         </div>
-        <TrendingUp size={24} className="text-purple-500/30" />
       </div>
 
-      <div className="space-y-4 mb-8 relative z-10">
+      <div className="space-y-2 mb-4">
         <div className="flex justify-between items-end">
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-black text-white">{room.current_participants}</span>
-            <span className="text-sm font-bold text-white/20">/ {room.max_participants}</span>
-          </div>
+          <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{room.current_participants}/{room.max_participants} Jogadores</span>
           <span className={cn(
-            "text-[10px] font-black uppercase tracking-widest",
-            percentage > 80 ? "text-red-400 animate-pulse" : "text-white/40"
-          )}>
-            {percentage}% PREENCHIDO
-          </span>
+            "text-[9px] font-black uppercase",
+            percentage > 80 ? "text-red-400" : "text-white/20"
+          )}>{percentage}%</span>
         </div>
-        
-        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-1000 ease-out"
-            style={{ width: `${percentage}%` }}
+        <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${percentage}%` }}
+            className="h-full bg-gradient-to-r from-purple-600 to-blue-500"
           />
         </div>
       </div>
@@ -67,14 +56,14 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
       <Button 
         onClick={onJoin}
         disabled={loading || room.current_participants >= room.max_participants}
-        className="w-full h-14 rounded-2xl premium-gradient font-black text-sm uppercase tracking-widest relative z-10 group/btn overflow-hidden"
+        className="w-full h-10 rounded-xl premium-gradient font-black text-[10px] uppercase tracking-[0.1em] group/btn"
       >
         {loading ? (
-          <Loader2 className="animate-spin" />
+          <Loader2 className="animate-spin" size={14} />
         ) : (
           <>
-            ENTRAR NA MESA
-            <ArrowRight size={16} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
+            ENTRAR AGORA
+            <ArrowRight size={12} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
           </>
         )}
       </Button>

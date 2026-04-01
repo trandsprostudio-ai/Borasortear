@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LayoutGrid, Loader2, Sparkles, HelpCircle, Users, ArrowRight, Gift, Share2, DollarSign } from 'lucide-react';
+import { LayoutGrid, Loader2, Sparkles, HelpCircle, Gift, ArrowRight } from 'lucide-react';
 import ModuleCard from '@/components/raffle/ModuleCard';
 import RoomItem from '@/components/raffle/RoomItem';
 import NewsTicker from '@/components/layout/NewsTicker';
@@ -40,13 +40,11 @@ const Index = () => {
       }
       setLoading(false);
     };
-
     fetchModules();
   }, []);
 
   useEffect(() => {
     if (!selectedModule) return;
-
     const fetchRooms = async (moduleId: string) => {
       const { data } = await supabase
         .from('rooms')
@@ -57,32 +55,17 @@ const Index = () => {
         .limit(3);
       if (data) setRooms(data);
     };
-
     fetchRooms(selectedModule.id);
-
     const roomsChannel = supabase.channel(`lobby-rooms-${selectedModule.id}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'rooms',
-        filter: `module_id=eq.${selectedModule.id}`
-      }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rooms', filter: `module_id=eq.${selectedModule.id}` }, () => {
         fetchRooms(selectedModule.id);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(roomsChannel);
-    };
+      }).subscribe();
+    return () => { supabase.removeChannel(roomsChannel); };
   }, [selectedModule]);
 
   const handleJoinRoom = async (room: any) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-
+    if (!session) { setIsAuthModalOpen(true); return; }
     setActionLoading(room.id);
     try {
       const { data, error } = await supabase.rpc('join_room_secure', {
@@ -90,76 +73,59 @@ const Index = () => {
         p_room_id: room.id,
         p_price: selectedModule.price
       });
-
       if (error) throw error;
-
-      if (data === 'FULL') toast.error("Esta mesa acabou de lotar!");
-      else if (data === 'NO_BALANCE') toast.error("Saldo insuficiente. Faça uma recarga!");
-      else {
-        setTicketModal({ open: true, code: data });
-      }
-    } catch (err: any) {
-      toast.error("Erro ao entrar na mesa.");
-    } finally {
-      setActionLoading(null);
-    }
+      if (data === 'FULL') toast.error("Sala lotada!");
+      else if (data === 'NO_BALANCE') toast.error("Saldo insuficiente!");
+      else setTicketModal({ open: true, code: data });
+    } catch (err) { toast.error("Erro ao entrar na mesa."); }
+    finally { setActionLoading(null); }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0A0B12] flex items-center justify-center">
-        <Loader2 className="animate-spin text-purple-500" size={40} />
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen bg-[#0A0B12] flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
   return (
-    <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
+    <div className="min-h-screen bg-[#0A0B12] text-white pb-32 selection:bg-purple-500/30">
       <Navbar />
+      <NewsTicker />
       
-      <main className="max-w-[1600px] mx-auto px-4 pt-20 md:pt-28">
-        <div className="flex flex-col lg:flex-row gap-12 mb-16">
-          <div className="flex-1">
-            <header className="text-left mb-10 space-y-6">
+      <main className="max-w-[1600px] mx-auto px-4 pt-12 md:pt-16">
+        <div className="flex flex-col lg:flex-row gap-8">
+          
+          <div className="flex-1 space-y-12">
+            {/* Header Hero Compacto */}
+            <header className="space-y-6">
               <div className="flex flex-wrap items-center gap-3">
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                  className="inline-flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-full border border-purple-500/20"
-                >
-                  <Sparkles size={14} className="text-purple-400" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400">Sorteios Digitais Premium</span>
-                </motion.div>
-                <div className="flex items-center gap-2 bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-green-400">ATIVO AGORA</span>
+                <div className="inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20">
+                  <Sparkles size={12} className="text-purple-400" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">Elite Gaming</span>
+                </div>
+                <div className="flex items-center gap-2 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-green-400">ATIVO AGORA</span>
                 </div>
               </div>
               
-              <motion.h1 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="text-5xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.85]"
-              >
-                A TUA SORTE <br /> <span className="text-purple-500">COMEÇA AQUI.</span>
-              </motion.h1>
+              <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-[0.85]">
+                A TUA SORTE <br /> <span className="text-purple-500">NAS TUAS MÃOS.</span>
+              </h1>
               
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                <p className="text-white/40 font-bold text-xs uppercase tracking-widest max-w-sm">
-                  Escolha um módulo, entre numa mesa e ganhe até 3x o valor da entrada em minutos.
+              <div className="flex items-center gap-6">
+                <p className="text-white/30 font-bold text-[10px] uppercase tracking-widest max-w-xs leading-relaxed">
+                  Entra numa mesa, aguarda o sorteio e triplica o teu saldo em segundos.
                 </p>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/central-de-ajuda')}
-                  className="h-12 rounded-xl border-white/10 bg-white/5 hover:bg-white/10 font-black text-[10px] uppercase tracking-widest px-6"
+                  className="h-10 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 font-black text-[9px] uppercase tracking-widest px-4"
                 >
-                  <HelpCircle size={16} className="mr-2" /> Como Funciona?
+                  <HelpCircle size={14} className="mr-2" /> REGRAS
                 </Button>
               </div>
             </header>
 
-            <NewsTicker />
-
-            <section className="my-12">
-              <div className="flex overflow-x-auto no-scrollbar gap-4 pb-6 px-2">
+            {/* Seletor de Módulos Compacto */}
+            <section>
+              <div className="flex overflow-x-auto no-scrollbar gap-3 pb-2">
                 {modules.map((mod) => (
                   <ModuleCard 
                     key={mod.id} 
@@ -171,24 +137,26 @@ const Index = () => {
               </div>
             </section>
 
-            <section className="space-y-8">
-              <div className="flex items-center justify-between px-2">
+            {/* Mesas Ativas - O Coração da Página */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500">
-                    <LayoutGrid size={20} />
+                  <div className="w-8 h-8 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500">
+                    <LayoutGrid size={16} />
                   </div>
-                  <h2 className="text-xl font-black italic tracking-tighter uppercase">Mesas Online</h2>
+                  <h2 className="text-lg font-black italic tracking-tighter uppercase">Mesas Ativas ({selectedModule?.name})</h2>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2">
+              {/* Grelha Tripla Garantida */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <AnimatePresence mode="popLayout">
                   {rooms.map((room) => (
                     <motion.div
                       key={room.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
+                      initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
                       layout
                     >
                       <RoomItem 
@@ -201,57 +169,102 @@ const Index = () => {
                 </AnimatePresence>
                 
                 {rooms.length === 0 && !loading && (
-                  <div className="col-span-full py-20 text-center glass-card rounded-[3rem] border-dashed">
-                    <Loader2 className="animate-spin text-white/10 mx-auto mb-4" size={40} />
-                    <p className="text-white/20 font-black uppercase text-[10px] tracking-widest">Preparando novas mesas...</p>
+                  <div className="col-span-full py-16 text-center glass-card rounded-[2rem] border-dashed border-white/10">
+                    <Loader2 className="animate-spin text-white/10 mx-auto mb-3" size={32} />
+                    <p className="text-white/20 font-black uppercase text-[9px] tracking-widest">Preparando novas salas para ti...</p>
                   </div>
                 )}
               </div>
             </section>
           </div>
 
-          <aside className="w-full lg:w-80 shrink-0">
+          {/* Hall of Fame Sidebar Redimensionada */}
+          <aside className="w-full lg:w-[320px] shrink-0">
             <HallOfFame />
           </aside>
         </div>
 
-        <section className="pt-20 border-t border-white/5">
-          <div className="glass-card p-12 rounded-[3.5rem] border-purple-500/20 bg-gradient-to-br from-purple-600/10 via-transparent to-transparent relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-12 opacity-5">
-              <Gift size={200} />
-            </div>
-            
-            <div className="max-w-3xl relative z-10">
-              <div className="inline-flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-full border border-purple-500/20 mb-8">
-                <Gift size={14} className="text-purple-400" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-purple-400">PROGRAMA DE AFILIADOS ELITE</span>
+        {/* Affiliate Section compacta e moderna */}
+        <section className="mt-24 pt-16 border-t border-white/5">
+          <div className="glass-card p-10 rounded-[3rem] border-purple-500/10 bg-gradient-to-br from-purple-600/5 to-transparent relative overflow-hidden">
+            <div className="max-w-3xl relative z-10 space-y-6">
+              <div className="inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20">
+                <Gift size={12} className="text-purple-400" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">PROGRAMA DE AFILIADOS</span>
               </div>
               
-              <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase mb-6">Convide amigos e ganhe <span className="text-green-400">5% de comissão vitalícia</span></h2>
-              <p className="text-white/40 font-bold text-sm uppercase tracking-widest mb-10 leading-relaxed">
+              <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none">Ganhe com <span className="text-green-400">cada vitória</span> dos seus amigos</h2>
+              <p className="text-white/30 font-think
+The user is asking to continue the previous response which was cut off. Looking at the last message:
+- The `Index.tsx` file was being written.
+- It cut off inside the `Index.tsx` file: `<p className="text-white/30 font-`
+- I need to continue the `Index.tsx` file and then finish the rest of the response if any other files or tags were pending.
+
+The previous response had:
+- `src/components/raffle/RoomItem.tsx`
+- `src/components/raffle/ModuleCard.tsx`
+- `src/pages/Index.tsx` (Started, cut off at line ~160)
+
+I will rewrite the `src/pages/Index.tsx` from the beginning of that specific tag to ensure integrity, or just continue the content. The prompt says "Continue exactly where you left off".
+
+Actually, to avoid syntax errors and ensure the file is valid, I should rewrite the whole `src/pages/Index.tsx` block since `dyad-write` requires a complete file.
+
+Wait, the prompt says "Continue exactly where you left off without any preamble".
+If I just output the text, it won't be valid XML. I must use `<dyad-write>` tag for the file.
+
+Let's re-examine the `Index.tsx` content from the previous turn and complete it.
+
+Previous Turn Cutoff:
+`<p className="text-white/30 font-`
+
+I will rewrite the `src/pages/Index.tsx` entirely to be safe and follow the instructions about "ONE write block per file".
+
+Wait, I should also check if `dyad-chat-summary` was included. It was.
+
+Let's finish the `Index.tsx` file.
+
+```tsx
+              <p className="text-white/30 font-bold text-[10px] uppercase tracking-widest mb-10 leading-relaxed max-w-xl">
                 Sempre que um indicado seu ganhar um prémio, você recebe automaticamente 5% do valor na sua carteira. Sem limites, sem taxas.
               </p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
-                  <Share2 className="text-purple-500 mb-4" size={24} />
-                  <h4 className="text-xs font-black uppercase mb-1">Partilhe o Link</h4>
-                  <p className="text-[10px] font-bold text-white/20">Use o link no seu perfil</p>
-                </div>
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
-                  <Users className="text-purple-500 mb-4" size={24} />
-                  <h4 className="text-xs font-black uppercase mb-1">Amigos se Registem</h4>
-                  <p className="text-[10px] font-bold text-white/20">Eles entram na sua rede</p>
-                </div>
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
-                  <DollarSign className="text-green-500 mb-4" size={24} />
-                  <h4 className="text-xs font-black uppercase mb-1">Lucro Vitalício</h4>
-                  <p className="text-[10px] font-bold text-white/20">Ganha com cada vitória</p>
-                </div>
-              </div>
+              <Button onClick={() => navigate('/affiliates')} className="h-14 px-8 rounded-2xl premium-gradient font-black text-sm uppercase tracking-widest shadow-xl shadow-purple-500/20">
+                SABER MAIS <ArrowRight size={18} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      {ticketModal && (
+        <TicketConfirmationModal 
+          isOpen={ticketModal.open}
+          onClose={() => setTicketModal(null)}
+          ticketCode={ticketModal.code}
+          moduleName={selectedModule?.name}
+          price={selectedModule?.price}
+        />
+      )}
+      <Footer />
+    </div>
+  );
+};
+
+export default Index;
+```
+
+I'll provide the full `Index.tsx` file again to ensure it's correct.
+
+Actually, the user asked to "Continue exactly where you left off".
+If I start with `<dyad-write path="src/pages/Index.tsx">...`, I'm continuing the task.
+
+Let's go.bold text-[10px] uppercase tracking-widest mb-10 leading-relaxed max-w-xl">
+                Sempre que um indicado seu ganhar um prémio, você recebe automaticamente 5% do valor na sua carteira. Sem limites, sem taxas.
+              </p>
               
-              <Button onClick={() => navigate('/affiliates')} className="h-16 px-10 rounded-2xl premium-gradient font-black text-lg">
-                SABER MAIS <ArrowRight size={20} className="ml-2" />
+              <Button onClick={() => navigate('/affiliates')} className="h-14 px-8 rounded-2xl premium-gradient font-black text-sm uppercase tracking-widest shadow-xl shadow-purple-500/20">
+                SABER MAIS <ArrowRight size={18} className="ml-2" />
               </Button>
             </div>
           </div>
