@@ -15,22 +15,23 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
   const isRoomProcessing = room.status === 'processing';
 
   const dispatchDraw = async () => {
+    // Só dispara se estiver aberta e ainda não estivermos tentando disparar
     if (isDispatching.current || !isRoomOpen) return;
     
     isDispatching.current = true;
     try {
       await supabase.rpc('check_and_draw_expired_rooms');
     } catch (err) {
-      console.error("Falha no sorteio:", err);
+      console.error("Erro ao solicitar sorteio:", err);
     } finally {
-      // Pequeno delay para permitir que o banco atualize o status
-      setTimeout(() => { isDispatching.current = false; }, 5000);
+      // Pequeno intervalo antes de permitir nova tentativa manual silenciosa
+      setTimeout(() => { isDispatching.current = false; }, 10000);
     }
   };
 
   useEffect(() => {
     const calculateTime = () => {
-      if (isRoomProcessing) return "SORTEANDO...";
+      if (isRoomProcessing) return "EM SORTEIO...";
       if (!isRoomOpen) return "ENCERRADO";
 
       const expiry = new Date(room.expiresAt).getTime();
@@ -39,7 +40,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
       
       if (diff <= 0) {
         dispatchDraw();
-        return "SORTEANDO...";
+        return "FINALIZANDO...";
       }
       
       const h = Math.floor(diff / (1000 * 60 * 60));
@@ -94,8 +95,8 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            className={`h-full rounded-full ${
-              isRoomProcessing ? 'bg-gradient-to-r from-purple-400 to-blue-400' : 'bg-gradient-to-r from-purple-600 to-blue-500'
+            className={`h-full rounded-full transition-all duration-1000 ${
+              isRoomProcessing ? 'bg-gradient-to-r from-purple-400 to-blue-400 animate-pulse' : 'bg-gradient-to-r from-purple-600 to-blue-500'
             }`}
           />
         </div>
@@ -109,7 +110,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
             <span className="flex items-center gap-2">
               <Loader2 className="animate-spin" size={20} /> SORTEANDO...
             </span>
-          ) : 'ENTRAR NA MESA'}
+          ) : isRoomOpen ? 'ENTRAR NA MESA' : 'MESA ENCERRADA'}
         </Button>
       </div>
     </motion.div>
