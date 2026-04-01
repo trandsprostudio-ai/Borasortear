@@ -15,6 +15,23 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
   const isRoomOpen = room.status === 'open';
   const isRoomProcessing = room.status === 'processing';
 
+  // Função isolada para disparar o sorteio de forma segura
+  const dispatchDraw = async () => {
+    if (isDrawDispatched || !isRoomOpen) return;
+    
+    setIsDrawDispatched(true);
+    try {
+      const { error } = await supabase.rpc('check_and_draw_expired_rooms');
+      if (error) {
+        console.error("Erro no sorteio automático:", error);
+        setIsDrawDispatched(false);
+      }
+    } catch (err) {
+      console.error("Falha ao comunicar com o servidor:", err);
+      setIsDrawDispatched(false);
+    }
+  };
+
   useEffect(() => {
     const calculateTime = () => {
       // Se a sala já está sendo sorteada no banco
@@ -27,14 +44,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
       
       // Se o tempo acabou
       if (diff <= 0) {
-        if (!isDrawDispatched && isRoomOpen) {
-          setIsDrawDispatched(true);
-          // Chama o sorteio no servidor
-          supabase.rpc('check_and_draw_expired_rooms').catch(err => {
-            console.error("Erro ao disparar sorteio:", err);
-            setIsDrawDispatched(false);
-          });
-        }
+        dispatchDraw();
         return "SORTEANDO...";
       }
       
