@@ -18,6 +18,7 @@ import TermosDeUso from "./pages/TermosDeUso";
 import Privacidade from "./pages/Privacidade";
 import CentralDeAjuda from "./pages/CentralDeAjuda";
 import AdminRoomsStatus from "./pages/AdminRoomsStatus";
+import TestSandbox from "./pages/TestSandbox";
 import FloatingNav from "./components/layout/FloatingNav";
 import ScrollToTop from "./components/layout/ScrollToTop";
 
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/termos-de-uso" element={<TermosDeUso />} />
           <Route path="/privacidade" element={<Privacidade />} />
           <Route path="/central-de-ajuda" element={<CentralDeAjuda />} />
+          <Route path="/test-sandbox" element={<TestSandbox />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <FloatingNav />

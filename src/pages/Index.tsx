@@ -28,8 +28,12 @@ const Index = () => {
         .order('price', { ascending: true });
       
       if (modData && modData.length > 0) {
-        setModules(modData);
-        setSelectedModule(modData[0]); // Seleciona o primeiro apenas no início
+        // FILTRAR módulos de teste para não aparecerem no lançamento oficial
+        const publicModules = modData.filter(m => !m.name.startsWith('TEST_'));
+        setModules(publicModules);
+        if (publicModules.length > 0) {
+          setSelectedModule(publicModules[0]);
+        }
       }
       setLoading(false);
     };
@@ -54,7 +58,6 @@ const Index = () => {
 
     fetchRooms(selectedModule.id);
 
-    // Subscrever apenas a mudanças neste módulo específico para performance
     const roomsChannel = supabase.channel(`lobby-rooms-${selectedModule.id}`)
       .on('postgres_changes', { 
         event: '*', 
@@ -158,16 +161,6 @@ const Index = () => {
                 <LayoutGrid size={20} />
               </div>
               <h2 className="text-xl font-black italic tracking-tighter uppercase">Mesas Disponíveis</h2>
-            </div>
-            <div className="hidden md:flex items-center gap-6">
-               <div className="flex items-center gap-2">
-                 <ShieldCheck size={14} className="text-green-500" />
-                 <span className="text-[9px] font-black uppercase text-white/40">Seguro</span>
-               </div>
-               <div className="flex items-center gap-2">
-                 <TrendingUp size={14} className="text-blue-500" />
-                 <span className="text-[9px] font-black uppercase text-white/40">Rápido</span>
-               </div>
             </div>
           </div>
 
