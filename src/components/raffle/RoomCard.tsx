@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Users, Clock, Trophy, TrendingUp, Radio, Loader2, DollarSign } from 'lucide-react';
+import { Users, Clock, Trophy, TrendingUp, Radio, Loader2, DollarSign, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Room, Module } from '@/types/raffle';
@@ -20,7 +20,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
   const [triggering, setTriggering] = useState(false);
   
   const progress = room.maxParticipants > 0 ? (room.currentParticipants / room.maxParticipants) * 100 : 0;
-  const totalPool = module.price * room.maxParticipants;
+  const totalArrecadado = module.price * room.currentParticipants;
   const isAlmostFull = progress > 80;
   
   const isRoomOpen = room.status === 'open';
@@ -97,8 +97,8 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
       <div className="space-y-5">
         <div className="flex justify-between items-end text-[11px] font-black uppercase tracking-widest">
           <div className="flex items-center gap-2 text-green-400">
-            <TrendingUp size={14} />
-            <span>PRÊMIO: {totalPool.toLocaleString()} Kz</span>
+            <Wallet size={14} />
+            <span>ARRECADADO: {totalArrecadado.toLocaleString()} Kz</span>
           </div>
           <div className={`flex items-center gap-2 transition-colors duration-300 ${
             isRoomFinished ? 'text-green-500' : 

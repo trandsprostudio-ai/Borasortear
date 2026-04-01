@@ -162,14 +162,18 @@ const JoinRoomModal = ({ isOpen, onClose, room, module, userBalance: initialBala
                   <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Estimativa de Prêmios</span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
-                    <p className="text-[8px] font-black text-white/20 uppercase">1º Lugar (33%)</p>
-                    <p className="text-sm font-black text-green-400">{prizePerWinner.toLocaleString()} Kz</p>
+                    <p className="text-[7px] font-black text-white/20 uppercase">1º (33%)</p>
+                    <p className="text-[11px] font-black text-green-400">{prizePerWinner.toLocaleString()} Kz</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[8px] font-black text-white/20 uppercase">2º Lugar (33%)</p>
-                    <p className="text-sm font-black text-blue-400">{prizePerWinner.toLocaleString()} Kz</p>
+                    <p className="text-[7px] font-black text-white/20 uppercase">2º (33%)</p>
+                    <p className="text-[11px] font-black text-blue-400">{prizePerWinner.toLocaleString()} Kz</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[7px] font-black text-white/20 uppercase">3º (33%)</p>
+                    <p className="text-[11px] font-black text-white/40">{prizePerWinner.toLocaleString()} Kz</p>
                   </div>
                 </div>
                 

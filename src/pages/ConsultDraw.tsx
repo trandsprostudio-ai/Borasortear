@@ -189,7 +189,7 @@ const ConsultDraw = () => {
                   </h3>
                   <span className="text-[9px] font-black text-white/20 uppercase">Total Arrecadado: {result.divisions.total.toLocaleString()} Kz</span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                     <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (33%)</p>
                     <p className="text-xl font-black text-green-400">{result.divisions.first.toLocaleString()} Kz</p>
@@ -202,14 +202,14 @@ const ConsultDraw = () => {
                     <p className="text-[9px] font-black text-white/20 uppercase mb-1">3º Lugar (33%)</p>
                     <p className="text-xl font-black text-white/40">{result.divisions.third.toLocaleString()} Kz</p>
                   </div>
-                  <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20">
-                    <p className="text-[9px] font-black text-purple-400 uppercase mb-1 flex items-center gap-1">
-                      <Share2 size={10} /> Bônus de Indicação (5%)
-                    </p>
-                    <p className="text-xl font-black text-purple-400">
-                      {result.profiles?.referred_by ? `${(result.divisions.first * 0.05).toLocaleString()} Kz` : '0 Kz'}
-                    </p>
-                  </div>
+                </div>
+                <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20 mt-4">
+                  <p className="text-[9px] font-black text-purple-400 uppercase mb-1 flex items-center gap-1">
+                    <Share2 size={10} /> Bônus de Indicação (5%)
+                  </p>
+                  <p className="text-xl font-black text-purple-400">
+                    {result.profiles?.referred_by ? `${(result.divisions.first * 0.05).toLocaleString()} Kz` : '0 Kz'}
+                  </p>
                 </div>
               </div>
             </motion.div>
