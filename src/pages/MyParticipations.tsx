@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, Activity, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, Copy, Wallet } from 'lucide-react';
+import { LayoutGrid, Activity, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, Copy, Wallet, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
@@ -103,7 +103,7 @@ const MyParticipations = () => {
               {activeRooms.length > 0 ? (
                 activeRooms.map((p) => {
                   const progress = (p.rooms.current_participants / p.rooms.max_participants) * 100;
-                  const totalArrecadado = p.rooms.modules.price * p.rooms.current_participants;
+                  const valorTotalSorteio = p.rooms.modules.price * p.rooms.max_participants;
                   return (
                     <motion.div 
                       key={p.id}
@@ -124,9 +124,9 @@ const MyParticipations = () => {
 
                       <div className="space-y-4">
                         <div className="flex justify-between items-end">
-                          <div className="flex items-center gap-2 text-xs font-bold text-white/60">
-                            <Wallet size={14} className="text-green-400" />
-                            <span>Arrecadado: {totalArrecadado.toLocaleString()} Kz</span>
+                          <div className="flex items-center gap-2 text-xs font-bold text-green-400">
+                            <DollarSign size={14} />
+                            <span>Valor de Sorteio: {valorTotalSorteio.toLocaleString()} Kz</span>
                           </div>
                           <span className="text-sm font-black text-purple-500">{Math.round(progress)}%</span>
                         </div>

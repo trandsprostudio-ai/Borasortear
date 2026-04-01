@@ -20,7 +20,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
   const [triggering, setTriggering] = useState(false);
   
   const progress = room.maxParticipants > 0 ? (room.currentParticipants / room.maxParticipants) * 100 : 0;
-  const totalArrecadado = module.price * room.currentParticipants;
+  const valorTotalSorteio = module.price * room.maxParticipants;
   const isAlmostFull = progress > 80;
   
   const isRoomOpen = room.status === 'open';
@@ -97,8 +97,8 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: RoomCardProps) =>
       <div className="space-y-5">
         <div className="flex justify-between items-end text-[11px] font-black uppercase tracking-widest">
           <div className="flex items-center gap-2 text-green-400">
-            <Wallet size={14} />
-            <span>ARRECADADO: {totalArrecadado.toLocaleString()} Kz</span>
+            <DollarSign size={14} />
+            <span>VALOR DE SORTEIO: {valorTotalSorteio.toLocaleString()} Kz</span>
           </div>
           <div className={`flex items-center gap-2 transition-colors duration-300 ${
             isRoomFinished ? 'text-green-500' : 
