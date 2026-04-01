@@ -24,10 +24,11 @@ const Footer = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Lógica rigorosa para ocultar o footer em qualquer página de administração
+  // Ocultar Footer se estiver em páginas administrativas ou se houver um Splash Screen ativo (via atributo no body ou rota)
   const isAdminPath = location.pathname.toLowerCase().includes('admin');
+  const isAuthPath = location.pathname === '/auth';
   
-  if (isAdminPath) {
+  if (isAdminPath || isAuthPath) {
     return null;
   }
 

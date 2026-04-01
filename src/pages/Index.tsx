@@ -31,15 +31,11 @@ const Index = () => {
 
   useEffect(() => {
     const initializeData = async () => {
-      // Garantir sessão imediata e carregar módulos
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
         fetchProfile(session.user.id);
       }
-
-      await supabase.rpc('ensure_active_rooms');
-      await supabase.rpc('check_and_draw_expired_rooms');
 
       const { data: modData } = await supabase
         .from('modules')
@@ -59,17 +55,17 @@ const Index = () => {
       
       fetchTopWinners();
       fetchRecentWins();
+      
+      // Trigger automático de limpeza/verificação silenciosa
+      supabase.rpc('ensure_active_rooms');
+      supabase.rpc('check_and_draw_expired_rooms');
     };
     initializeData();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) {
-        fetchProfile(currentUser.id);
-      } else {
-        setProfile(null);
-      }
+      if (currentUser) fetchProfile(currentUser.id);
     });
 
     return () => subscription.unsubscribe();
@@ -78,9 +74,14 @@ const Index = () => {
   useEffect(() => {
     const finishedRooms = rooms.filter(r => r.status === 'finished');
     const newFinished = finishedRooms.filter(r => !shownDrawRooms.has(r.id));
+    
+    // Só mostramos o popup se a sala terminou nos últimos 60 segundos (evita spam de salas antigas ao carregar)
     if (newFinished.length > 0) {
       const roomToShow = newFinished.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-      fetchWinnersForRoom(roomToShow);
+      const isFresh = (Date.now() - new Date(roomToShow.createdAt).getTime()) < 60000;
+      
+      if (isFresh) fetchWinnersForRoom(roomToShow);
+      else setShownDrawRooms(prev => new Set(prev).add(roomToShow.id));
     }
   }, [rooms, shownDrawRooms]);
 
@@ -122,7 +123,6 @@ const Index = () => {
       navigate(`/auth?mode=login&room=${room.id}`);
       return;
     }
-    // Abrimos o modal apenas com o usuário autenticado, sem esperar o carregamento do profile.
     setSelectedRoom({ room, module });
   };
 
