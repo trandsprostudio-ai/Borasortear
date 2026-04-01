@@ -1,4 +1,3 @@
-Entrada -> Automação) sem interferir nos dados de produção dos utilizadores.">
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -142,7 +141,7 @@ const TestSandbox = () => {
           <h3 className="text-amber-500 text-[10px] font-black uppercase mb-2">Aviso de Segurança</h3>
           <p className="text-[10px] text-white/40 leading-relaxed">
             As funções RPC (`join_room_secure` e `approve_transaction_admin`) são as mesmas usadas em produção. 
-            O teste valida a integridade dos Triggers do Postgres e do cálculo de bónus de afiliados.
+            O teste valida a integridade dos Triggers do Postgres e do cálculo de bónus de aliados.
           </p>
         </div>
       </main>
