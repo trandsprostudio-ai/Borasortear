@@ -41,8 +41,8 @@ export function useRooms() {
       })
       .subscribe();
 
-    // Verificação de segurança a cada 10 segundos para evitar o "Sincronizando" infinito
-    const interval = setInterval(fetchRooms, 10000);
+    // Verificação de segurança AGRESSIVA (2 SEGUNDOS) durante o teste
+    const interval = setInterval(fetchRooms, 2000);
 
     return () => {
       supabase.removeChannel(channel);
