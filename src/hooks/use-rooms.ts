@@ -47,8 +47,8 @@ export function useRooms() {
       })
       .subscribe();
 
-    // Polling acelerado: de 3s para 1.5s
-    const interval = setInterval(fetchRooms, 1500);
+    // Polling acelerado para 1s
+    const interval = setInterval(fetchRooms, 1000);
 
     return () => {
       supabase.removeChannel(channel);
