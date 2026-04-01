@@ -66,6 +66,7 @@ const Index = () => {
   const handleJoinRoom = async (room: any) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setIsAuthModalOpen(true); return; }
+    
     setActionLoading(room.id);
     try {
       const { data, error } = await supabase.rpc('join_room_secure', {
@@ -73,12 +74,28 @@ const Index = () => {
         p_room_id: room.id,
         p_price: selectedModule.price
       });
-      if (error) throw error;
-      if (data === 'FULL') toast.error("Sala lotada!");
-      else if (data === 'NO_BALANCE') toast.error("Saldo insuficiente!");
-      else setTicketModal({ open: true, code: data });
-    } catch (err) { toast.error("Erro ao entrar na mesa."); }
-    finally { setActionLoading(null); }
+
+      if (error) {
+        toast.error(`Erro: ${error.message}`);
+        return;
+      }
+
+      if (data === 'FULL') {
+        toast.error("Esta mesa já está lotada!");
+      } else if (data === 'NO_BALANCE') {
+        toast.error("Saldo insuficiente para entrar nesta mesa.");
+      } else if (data === 'BANNED') {
+        toast.error("Esta conta está suspensa.");
+      } else if (data) {
+        setTicketModal({ open: true, code: data });
+      } else {
+        toast.error("Ocorreu um erro inesperado ao processar sua entrada.");
+      }
+    } catch (err: any) {
+      toast.error(`Erro ao entrar: ${err.message || "Tente novamente mais tarde."}`);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   if (loading) return <div className="min-h-screen bg-[#0A0B12] flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
