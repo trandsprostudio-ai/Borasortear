@@ -134,7 +134,7 @@ const AdminSystem = () => {
                     </TableRow>
                   );
                 })}
-              </tbody>
+              </TableBody>
             </Table>
           </div>
         </div>
