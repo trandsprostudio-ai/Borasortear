@@ -25,15 +25,6 @@ const Index = () => {
   const [onlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
   const navigate = useNavigate();
 
-  const tickerItems = useMemo(() => {
-    const prizes = [16500, 33000, 82500, 66000, 13200, 41250];
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return Array.from({ length: 30 }, () => ({
-      code: Array.from({ length: 8 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join(''),
-      amount: prizes[Math.floor(Math.random() * prizes.length)]
-    }));
-  }, []);
-
   useEffect(() => {
     const initializeData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -58,14 +49,19 @@ const Index = () => {
         setActiveModuleId(mappedModules[0].id);
       }
       
-      await supabase.rpc('ensure_active_rooms');
+      // Check inicial
       await supabase.rpc('check_and_draw_expired_rooms');
-      refreshRooms();
-      
       fetchTopWinners();
     };
     
     initializeData();
+
+    // Monitor de Sorteio Ativo (Roda a cada 5 segundos)
+    const monitorInterval = setInterval(() => {
+      supabase.rpc('check_and_draw_expired_rooms');
+    }, 5000);
+
+    return () => clearInterval(monitorInterval);
   }, []);
 
   const fetchTopWinners = async () => {
@@ -92,6 +88,15 @@ const Index = () => {
     .slice(0, 3);
 
   const activeModule = modules.find(m => m.id === activeModuleId);
+
+  const tickerItems = useMemo(() => {
+    const prizes = [16500, 33000, 82500, 66000, 13200, 41250];
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return Array.from({ length: 30 }, () => ({
+      code: Array.from({ length: 8 }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join(''),
+      amount: prizes[Math.floor(Math.random() * prizes.length)]
+    }));
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white font-sans pb-24">

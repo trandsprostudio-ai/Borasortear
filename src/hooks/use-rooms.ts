@@ -47,8 +47,8 @@ export function useRooms() {
       })
       .subscribe();
 
-    // Polling de segurança a cada 3 segundos para cobrir falhas de websocket
-    const interval = setInterval(fetchRooms, 3000);
+    // Polling acelerado: de 3s para 1.5s
+    const interval = setInterval(fetchRooms, 1500);
 
     return () => {
       supabase.removeChannel(channel);
