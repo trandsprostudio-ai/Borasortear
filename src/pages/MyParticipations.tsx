@@ -9,6 +9,7 @@ import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DrawOverlay from '@/components/raffle/DrawOverlay';
+import { Button } from '@/components/ui/button';
 
 const CountdownItem = ({ expiresAt }: { expiresAt: string }) => {
   const [timeLeft, setTimeLeft] = useState("");
