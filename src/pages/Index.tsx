@@ -6,7 +6,6 @@ import JoinRoomModal from '@/components/raffle/JoinRoomModal';
 import PrizeCarousel from '@/components/raffle/PrizeCarousel';
 import WinnersCarousel from '@/components/raffle/WinnersCarousel';
 import LiveActivity from '@/components/raffle/LiveActivity';
-import DrawOverlay from '@/components/raffle/DrawOverlay';
 import Footer from '@/components/layout/Footer';
 import { useRooms } from '@/hooks/use-rooms';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,8 +24,6 @@ const Index = () => {
   const [topWinners, setTopWinners] = useState<any[]>([]);
   const [recentWins, setRecentWins] = useState<any[]>([]);
   const [onlinePlayers] = useState(Math.floor(Math.random() * 1500) + 2000);
-  const [drawResult, setDrawResult] = useState<{ isOpen: boolean; winners: any[]; roomInfo: string }>({ isOpen: false, winners: [], roomInfo: "" });
-  const [shownDrawRooms, setShownDrawRooms] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,7 +53,7 @@ const Index = () => {
       fetchTopWinners();
       fetchRecentWins();
       
-      // Manutenção automática silenciosa
+      // Manutenção automática silenciosa para garantir salas sempre abertas
       supabase.rpc('ensure_active_rooms');
       supabase.rpc('check_and_draw_expired_rooms');
     };
@@ -70,38 +67,6 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // Monitorar salas finalizadas para exibir o overlay de sorteio apenas se for recente
-  useEffect(() => {
-    const finishedRooms = rooms.filter(r => r.status === 'finished');
-    const newFinished = finishedRooms.filter(r => !shownDrawRooms.has(r.id));
-    
-    if (newFinished.length > 0) {
-      const roomToShow = newFinished.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-      const isFresh = (Date.now() - new Date(roomToShow.createdAt).getTime()) < 60000;
-      
-      if (isFresh) fetchWinnersForRoom(roomToShow);
-      else setShownDrawRooms(prev => new Set(prev).add(roomToShow.id));
-    }
-  }, [rooms, shownDrawRooms]);
-
-  const fetchWinnersForRoom = async (room: Room) => {
-    const { data: winners } = await supabase.from('winners').select('*, profiles(first_name)').eq('draw_id', room.id).order('position', { ascending: true });
-    if (winners && winners.length > 0) {
-      setDrawResult({
-        isOpen: true,
-        winners: winners.map(w => ({
-          name: w.profiles?.first_name || 'Jogador',
-          prize: w.prize_amount.toLocaleString() + ' Kz',
-          position: w.position,
-          userId: w.user_id,
-          amount: w.prize_amount
-        })),
-        roomInfo: `MESA ${room.id.slice(0, 8)}`
-      });
-      setShownDrawRooms(prev => new Set(prev).add(room.id));
-    }
-  };
 
   const fetchTopWinners = async () => {
     const { data } = await supabase.from('winners').select('*, profiles(first_name)').order('prize_amount', { ascending: false }).limit(10);
@@ -126,7 +91,6 @@ const Index = () => {
     setSelectedRoom({ room, module });
   };
 
-  // Filtramos apenas as salas abertas para a visualização principal
   const activeModuleRooms = rooms
     .filter(r => r.moduleId === activeModuleId && (r.status === 'open' || r.status === 'processing'))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
@@ -138,13 +102,6 @@ const Index = () => {
     <div className="min-h-screen bg-[#0A0B12] text-white font-sans pb-24">
       <Navbar />
       
-      <DrawOverlay 
-        isOpen={drawResult.isOpen} 
-        onClose={() => setDrawResult(prev => ({ ...prev, isOpen: false }))}
-        winners={drawResult.winners}
-        roomInfo={drawResult.roomInfo}
-      />
-
       {selectedRoom && user && (
         <JoinRoomModal 
           isOpen={!!selectedRoom}

@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import DrawOverlay from '@/components/raffle/DrawOverlay';
 
 const CountdownItem = ({ expiresAt }: { expiresAt: string }) => {
   const [timeLeft, setTimeLeft] = useState("");
@@ -33,6 +34,7 @@ const MyParticipations = () => {
   const [participations, setParticipations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [selectedResult, setSelectedResult] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -69,6 +71,28 @@ const MyParticipations = () => {
     setLoading(false);
   };
 
+  const handleShowResult = async (p: any) => {
+    const { data: winners } = await supabase
+      .from('winners')
+      .select('*, profiles(first_name)')
+      .eq('draw_id', p.rooms.id)
+      .order('position', { ascending: true });
+
+    if (winners) {
+      setSelectedResult({
+        isOpen: true,
+        winners: winners.map(w => ({
+          name: w.profiles?.first_name || 'Jogador',
+          prize: w.prize_amount.toLocaleString() + ' Kz',
+          position: w.position,
+          userId: w.user_id,
+          amount: w.prize_amount
+        })),
+        roomInfo: `MESA #${p.rooms.id.slice(0, 8)}`
+      });
+    }
+  };
+
   const copyCode = (e: React.MouseEvent, code: string) => {
     e.stopPropagation();
     navigator.clipboard.writeText(code);
@@ -79,7 +103,6 @@ const MyParticipations = () => {
 
   const activeRooms = participations.filter(p => p.rooms.status === 'open' || p.rooms.status === 'processing');
   
-  // Regra: Histórico desaparece após 24h do encerramento (usando expires_at como referência de conclusão)
   const finishedRooms = participations.filter(p => {
     if (p.rooms.status !== 'finished') return false;
     const completionDate = new Date(p.rooms.expires_at);
@@ -92,6 +115,15 @@ const MyParticipations = () => {
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
       <Navbar />
       
+      {selectedResult && (
+        <DrawOverlay 
+          isOpen={selectedResult.isOpen}
+          onClose={() => setSelectedResult(null)}
+          winners={selectedResult.winners}
+          roomInfo={selectedResult.roomInfo}
+        />
+      )}
+
       <main className="max-w-5xl mx-auto px-4 pt-28">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
@@ -202,7 +234,7 @@ const MyParticipations = () => {
               finishedRooms.map((p) => (
                 <div 
                   key={p.id}
-                  onClick={() => navigate(`/consult-draw?code=${p.ticket_code}`)}
+                  onClick={() => handleShowResult(p)}
                   className="glass-card p-4 rounded-2xl border-white/5 flex items-center justify-between hover:border-purple-500/30 transition-all cursor-pointer group"
                 >
                   <div className="flex items-center gap-4">
