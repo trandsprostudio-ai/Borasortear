@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Plus, Activity, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock, Layers, Zap, RotateCcw } from 'lucide-react';
+import { Plus, Activity, Trash2, RefreshCw, LayoutGrid, Trophy, Loader2, CheckCircle2, Clock, Layers, Zap, RotateCcw, Beaker } from 'lucide-react';
 import { toast } from 'sonner';
 import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
@@ -34,6 +34,33 @@ const AdminSystem = () => {
     setLoading(false);
   };
 
+  const handleTestReset = async () => {
+    setLoading(true);
+    try {
+      // Deletar tudo para o teste
+      await supabase.from('winners').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('participants').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('rooms').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+      // Recriar 1 mesa de cada módulo com 30s
+      for (const mod of modules) {
+        await supabase.from('rooms').insert({
+          module_id: mod.id,
+          max_participants: mod.max_participants,
+          status: 'open',
+          expires_at: new Date(Date.now() + 30 * 1000).toISOString()
+        });
+      }
+      
+      toast.success("Sistema reiniciado para Teste de 30s!");
+      fetchSystemData();
+    } catch (err) {
+      toast.error("Erro ao resetar para teste");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCleanExpired = async () => {
     const { error } = await supabase.rpc('check_and_draw_expired_rooms');
     if (error) toast.error("Erro ao processar expirações");
@@ -43,91 +70,23 @@ const AdminSystem = () => {
     }
   };
 
-  const handleEmergencyReset = async () => {
-    setLoading(true);
-    try {
-      // Destrava todas as mesas que não estão finalizadas
-      await supabase.from('rooms').update({ status: 'open' }).neq('status', 'finished');
-      toast.success("Sistema destravado com sucesso!");
-      fetchSystemData();
-    } catch (err) {
-      toast.error("Erro ao resetar sistema");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateRoom = async (moduleId: string, maxParticipants: number) => {
-    const { error } = await supabase.from('rooms').insert({
-      module_id: moduleId,
-      max_participants: maxParticipants,
-      status: 'open',
-      expires_at: new Date(Date.now() + 1 * 60 * 1000).toISOString()
-    });
-
-    if (error) toast.error("Erro ao criar mesa");
-    else {
-      toast.success("Mesa criada com sucesso!");
-      fetchSystemData();
-    }
-  };
-
-  const handleAutoFillRooms = async () => {
-    setLoading(true);
-    try {
-      for (const mod of modules) {
-        const activeRoomsCount = rooms.filter(r => r.module_id === mod.id && (r.status === 'open' || r.status === 'processing')).length;
-        const needed = 3 - activeRoomsCount;
-        
-        if (needed > 0) {
-          const newRooms = Array(needed).fill({
-            module_id: mod.id,
-            max_participants: mod.max_participants,
-            status: 'open',
-            expires_at: new Date(Date.now() + 1 * 60 * 1000).toISOString()
-          });
-          await supabase.from('rooms').insert(newRooms);
-        }
-      }
-      toast.success("Salas geradas com sucesso!");
-      setConfirmConfig({ isOpen: false });
-      fetchSystemData();
-    } catch (err) {
-      toast.error("Erro ao gerar salas automáticas");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-10">
-      <ActionConfirmModal 
-        isOpen={confirmConfig.isOpen}
-        onClose={() => setConfirmConfig({ isOpen: false })}
-        onConfirm={handleAutoFillRooms}
-        title="GERAR SALAS AUTOMÁTICAS"
-        description="Deseja criar salas até que cada módulo tenha 3 salas ativas?"
-        variant="info"
-        loading={loading}
-      />
-
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
             <LayoutGrid className="text-purple-500" /> Módulos de Jogo
           </h3>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleEmergencyReset} variant="outline" className="border-red-500/20 text-red-500 hover:bg-red-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
-              <RotateCcw size={14} className="mr-2" /> Reset Emergência
+            <Button onClick={handleTestReset} className="bg-amber-600 hover:bg-amber-700 h-10 rounded-xl font-black text-[10px] uppercase">
+              <Beaker size={14} className="mr-2" /> RESET TESTE (30S)
             </Button>
-            <Button onClick={() => setConfirmConfig({ isOpen: true })} variant="outline" className="border-purple-500/20 text-purple-400 hover:bg-purple-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
-              <Layers size={14} className="mr-2" /> Gerar 3 Salas/Módulo
-            </Button>
-            <Button onClick={handleCleanExpired} variant="outline" className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
+            <Button onClick={handleCleanExpired} variant="outline" className="border-purple-500/20 text-purple-400 hover:bg-purple-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
               Processar Expiradas
             </Button>
           </div>
         </div>
+        
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {modules.map((mod) => {
             const activeCount = rooms.filter(r => r.module_id === mod.id && (r.status === 'open' || r.status === 'processing')).length;
@@ -135,17 +94,9 @@ const AdminSystem = () => {
               <div key={mod.id} className="glass-card p-4 rounded-2xl border-white/5 text-center">
                 <p className="text-[10px] font-black text-white/20 uppercase mb-1">{mod.name}</p>
                 <p className="text-lg font-black italic mb-1">{mod.price.toLocaleString()} Kz</p>
-                <p className={`text-[9px] font-bold mb-3 ${activeCount >= 3 ? 'text-green-400' : 'text-amber-500'}`}>
-                  {activeCount}/3 Salas Ativas
+                <p className={`text-[9px] font-bold mb-3 ${activeCount > 0 ? 'text-green-400' : 'text-amber-500'}`}>
+                  {activeCount} Mesas Ativas
                 </p>
-                <Button 
-                  size="sm"
-                  disabled={activeCount >= 3}
-                  onClick={() => handleCreateRoom(mod.id, mod.max_participants)}
-                  className="w-full h-8 bg-white/5 hover:bg-purple-600 text-[9px] font-black uppercase rounded-lg"
-                >
-                  {activeCount >= 3 ? 'Limite Atingido' : 'Nova Mesa'}
-                </Button>
               </div>
             );
           })}
@@ -168,7 +119,7 @@ const AdminSystem = () => {
                 <TableRow className="border-white/5 hover:bg-transparent">
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">ID Mesa</TableHead>
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Módulo</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Progresso</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Participantes</TableHead>
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Expira em</TableHead>
                   <TableHead className="text-[10px] font-black uppercase text-white/40 p-6">Status</TableHead>
                 </TableRow>
@@ -179,17 +130,9 @@ const AdminSystem = () => {
                   return (
                     <TableRow key={room.id} className="border-white/5 hover:bg-white/5 transition-colors">
                       <TableCell className="p-6 font-black text-purple-400">#{room.id.slice(0, 8)}</TableCell>
-                      <TableCell className="p-6 font-bold">{room.modules?.name} ({room.modules?.price.toLocaleString()} Kz)</TableCell>
+                      <TableCell className="p-6 font-bold">{room.modules?.name}</TableCell>
                       <TableCell className="p-6">
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold">{room.current_participants}/{room.max_participants}</span>
-                          <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-purple-500" 
-                              style={{ width: `${(room.current_participants / room.max_participants) * 100}%` }} 
-                            />
-                          </div>
-                        </div>
+                        <span className="font-bold">{room.current_participants}/{room.max_participants}</span>
                       </TableCell>
                       <TableCell className="p-6">
                         <span className={`text-[10px] font-black uppercase ${isExpired ? 'text-red-500' : 'text-white/40'}`}>
@@ -198,7 +141,7 @@ const AdminSystem = () => {
                       </TableCell>
                       <TableCell className="p-6">
                         <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${
-                          room.status === 'processing' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'
+                          room.status === 'processing' ? 'bg-blue-500/20 text-blue-400 animate-pulse' : 'bg-green-500/20 text-green-400'
                         }`}>
                           {room.status}
                         </span>
