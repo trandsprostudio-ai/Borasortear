@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
   const [timeLeft, setTimeLeft] = useState("");
-  const isDispatching = useRef(false);
+  const lastCheck = useRef(0);
   
   const progress = room.maxParticipants > 0 ? (room.currentParticipants / room.maxParticipants) * 100 : 0;
   const isRoomOpen = room.status === 'open';
@@ -17,15 +17,15 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
   useEffect(() => {
     const calculateTime = () => {
       if (isRoomProcessing) return "SORTEANDO...";
-      if (room.status === 'finished') return "ENCERRADA";
-
+      
       const expiry = new Date(room.expiresAt).getTime();
       const now = Date.now();
       const diff = expiry - now;
       
       if (diff <= 0) {
-        if (!isDispatching.current) {
-          isDispatching.current = true;
+        // Dispara o check apenas a cada 5 segundos para não sobrecarregar
+        if (now - lastCheck.current > 5000) {
+          lastCheck.current = now;
           supabase.rpc('check_and_draw_expired_rooms');
         }
         return "SORTEANDO...";
@@ -40,7 +40,7 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
     const timer = setInterval(() => setTimeLeft(calculateTime()), 1000);
     setTimeLeft(calculateTime());
     return () => clearInterval(timer);
-  }, [room.expiresAt, room.status]);
+  }, [room.expiresAt, room.status, isRoomProcessing]);
 
   return (
     <motion.div 
