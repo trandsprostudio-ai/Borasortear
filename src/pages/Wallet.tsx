@@ -80,11 +80,12 @@ const Wallet = () => {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
+  const currentBalance = Number(profile?.balance || 0);
   const pendingDepositAmount = transactions
     .filter(t => t.type === 'deposit' && t.status === 'pending')
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
-  const totalDisplayBalance = (profile?.balance || 0) + pendingDepositAmount;
+  const totalDisplayBalance = currentBalance + pendingDepositAmount;
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-24 relative overflow-hidden">
@@ -107,7 +108,7 @@ const Wallet = () => {
         }}
         type={modalConfig.type}
         user={user}
-        currentBalance={profile?.balance || 0}
+        currentBalance={currentBalance}
       />
 
       <main className="max-w-6xl mx-auto px-4 pt-24 md:pt-32 relative z-10">
@@ -161,7 +162,7 @@ const Wallet = () => {
               <div className="grid grid-cols-2 gap-6 mb-12">
                 <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5">
                   <span className="text-[9px] font-black text-white/20 uppercase tracking-widest block mb-2">Disponível</span>
-                  <span className="text-2xl font-black text-green-400 italic">{(profile?.balance || 0).toLocaleString()} <span className="text-xs opacity-60">Kz</span></span>
+                  <span className="text-2xl font-black text-green-400 italic">{currentBalance.toLocaleString()} <span className="text-xs opacity-60">Kz</span></span>
                 </div>
                 <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5">
                   <span className="text-[9px] font-black text-white/20 uppercase tracking-widest block mb-2">Pendente</span>
@@ -180,7 +181,7 @@ const Wallet = () => {
                 <Button 
                   variant="ghost" 
                   onClick={() => setModalConfig({ open: true, type: 'withdrawal' })}
-                  disabled={profile?.is_banned || (profile?.balance || 0) <= 0}
+                  disabled={profile?.is_banned || currentBalance <= 0}
                   className="flex-1 h-16 rounded-2xl font-black text-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white/60"
                 >
                   <ArrowUpRight size={24} className="mr-2" /> SOLICITAR SAQUE

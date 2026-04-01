@@ -99,7 +99,8 @@ const Navbar = () => {
     }, 2000);
   };
 
-  const totalDisplayBalance = (profile?.balance || 0) + pendingAmount;
+  const currentBalance = Number(profile?.balance || 0);
+  const totalDisplayBalance = currentBalance + pendingAmount;
 
   return (
     <>
@@ -113,7 +114,7 @@ const Navbar = () => {
           onClose={() => setIsDepositOpen(false)} 
           type="deposit" 
           user={user} 
-          currentBalance={profile?.balance || 0} 
+          currentBalance={currentBalance} 
         />
       )}
 
