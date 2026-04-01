@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LayoutGrid, Loader2, Sparkles, HelpCircle, Activity, Trophy } from 'lucide-react';
+import { LayoutGrid, Loader2, Sparkles, HelpCircle, Users, ArrowRight, Gift, Share2, DollarSign } from 'lucide-react';
 import ModuleCard from '@/components/raffle/ModuleCard';
 import RoomItem from '@/components/raffle/RoomItem';
 import NewsTicker from '@/components/layout/NewsTicker';
@@ -23,8 +23,6 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  
-  // Estado para o modal de sucesso do bilhete
   const [ticketModal, setTicketModal] = useState<{ open: boolean; code: string } | null>(null);
 
   const navigate = useNavigate();
@@ -52,7 +50,7 @@ const Index = () => {
     const fetchRooms = async (moduleId: string) => {
       const { data } = await supabase
         .from('rooms')
-        .select('*')
+        .select('*, modules(*)')
         .eq('module_id', moduleId)
         .eq('status', 'open')
         .order('created_at', { ascending: true })
@@ -98,7 +96,6 @@ const Index = () => {
       if (data === 'FULL') toast.error("Esta mesa acabou de lotar!");
       else if (data === 'NO_BALANCE') toast.error("Saldo insuficiente. Faça uma recarga!");
       else {
-        // Mostrar o novo modal de bilhete ao invés de toast
         setTicketModal({ open: true, code: data });
       }
     } catch (err: any) {
@@ -119,37 +116,22 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
       <Navbar />
-      <NewsTicker />
       
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      
-      {ticketModal && (
-        <TicketConfirmationModal 
-          isOpen={ticketModal.open}
-          onClose={() => setTicketModal(null)}
-          ticketCode={ticketModal.code}
-          moduleName={selectedModule?.name}
-          price={selectedModule?.price}
-        />
-      )}
-
       <main className="max-w-[1600px] mx-auto px-4 pt-20 md:pt-28">
-        <div className="flex flex-col lg:flex-row gap-12">
-          
+        <div className="flex flex-col lg:flex-row gap-12 mb-16">
           <div className="flex-1">
-            <header className="text-left mb-16 space-y-6">
+            <header className="text-left mb-10 space-y-6">
               <div className="flex flex-wrap items-center gap-3">
                 <motion.div 
                   initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                   className="inline-flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-full border border-purple-500/20"
                 >
                   <Sparkles size={14} className="text-purple-400" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400">Plataforma Premium</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400">Sorteios Digitais Premium</span>
                 </motion.div>
-
                 <div className="flex items-center gap-2 bg-green-500/10 px-4 py-2 rounded-full border border-green-500/20">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-green-400">1.240 Jogadores Online</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-green-400">ATIVO AGORA</span>
                 </div>
               </div>
               
@@ -174,7 +156,9 @@ const Index = () => {
               </div>
             </header>
 
-            <section className="mb-16">
+            <NewsTicker />
+
+            <section className="my-12">
               <div className="flex overflow-x-auto no-scrollbar gap-4 pb-6 px-2">
                 {modules.map((mod) => (
                   <ModuleCard 
@@ -193,11 +177,11 @@ const Index = () => {
                   <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500">
                     <LayoutGrid size={20} />
                   </div>
-                  <h2 className="text-xl font-black italic tracking-tighter uppercase">Mesas Ativas</h2>
+                  <h2 className="text-xl font-black italic tracking-tighter uppercase">Mesas Online</h2>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2">
                 <AnimatePresence mode="popLayout">
                   {rooms.map((room) => (
                     <motion.div
@@ -226,14 +210,64 @@ const Index = () => {
             </section>
           </div>
 
-          {/* Hall of Fame Sidebar */}
           <aside className="w-full lg:w-80 shrink-0">
             <HallOfFame />
           </aside>
-
         </div>
+
+        <section className="pt-20 border-t border-white/5">
+          <div className="glass-card p-12 rounded-[3.5rem] border-purple-500/20 bg-gradient-to-br from-purple-600/10 via-transparent to-transparent relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-12 opacity-5">
+              <Gift size={200} />
+            </div>
+            
+            <div className="max-w-3xl relative z-10">
+              <div className="inline-flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-full border border-purple-500/20 mb-8">
+                <Gift size={14} className="text-purple-400" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-purple-400">PROGRAMA DE AFILIADOS ELITE</span>
+              </div>
+              
+              <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase mb-6">Convide amigos e ganhe <span className="text-green-400">5% de comissão vitalícia</span></h2>
+              <p className="text-white/40 font-bold text-sm uppercase tracking-widest mb-10 leading-relaxed">
+                Sempre que um indicado seu ganhar um prémio, você recebe automaticamente 5% do valor na sua carteira. Sem limites, sem taxas.
+              </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
+                <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+                  <Share2 className="text-purple-500 mb-4" size={24} />
+                  <h4 className="text-xs font-black uppercase mb-1">Partilhe o Link</h4>
+                  <p className="text-[10px] font-bold text-white/20">Use o link no seu perfil</p>
+                </div>
+                <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+                  <Users className="text-purple-500 mb-4" size={24} />
+                  <h4 className="text-xs font-black uppercase mb-1">Amigos se Registem</h4>
+                  <p className="text-[10px] font-bold text-white/20">Eles entram na sua rede</p>
+                </div>
+                <div className="bg-white/5 p-6 rounded-2xl border border-white/5">
+                  <DollarSign className="text-green-500 mb-4" size={24} />
+                  <h4 className="text-xs font-black uppercase mb-1">Lucro Vitalício</h4>
+                  <p className="text-[10px] font-bold text-white/20">Ganha com cada vitória</p>
+                </div>
+              </div>
+              
+              <Button onClick={() => navigate('/affiliates')} className="h-16 px-10 rounded-2xl premium-gradient font-black text-lg">
+                SABER MAIS <ArrowRight size={20} className="ml-2" />
+              </Button>
+            </div>
+          </div>
+        </section>
       </main>
 
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      {ticketModal && (
+        <TicketConfirmationModal 
+          isOpen={ticketModal.open}
+          onClose={() => setTicketModal(null)}
+          ticketCode={ticketModal.code}
+          moduleName={selectedModule?.name}
+          price={selectedModule?.price}
+        />
+      )}
       <Footer />
     </div>
   );

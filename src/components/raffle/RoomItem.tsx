@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Users, Clock, ArrowRight, Loader2, Globe } from 'lucide-react';
+import { Users, Clock, ArrowRight, Loader2, Globe, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,9 @@ interface RoomItemProps {
 const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
   const percentage = Math.round((room.current_participants / room.max_participants) * 100);
   
+  // Prémio estimado: 33.3% do total arrecadado quando cheia
+  const estimatedPrize = Math.floor((room.modules.price * room.max_participants) * 0.333);
+
   return (
     <div className="glass-card p-6 rounded-[2.5rem] border-white/5 relative overflow-hidden group">
       <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -31,6 +34,14 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
         </div>
       </div>
 
+      <div className="bg-purple-500/5 p-4 rounded-2xl border border-purple-500/10 mb-6 flex items-center justify-between">
+        <div>
+          <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-1">Prémio de 1º Lugar</p>
+          <p className="text-xl font-black text-white italic">{estimatedPrize.toLocaleString()} <span className="text-[10px] not-italic opacity-40">Kz</span></p>
+        </div>
+        <TrendingUp size={24} className="text-purple-500/30" />
+      </div>
+
       <div className="space-y-4 mb-8 relative z-10">
         <div className="flex justify-between items-end">
           <div className="flex items-baseline gap-1">
@@ -45,9 +56,9 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
           </span>
         </div>
         
-        <div className="h-3 w-full bg-black/40 rounded-full overflow-hidden p-0.5 border border-white/5">
+        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-gradient-to-r from-purple-600 to-blue-500 rounded-full transition-all duration-1000 ease-out"
+            className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-1000 ease-out"
             style={{ width: `${percentage}%` }}
           />
         </div>
