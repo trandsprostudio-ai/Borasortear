@@ -1,48 +1,42 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Users, Clock, Trophy, TrendingUp, Radio, Loader2, DollarSign, Wallet } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Users, Clock, Trophy, Loader2, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Room, Module } from '@/types/raffle';
+import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
 const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
   const [timeLeft, setTimeLeft] = useState("");
-  const [isDrawDispatched, setIsDrawDispatched] = useState(false);
+  const isDispatching = useRef(false);
   
   const progress = room.maxParticipants > 0 ? (room.currentParticipants / room.maxParticipants) * 100 : 0;
   const isRoomOpen = room.status === 'open';
   const isRoomProcessing = room.status === 'processing';
 
-  // Função isolada para disparar o sorteio de forma segura
   const dispatchDraw = async () => {
-    if (isDrawDispatched || !isRoomOpen) return;
+    if (isDispatching.current || !isRoomOpen) return;
     
-    setIsDrawDispatched(true);
+    isDispatching.current = true;
     try {
-      const { error } = await supabase.rpc('check_and_draw_expired_rooms');
-      if (error) {
-        console.error("Erro no sorteio automático:", error);
-        setIsDrawDispatched(false);
-      }
+      await supabase.rpc('check_and_draw_expired_rooms');
     } catch (err) {
-      console.error("Falha ao comunicar com o servidor:", err);
-      setIsDrawDispatched(false);
+      console.error("Falha no sorteio:", err);
+    } finally {
+      // Pequeno delay para permitir que o banco atualize o status
+      setTimeout(() => { isDispatching.current = false; }, 5000);
     }
   };
 
   useEffect(() => {
     const calculateTime = () => {
-      // Se a sala já está sendo sorteada no banco
       if (isRoomProcessing) return "SORTEANDO...";
-      if (!isRoomOpen) return "FINALIZADO";
+      if (!isRoomOpen) return "ENCERRADO";
 
       const expiry = new Date(room.expiresAt).getTime();
-      const now = new Date().getTime();
+      const now = Date.now();
       const diff = expiry - now;
       
-      // Se o tempo acabou
       if (diff <= 0) {
         dispatchDraw();
         return "SORTEANDO...";
@@ -57,15 +51,17 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
     const timer = setInterval(() => setTimeLeft(calculateTime()), 1000);
     setTimeLeft(calculateTime());
     return () => clearInterval(timer);
-  }, [room.expiresAt, isRoomOpen, isRoomProcessing, isDrawDispatched, room.id]);
+  }, [room.expiresAt, room.status]);
 
   return (
     <motion.div 
-      className={`bg-[#151823] border-2 rounded-[2.5rem] p-6 relative overflow-hidden transition-colors ${
-        isRoomProcessing || timeLeft === "SORTEANDO..." ? 'border-purple-500/40 shadow-xl' : 'border-white/5'
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`bg-[#151823] border-2 rounded-[2.5rem] p-6 relative overflow-hidden transition-all duration-500 ${
+        isRoomProcessing ? 'border-purple-500 shadow-[0_0_30px_rgba(124,58,237,0.2)]' : 'border-white/5'
       }`}
     >
-      <div className="absolute top-0 left-0 bg-purple-600 text-[10px] font-black px-4 py-1.5 rounded-br-2xl uppercase tracking-widest">
+      <div className="absolute top-0 left-0 bg-purple-600 text-[10px] font-black px-4 py-1.5 rounded-br-2xl uppercase tracking-widest z-10">
         MESA {roomNumber}
       </div>
 
@@ -77,13 +73,18 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
             <span className="text-sm font-black text-purple-500">Kz</span>
           </div>
         </div>
-        <Trophy size={24} className={isRoomProcessing ? 'text-purple-500 animate-bounce' : 'text-white/10'} />
+        <div className={isRoomProcessing ? 'animate-bounce text-purple-500' : 'text-white/10'}>
+          <Trophy size={24} />
+        </div>
       </div>
 
       <div className="space-y-5">
         <div className="flex justify-between items-end text-[11px] font-black uppercase">
-          <span className="text-green-400">POOL: {(module.price * room.maxParticipants).toLocaleString()} Kz</span>
-          <div className={`flex items-center gap-2 ${timeLeft === "SORTEANDO..." ? 'text-purple-400 animate-pulse' : 'text-amber-500'}`}>
+          <div className="flex items-center gap-1.5 text-green-400">
+            <DollarSign size={14} />
+            <span>POOL: {(module.price * room.maxParticipants).toLocaleString()}</span>
+          </div>
+          <div className={`flex items-center gap-2 ${isRoomProcessing ? 'text-purple-400 animate-pulse' : 'text-amber-500'}`}>
             <Clock size={14} />
             <span>{timeLeft}</span>
           </div>
@@ -91,23 +92,24 @@ const RoomCard = ({ room, module, roomNumber, onParticipate }: any) => {
         
         <div className="h-3 w-full bg-black/60 rounded-full overflow-hidden border border-white/5 p-0.5">
           <motion.div 
+            initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             className={`h-full rounded-full ${
-              isRoomProcessing ? 'bg-gradient-to-r from-purple-400 to-blue-400 animate-pulse' : 'bg-gradient-to-r from-purple-600 to-blue-500'
+              isRoomProcessing ? 'bg-gradient-to-r from-purple-400 to-blue-400' : 'bg-gradient-to-r from-purple-600 to-blue-500'
             }`}
           />
         </div>
 
         <Button 
           onClick={() => onParticipate(room, module)}
-          disabled={!isRoomOpen || timeLeft === "SORTEANDO..." || isRoomProcessing}
-          className="w-full h-14 rounded-2xl font-black text-lg premium-gradient"
+          disabled={!isRoomOpen || isRoomProcessing}
+          className="w-full h-14 rounded-2xl font-black text-lg premium-gradient shadow-lg"
         >
-          {(isRoomProcessing || timeLeft === "SORTEANDO...") ? (
-            <>
-              <Loader2 className="animate-spin mr-2" /> SORTEANDO...
-            </>
-          ) : 'SORTEAR'}
+          {isRoomProcessing ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="animate-spin" size={20} /> SORTEANDO...
+            </span>
+          ) : 'ENTRAR NA MESA'}
         </Button>
       </div>
     </motion.div>
