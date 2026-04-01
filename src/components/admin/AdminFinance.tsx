@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Loader2, RefreshCw, ExternalLink, Copy } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ArrowDownLeft, ArrowUpRight, Loader2, RefreshCw, ExternalLink, Copy, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
@@ -59,8 +59,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
     if (!tx) return;
 
     try {
-      // Usamos uma RPC (Stored Procedure) para garantir que a atualização de saldo e status seja atômica
-      // e ignore restrições de RLS do lado do cliente.
       const { error } = await supabase.rpc('approve_transaction_admin', {
         p_transaction_id: tx.id
       });
@@ -72,7 +70,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
-      console.error("Erro na aprovação:", error);
       toast.error(error.message || "Falha ao processar aprovação.");
     }
   };
@@ -94,7 +91,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       fetchTransactions();
       onUpdate();
     } catch (error: any) {
-      console.error("Erro na rejeição:", error);
       toast.error("Erro ao processar rejeição.");
     }
   };
@@ -133,7 +129,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
               <Table className="min-w-[800px]">
                 <TableHeader className="bg-white/5">
                   <TableRow className="border-white/5">
-                    <TableHead className="text-[10px] font-black uppercase p-6">Jogador</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase p-6">Jogador / Status</TableHead>
                     <TableHead className="text-[10px] font-black uppercase p-6">Valor</TableHead>
                     <TableHead className="text-[10px] font-black uppercase p-6">Comprovativo</TableHead>
                     <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ações</TableHead>
@@ -143,9 +139,16 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                   {pendingDeposits.length > 0 ? pendingDeposits.map((tx) => (
                     <TableRow key={tx.id} className="border-white/5 hover:bg-white/5">
                       <TableCell className="p-6">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col gap-1">
                           <span className="font-black uppercase text-xs">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
-                          <span className="text-[9px] text-white/20">{new Date(tx.created_at).toLocaleString()}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[8px] text-white/20 uppercase font-black">{new Date(tx.created_at).toLocaleTimeString()}</span>
+                            {tx.acceleration_requested && (
+                              <span className="bg-red-500 text-white text-[7px] px-1.5 py-0.5 rounded-full font-black animate-pulse flex items-center gap-1">
+                                <Zap size={8} /> URGENTE
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="p-6 font-black text-green-400 text-lg">{Number(tx.amount).toLocaleString()} Kz</TableCell>
@@ -166,16 +169,6 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                             description: `Deseja creditar ${Number(tx.amount).toLocaleString()} Kz para ${tx.profiles?.first_name}?`,
                             variant: 'success'
                           })} className="h-8 bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-3 rounded-lg">Aprovar</Button>
-                          
-                          <Button onClick={() => setConfirmConfig({ 
-                            isOpen: true, 
-                            tx, 
-                            action: 'reject', 
-                            isFalse: false,
-                            title: 'REJEITAR DEPÓSITO', 
-                            description: `Deseja recusar o depósito de ${Number(tx.amount).toLocaleString()} Kz?`,
-                            variant: 'info'
-                          })} variant="ghost" className="h-8 text-white/40 text-[9px] font-black uppercase px-3">Rejeitar</Button>
                           
                           <Button onClick={() => setConfirmConfig({ 
                             isOpen: true, 
@@ -204,7 +197,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
               <Table className="min-w-[800px]">
                 <TableHeader className="bg-white/5">
                   <TableRow className="border-white/5">
-                    <TableHead className="text-[10px] font-black uppercase p-6">Jogador / IBAN</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase p-6">Jogador / IBAN / Express</TableHead>
                     <TableHead className="text-[10px] font-black uppercase p-6">Valor</TableHead>
                     <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ações</TableHead>
                   </TableRow>
