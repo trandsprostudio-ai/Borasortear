@@ -89,7 +89,7 @@ const AdminUsers = () => {
       .update({ 
         balance: newBalance, 
         bonus_balance: newBonusBalance,
-        updated_at: new Date().toISOString() // Força atualização do timestamp
+        updated_at: new Date().toISOString()
       })
       .eq('id', userId);
 
