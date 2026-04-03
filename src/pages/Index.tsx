@@ -126,6 +126,9 @@ const Index = () => {
 
   if (loading) return <div className="min-h-screen bg-[#0A0B12] flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
+  // Verifica se qualquer formulário ou modal está aberto para ocultar a mascote fixa
+  const isAnyModalOpen = !!confirmingRoom || isAuthModalOpen || !!ticketModal;
+
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32 selection:bg-purple-500/30">
       <Navbar />
@@ -202,10 +205,19 @@ const Index = () => {
           </aside>
         </div>
 
-        {/* Mascote Fixa na Home */}
-        <div className="fixed bottom-24 right-4 md:right-8 z-[100] pointer-events-none">
-          <PenguinMascot page="home" className="pointer-events-auto" />
-        </div>
+        {/* Mascote Fixa na Home (Oculta se houver modal aberto) */}
+        <AnimatePresence>
+          {!isAnyModalOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="fixed bottom-24 right-4 md:right-8 z-[100] pointer-events-none"
+            >
+              <PenguinMascot page="home" className="pointer-events-auto" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
