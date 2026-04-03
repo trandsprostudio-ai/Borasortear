@@ -37,7 +37,7 @@ const TermosDeUso = () => {
               <h2 className="text-2xl font-black italic tracking-tighter uppercase">2. Elegibilidade</h2>
             </div>
             <p className="text-sm text-white/40 font-bold leading-relaxed">
-              O uso da plataforma é restrito a indivíduos com idade igual ou superior a 18 anos. Ao registar-se, o utilizador declara possuir capacidade legal para celebrar contratos e assumir responsabilidades financeiras. A plataforma reserva-se o direito de solicitar comprovativos de identidade a qualquer momento.
+              O uso da plataforma é EXCLUSIVAMENTE restrito a indivíduos com idade igual ou superior a 18 anos. É terminantemente proibida a utilização do serviço por menores de idade, mesmo que assistidos. Ao registar-se, o utilizador declara possuir capacidade legal para assumir responsabilidades financeiras. A plataforma reserva-se o direito de banir permanentemente qualquer conta sob suspeita de idade insuficiente.
             </p>
           </section>
 
@@ -101,6 +101,3 @@ const TermosDeUso = () => {
       <Footer />
     </div>
   );
-};
-
-export default TermosDeUso;
