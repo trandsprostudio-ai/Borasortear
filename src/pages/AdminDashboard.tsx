@@ -167,41 +167,80 @@ const AdminDashboard = () => {
             </div>
           </header>
 
+          {/* Novos Cards de Estatísticas Financeiras */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-            <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20">
+            {/* Lucro da Plataforma */}
+            <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 relative group">
               <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Lucro Bruto (33.4%)</p>
               <p className="text-4xl font-black italic tracking-tighter text-blue-400">
                 {stats.platformBalance.toLocaleString()} <span className="text-sm not-italic opacity-30">Kz</span>
               </p>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-green-500/20">
+            {/* Total de Depósitos */}
+            <div className="glass-card p-8 rounded-[2.5rem] border-green-500/20 relative group">
               <div className="flex justify-between items-start mb-2">
-                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Investimento Bónus</p>
-                <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center text-green-500">
-                  <Gift size={16} />
-                </div>
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Total Depósitos</p>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={() => setConfirmConfig({
+                    isOpen: true,
+                    type: 'deposit',
+                    title: 'LIMPAR DEPÓSITOS',
+                    description: 'Deseja apagar permanentemente o histórico de depósitos CONCLUÍDOS?'
+                  })}
+                  className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500"
+                >
+                  <Trash2 size={12} />
+                </Button>
               </div>
-              <p className="text-3xl font-black italic tracking-tighter text-green-400">-{stats.affiliateBonusPaid.toLocaleString()} Kz</p>
-              <p className="text-[8px] font-bold text-white/20 uppercase mt-1">Gasto em Bónus de Registo</p>
-            </div>
-
-            <div className="glass-card p-8 rounded-[2.5rem] border-amber-500/20">
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Comissões Pagas</p>
-                <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-500">
-                  <TrendingUp size={16} />
-                </div>
-              </div>
-              <p className="text-3xl font-black italic tracking-tighter text-amber-500">-{stats.affiliateCommissionsPaid.toLocaleString()} Kz</p>
-              <p className="text-[8px] font-bold text-white/20 uppercase mt-1">Custo Vitalício de 5%</p>
-            </div>
-
-            <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
-              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Utilizadores Totais</p>
-              <p className="text-3xl font-black italic tracking-tighter flex items-center gap-3">
-                {totalUsers} <Users size={20} className="text-white/10" />
+              <p className="text-3xl font-black italic tracking-tighter text-green-400">
+                {stats.totalDeposits.toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
               </p>
+              <div className="flex items-center gap-2 mt-2">
+                <ArrowDownLeft size={10} className="text-green-500" />
+                <span className="text-[8px] font-bold text-white/20 uppercase">Volume de Entrada</span>
+              </div>
+            </div>
+
+            {/* Total de Saques */}
+            <div className="glass-card p-8 rounded-[2.5rem] border-amber-500/20 relative group">
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Total Saques</p>
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={() => setConfirmConfig({
+                    isOpen: true,
+                    type: 'withdrawal',
+                    title: 'LIMPAR SAQUES',
+                    description: 'Deseja apagar permanentemente o histórico de saques CONCLUÍDOS?'
+                  })}
+                  className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500"
+                >
+                  <Trash2 size={12} />
+                </Button>
+              </div>
+              <p className="text-3xl font-black italic tracking-tighter text-amber-500">
+                {stats.totalWithdrawals.toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <ArrowUpRight size={10} className="text-amber-500" />
+                <span className="text-[8px] font-bold text-white/20 uppercase">Volume de Saída</span>
+              </div>
+            </div>
+
+            {/* Custos de Afiliados */}
+            <div className="glass-card p-8 rounded-[2.5rem] border-white/5 bg-red-500/5">
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Investimento Afiliados</p>
+                <TrendingUp size={12} className="text-red-400" />
+              </div>
+              <p className="text-3xl font-black italic tracking-tighter text-red-400">
+                -{(stats.affiliateBonusPaid + stats.affiliateCommissionsPaid).toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
+              </p>
+              <p className="text-[8px] font-bold text-white/20 uppercase mt-1">Bónus + Comissões</p>
             </div>
           </div>
 
