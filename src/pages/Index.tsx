@@ -100,7 +100,7 @@ const Index = () => {
       if (data === 'FULL') {
         toast.error("Esta mesa já está lotada!");
       } else if (data === 'NO_BALANCE') {
-        toast.error("Saldo insuficiente para entrar nesta mesa.");
+        toast.error("Saldo insuficiente! O seu saldo disponível é menor que o valor da entrada. Recarregue a sua carteira.");
       } else if (data === 'BANNED') {
         toast.error("Esta conta está suspensa.");
       } else if (data) {
