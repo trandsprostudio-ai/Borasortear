@@ -41,7 +41,7 @@ const Profile = () => {
       setReferrals(refList || []);
       setReferralStats({
         count: refList?.length || 0,
-        totalEarned: refEarnings?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0
+        totalEarned: refEarnings?.reduce((acc, curr) => acc + Number(acc), 0) || 0
       });
     } catch (err) {
       console.error("Erro ao carregar indicados:", err);

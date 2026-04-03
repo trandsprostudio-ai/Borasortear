@@ -16,7 +16,7 @@ import SplashScreen from '@/components/ui/SplashScreen';
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
-  const refId = searchParams.get('ref'); // Captura o ID de quem convidou
+  const refId = searchParams.get('ref'); 
   const roomId = searchParams.get('room');
   
   const [isLogin, setIsLogin] = useState(mode === 'login');
@@ -39,7 +39,6 @@ const Auth = () => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     const cleanPhone = phone.trim().replace(/\D/g, '');
     
     if (!cleanPhone || cleanPhone.length < 9) {
@@ -58,19 +57,17 @@ const Auth = () => {
         const { data: profile } = await supabase.from('profiles').select('is_banned').eq('id', authData.user.id).single();
         if (profile?.is_banned) {
           await supabase.auth.signOut();
-          toast.error("Esta conta foi banida permanentemente.");
+          toast.error("Esta conta foi banida.");
           setLoading(false);
           return;
         }
       } else {
         if (!age || parseInt(age) < 18) throw new Error("Mínimo 18 anos.");
-        if (password !== confirmPassword) throw new Error("Senhas diferentes.");
-        if (!acceptTerms) throw new Error("Aceite os termos.");
+        if (password !== confirmPassword) throw new Error("As senhas não coincidem.");
+        if (!acceptTerms) throw new Error("Deves aceitar os termos.");
 
-        // Validar se o refId é um UUID válido antes de enviar
-        const validRefId = (refId && refId.length === 36) ? refId : null;
-
-        const { data, error } = await supabase.auth.signUp({
+        // O segredo está aqui: passar o referred_by como metadado puro
+        const { error } = await supabase.auth.signUp({
           email: internalEmail,
           password,
           options: {
@@ -78,24 +75,13 @@ const Auth = () => {
               full_name: fullName,
               phone_number: cleanPhone,
               express_number: bankInfo,
-              referred_by: validRefId // Aqui criamos a ligação oficial no Auth
+              referred_by: refId 
             }
           }
         });
         
         if (error) throw error;
-
-        // Garantia de Sincronização: Criamos/Atualizamos o perfil imediatamente com o vínculo
-        if (data.user) {
-          await supabase.from('profiles').upsert({ 
-            id: data.user.id,
-            first_name: fullName.split(' ')[0],
-            last_name: fullName.split(' ').slice(1).join(' '),
-            balance: 0,
-            referred_by: validRefId,
-            bank_info: bankInfo
-          }, { onConflict: 'id' });
-        }
+        toast.success("Conta criada com sucesso!");
       }
       
       setShowSplash(true);
@@ -110,7 +96,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen w-full bg-[#0A0B12] flex flex-col items-center justify-start overflow-y-auto pt-20 pb-10 px-4">
       <AnimatePresence>
-        {showSplash && <SplashScreen message={isLogin ? "Entrando..." : "Criando Conta..."} />}
+        {showSplash && <SplashScreen message={isLogin ? "A entrar..." : "A criar conta..."} />}
       </AnimatePresence>
 
       <Link to="/" className="fixed top-8 left-8 flex items-center gap-2 text-white/40 hover:text-white transition-colors z-50 font-bold text-xs uppercase tracking-widest bg-[#0A0B12]/80 backdrop-blur-md px-4 py-2 rounded-full">
@@ -128,12 +114,12 @@ const Auth = () => {
             <Logo className="scale-110" />
           </div>
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
-            {isLogin ? 'Acessar' : 'Cadastro'}
+            {isLogin ? 'Entrar' : 'Criar Conta'}
           </h1>
           {refId && !isLogin && (
-            <div className="mt-2 inline-flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
-              <ShieldCheck size={12} className="text-green-500" />
-              <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Convite Ativo</span>
+            <div className="mt-2 inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
+              <ShieldCheck size={12} className="text-purple-400" />
+              <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">Convite Detetado</span>
             </div>
           )}
         </div>
@@ -145,7 +131,7 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome Completo</Label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Teu nome completo" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
               
@@ -153,12 +139,12 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Idade</Label>
                 <div className="relative">
                   <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="18+" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required min="18" />
+                  <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="18+" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Teu Telefone</Label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
@@ -166,10 +152,10 @@ const Auth = () => {
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Número Multicaixa Express</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nº Multicaixa Express (Para Saques)</Label>
                 <div className="relative">
                   <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Para receber prêmios" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número para receber prémios" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
                 </div>
               </div>
 
@@ -182,7 +168,7 @@ const Auth = () => {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Confirmar</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Confirmar Senha</Label>
                 <div className="relative">
                   <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
@@ -191,20 +177,20 @@ const Auth = () => {
 
               <div className="md:col-span-2 flex items-center space-x-2 pt-2">
                 <Checkbox id="terms" checked={acceptTerms} onCheckedChange={(c) => setAcceptTerms(c as boolean)} className="border-white/20" />
-                <label htmlFor="terms" className="text-[10px] font-bold text-white/40 cursor-pointer">Aceito os termos do BORA SORTEIAR</label>
+                <label htmlFor="terms" className="text-[10px] font-bold text-white/40 cursor-pointer">Aceito os termos de uso do Bora Sortear</label>
               </div>
             </div>
           ) : (
             <>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Telefone</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Teu Telefone</Label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" required />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Senha</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Tua Senha</Label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" required />
@@ -214,13 +200,13 @@ const Auth = () => {
           )}
 
           <Button type="submit" disabled={loading} className="w-full premium-gradient h-14 rounded-2xl font-black text-lg mt-4">
-            {loading ? 'CARREGANDO...' : isLogin ? 'ENTRAR' : 'CADASTRAR'}
+            {loading ? 'A PROCESSAR...' : isLogin ? 'ENTRAR AGORA' : 'FINALIZAR REGISTO'}
           </Button>
         </form>
 
         <div className="mt-8 text-center">
           <button onClick={() => setIsLogin(!isLogin)} className="text-[10px] text-white/40 hover:text-purple-400 font-black uppercase tracking-widest">
-            {isLogin ? 'Criar conta' : 'Já tenho conta'}
+            {isLogin ? 'Não tens conta? Criar agora' : 'Já tens conta? Entrar'}
           </button>
         </div>
       </motion.div>
