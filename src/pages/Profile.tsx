@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { User, Smartphone, ShieldCheck, Loader2, Trophy, Zap, Share2, Copy, Users, CheckCircle2, Star, Award, Medal, RefreshCw, DollarSign } from 'lucide-react';
+import { User, Smartphone, ShieldCheck, Loader2, Trophy, Zap, Share2, Copy, Users, CheckCircle2, Star, Award, Medal, RefreshCw, DollarSign, Trash2, AlertTriangle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +11,17 @@ import FloatingNav from '@/components/layout/FloatingNav';
 import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
 import MoneyPenguin from '@/components/ui/MoneyPenguin';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -82,6 +93,29 @@ const Profile = () => {
   useEffect(() => {
     loadAllData();
   }, [loadAllData]);
+
+  const handleDeleteAccount = async () => {
+    try {
+      setLoading(true);
+      
+      // 1. Eliminar o registo do perfil (os dados na public schema)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      // 2. Sign Out
+      await supabase.auth.signOut();
+      
+      toast.success("A tua conta e dados associados foram eliminados com sucesso.");
+      navigate('/');
+    } catch (err: any) {
+      toast.error("Erro ao eliminar conta: " + err.message);
+      setLoading(false);
+    }
+  };
 
   const copyToClipboard = async (text: string, message: string) => {
     if (!text) {
@@ -201,6 +235,45 @@ const Profile = () => {
               >
                 <Share2 size={14} className="mr-2" /> COPIAR LINK COMPLETO
               </Button>
+            </div>
+
+            {/* Zona de Perigo */}
+            <div className="glass-card p-6 rounded-[2rem] border-red-500/20 bg-red-500/5 space-y-4">
+              <div className="flex items-center gap-2 text-red-400">
+                <AlertTriangle size={16} />
+                <h3 className="text-[10px] font-black uppercase tracking-widest">Zona de Perigo</h3>
+              </div>
+              <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest leading-relaxed">
+                Esta ação é irreversível. Todos os teus dados e saldo serão perdidos.
+              </p>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full h-12 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500/10 font-black text-[10px] uppercase tracking-widest"
+                  >
+                    <Trash2 size={14} className="mr-2" /> ELIMINAR CONTA
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="glass-card border-white/10 rounded-3xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-xl font-black italic uppercase">Eliminar Conta?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm text-white/40 font-bold uppercase tracking-widest">
+                      Tens a certeza absoluta? Todos os teus prémios, histórico e saldo atual serão permanentemente removidos do nosso sistema.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="gap-2">
+                    <AlertDialogCancel className="rounded-xl font-black uppercase text-[10px] tracking-widest">CANCELAR</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDeleteAccount}
+                      className="rounded-xl bg-red-600 hover:bg-red-700 font-black uppercase text-[10px] tracking-widest"
+                    >
+                      CONFIRMAR ELIMINAÇÃO
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
 
