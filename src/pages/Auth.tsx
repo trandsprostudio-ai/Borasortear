@@ -66,8 +66,8 @@ const Auth = () => {
         if (password !== confirmPassword) throw new Error("As senhas não coincidem.");
         if (!acceptTerms) throw new Error("Deves aceitar os termos.");
 
-        // O segredo está aqui: passar o referred_by como metadado puro
-        const { error } = await supabase.auth.signUp({
+        // Registo oficial
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: internalEmail,
           password,
           options: {
@@ -81,6 +81,18 @@ const Auth = () => {
         });
         
         if (error) throw error;
+
+        // REDUNDÂNCIA: Tentar gravar o perfil manualmente se o trigger atrasar
+        if (signUpData.user) {
+          await supabase.from('profiles').upsert({
+            id: signUpData.user.id,
+            first_name: fullName.split(' ')[0],
+            referred_by: refId && refId.length === 36 ? refId : null,
+            balance: 0,
+            bank_info: bankInfo
+          });
+        }
+        
         toast.success("Conta criada com sucesso!");
       }
       
