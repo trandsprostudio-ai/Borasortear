@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
+import PenguinMascot from '@/components/ui/PenguinMascot';
 
 const ConsultDraw = () => {
   const [code, setCode] = useState('');
@@ -25,66 +26,30 @@ const ConsultDraw = () => {
     setResult(null);
 
     try {
-      // Busca pelo bilhete
       const { data: participant, error: pError } = await supabase
         .from('participants')
-        .select(`
-          *,
-          rooms (
-            *,
-            modules (*)
-          )
-        `)
+        .select(`*, rooms (*, modules (*))`)
         .eq('ticket_code', cleanCode)
         .maybeSingle();
 
       if (pError) throw pError;
-
       if (!participant) {
-        setError('Código de bilhete não encontrado. Verifica se digitaste corretamente (ex: 8 dígitos).');
+        setError('Código não encontrado. Verifica se digitaste corretamente.');
         setLoading(false);
         return;
       }
 
-      // Busca dados do usuário para divisão de bônus
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('referred_by, first_name')
-        .eq('id', participant.user_id)
-        .single();
-
-      // Verifica se há vencedor se a sala terminou
+      const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', participant.user_id).single();
+      
       let winnerInfo = null;
       if (participant.rooms.status === 'finished') {
-        const { data: winner } = await supabase
-          .from('winners')
-          .select('*')
-          .eq('user_id', participant.user_id)
-          .eq('draw_id', participant.rooms.id)
-          .maybeSingle();
+        const { data: winner } = await supabase.from('winners').select('*').eq('user_id', participant.user_id).eq('draw_id', participant.rooms.id).maybeSingle();
         winnerInfo = winner;
       }
 
-      const totalPool = participant.rooms.modules.price * participant.rooms.max_participants;
-      const share = totalPool * 0.3333;
-      
-      const referralBonus = winnerInfo ? winnerInfo.prize_amount * 0.05 : 0;
-
-      setResult({ 
-        ...participant, 
-        profiles: profile,
-        winner: winnerInfo,
-        divisions: {
-          total: totalPool,
-          first: share,
-          second: share,
-          third: share,
-          referral: referralBonus
-        }
-      });
+      setResult({ ...participant, profiles: profile, winner: winnerInfo });
     } catch (err: any) {
-      console.error("Erro na consulta:", err);
-      setError('Ocorreu um erro ao processar sua busca. Tente novamente mais tarde.');
+      setError('Erro ao processar busca.');
     } finally {
       setLoading(false);
     }
@@ -95,9 +60,10 @@ const ConsultDraw = () => {
       <Navbar />
       
       <main className="max-w-2xl mx-auto px-4 pt-28">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-black mb-4 italic tracking-tighter uppercase">Consultar Bilhete</h1>
-          <p className="text-muted-foreground font-bold text-xs uppercase tracking-widest">Insere o código de 8 dígitos para ver o teu resultado</p>
+        <div className="flex flex-col items-center mb-10">
+          <PenguinMascot page="raffle" className="scale-75 mb-4" />
+          <h1 className="text-4xl font-black italic tracking-tighter uppercase text-center">Consultar Bilhete</h1>
+          <p className="text-muted-foreground font-bold text-xs uppercase tracking-widest text-center mt-2">Vê o teu resultado em tempo real</p>
         </div>
 
         <form onSubmit={handleSearch} className="relative mb-12">
@@ -107,106 +73,25 @@ const ConsultDraw = () => {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
               placeholder="EX: A1B2C3D4"
-              className="bg-white/5 border-white/10 h-16 pl-14 pr-32 rounded-2xl text-xl font-black tracking-[0.2em] focus:border-purple-500/50 transition-all"
+              className="bg-white/5 border-white/10 h-16 pl-14 pr-32 rounded-2xl text-xl font-black tracking-[0.2em]"
               maxLength={12}
             />
-            <Button 
-              type="submit" 
-              disabled={loading || code.trim().length < 4}
-              className="absolute right-2 top-2 bottom-2 premium-gradient rounded-xl px-6 font-black"
-            >
+            <Button type="submit" disabled={loading || code.trim().length < 4} className="absolute right-2 top-2 bottom-2 premium-gradient rounded-xl px-6 font-black">
               {loading ? <Loader2 className="animate-spin" /> : 'BUSCAR'}
             </Button>
           </div>
         </form>
 
         <AnimatePresence mode="wait">
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-400 text-sm font-bold"
-            >
-              <AlertCircle size={20} />
-              {error}
-            </motion.div>
-          )}
-
+          {error && <motion.div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl text-red-400 text-sm font-bold text-center">{error}</motion.div>}
           {result && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="space-y-6"
-            >
-              <div className="glass-card rounded-[2.5rem] overflow-hidden border-white/5">
-                <div className={`p-8 text-center ${
-                  result.winner ? 'bg-green-500/10' : result.rooms.status === 'finished' ? 'bg-white/5' : 'bg-blue-500/10'
-                }`}>
-                  {result.winner ? (
-                    <>
-                      <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-green-400">
-                        <Trophy size={40} />
-                      </div>
-                      <h2 className="text-3xl font-black italic tracking-tighter text-green-400 mb-1">VOCÊ GANHOU!</h2>
-                      <p className="text-sm font-bold text-white/60 uppercase tracking-widest">Prémio de {result.winner.prize_amount.toLocaleString()} Kz</p>
-                    </>
-                  ) : result.rooms.status === 'finished' ? (
-                    <>
-                      <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-white/20">
-                        <CheckCircle2 size={40} />
-                      </div>
-                      <h2 className="text-3xl font-black italic tracking-tighter text-white/40 mb-1">SORTEIO ENCERRADO</h2>
-                      <p className="text-sm font-bold text-white/20 uppercase tracking-widest">Não foi desta vez. Tente novamente!</p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-400">
-                        <Clock size={40} className="animate-pulse" />
-                      </div>
-                      <h2 className="text-3xl font-black italic tracking-tighter text-blue-400 mb-1">MESA EM ABERTO</h2>
-                      <p className="text-sm font-bold text-white/60 uppercase tracking-widest">Aguardando preenchimento da mesa</p>
-                    </>
-                  )}
-                </div>
-
-                <div className="p-8 space-y-4">
-                  <div className="flex justify-between items-center py-3 border-b border-white/5">
-                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Código do Bilhete</span>
-                    <span className="font-black text-purple-400 tracking-widest">{result.ticket_code}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-3 border-b border-white/5">
-                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Mesa / Módulo</span>
-                    <span className="font-black">#{result.rooms.id.slice(0, 8)} / {result.rooms.modules.name}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-3">
-                    <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Valor da Entrada</span>
-                    <span className="font-black">{result.rooms.modules.price.toLocaleString()} Kz</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
-                    <TrendingUp size={14} className="text-purple-500" /> Divisão de Prémios da Mesa
-                  </h3>
-                  <span className="text-[9px] font-black text-white/20 uppercase">Total na Mesa: {result.divisions.total.toLocaleString()} Kz</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (33.3%)</p>
-                    <p className="text-xl font-black text-green-400">{result.divisions.first.toLocaleString()} Kz</p>
-                  </div>
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">2º Lugar (33.3%)</p>
-                    <p className="text-xl font-black text-blue-400">{result.divisions.second.toLocaleString()} Kz</p>
-                  </div>
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">Taxa Plaf (33.4%)</p>
-                    <p className="text-xl font-black text-white/20">{result.divisions.third.toLocaleString()} Kz</p>
-                  </div>
-                </div>
-              </div>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card rounded-[2.5rem] border-white/5 p-8">
+               <div className="text-center">
+                  <h2 className={`text-3xl font-black italic mb-2 ${result.winner ? 'text-green-400' : 'text-white/40'}`}>
+                    {result.winner ? 'VOCÊ GANHOU!' : 'SORTEIO ENCERRADO'}
+                  </h2>
+                  <p className="font-black text-purple-400 tracking-widest">{result.ticket_code}</p>
+               </div>
             </motion.div>
           )}
         </AnimatePresence>
