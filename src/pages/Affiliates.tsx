@@ -10,6 +10,8 @@ import Footer from '@/components/layout/Footer';
 import FloatingNav from '@/components/layout/FloatingNav';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const Affiliates = () => {
   const [user, setUser] = useState<any>(null);
@@ -20,13 +22,11 @@ const Affiliates = () => {
 
   const fetchStats = useCallback(async (userId: string, refCode: string) => {
     try {
-      // 1. Contar indicados
       const { count } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('referred_by', refCode);
 
-      // 2. Somar ganhos de comissão
       const { data: commissions } = await supabase
         .from('referral_earnings')
         .select('amount')
@@ -47,9 +47,11 @@ const Affiliates = () => {
       if (session?.user) {
         setUser(session.user);
         const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-        setProfile(data);
-        if (data?.referral_code) {
-          fetchStats(session.user.id, data.referral_code);
+        if (data) {
+          setProfile(data);
+          if (data.referral_code) {
+            fetchStats(session.user.id, data.referral_code);
+          }
         }
       }
       setLoading(false);
@@ -57,11 +59,32 @@ const Affiliates = () => {
     loadUser();
   }, [fetchStats]);
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      toast.success("Link de convite copiado!");
+    } catch (err) {
+      toast.error("Erro ao copiar.");
+    }
+  };
+
   const copyLink = () => {
     if (!profile?.referral_code) return;
     const link = `${window.location.origin}/auth?mode=signup&ref=${profile.referral_code}`;
-    navigator.clipboard.writeText(link);
-    toast.success("Link de convite copiado!");
+    copyToClipboard(link);
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
@@ -111,7 +134,7 @@ const Affiliates = () => {
                       <div className="relative">
                         <Input 
                           readOnly 
-                          value={`${window.location.origin}/?ref=${profile?.referral_code}`} 
+                          value={`${window.location.origin}/auth?mode=signup&ref=${profile?.referral_code || ''}`} 
                           className="bg-white/5 border-white/10 h-14 pr-16 font-bold text-xs text-purple-400 rounded-2xl"
                         />
                         <Button 

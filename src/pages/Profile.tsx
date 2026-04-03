@@ -21,7 +21,6 @@ const Profile = () => {
 
   const fetchReferralData = useCallback(async (myCode: string) => {
     try {
-      // Busca indicados pelo código
       const { data: refList, error: refError } = await supabase
         .from('profiles')
         .select('id, first_name, created_at')
@@ -41,9 +40,12 @@ const Profile = () => {
     if (session?.user) {
       setUser(session.user);
       const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-      setProfile(data);
-      if (data?.referral_code) {
-        await fetchReferralData(data.referral_code);
+      
+      if (data) {
+        setProfile(data);
+        if (data.referral_code) {
+          await fetchReferralData(data.referral_code);
+        }
       }
     } else {
       navigate('/auth?mode=login');
@@ -57,11 +59,38 @@ const Profile = () => {
     loadAllData();
   }, [loadAllData]);
 
+  const copyToClipboard = async (text: string, message: string) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback para navegadores sem suporte ou contextos não seguros
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      toast.success(message);
+    } catch (err) {
+      toast.error("Erro ao copiar. Tenta selecionar o texto manualmente.");
+    }
+  };
+
   const copyInviteLink = () => {
     if (!profile?.referral_code) return;
-    const link = `${window.location.origin}/?ref=${profile.referral_code}`;
-    navigator.clipboard.writeText(link);
-    toast.success("Link de afiliado copiado!");
+    const link = `${window.location.origin}/auth?mode=signup&ref=${profile.referral_code}`;
+    copyToClipboard(link, "Link de convite copiado!");
+  };
+
+  const copyOnlyCode = () => {
+    if (!profile?.referral_code) return;
+    copyToClipboard(profile.referral_code, "Código de afiliado copiado!");
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
@@ -114,14 +143,18 @@ const Profile = () => {
               </Button>
             </div>
 
-            <div className="glass-card p-6 rounded-[2rem] border-purple-500/20 bg-purple-500/5">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-2">
-                  <Share2 size={14} /> Teu Código: <span className="text-white bg-white/10 px-2 py-0.5 rounded">{profile?.referral_code}</span>
-                </h4>
+            <div className="glass-card p-6 rounded-[2rem] border-purple-500/20 bg-purple-500/5 space-y-4">
+              <div>
+                <Label className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-2 block">Teu Código Único</Label>
+                <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10 group">
+                  <span className="font-black tracking-[0.2em] text-white">{profile?.referral_code || 'A GERAR...'}</span>
+                  <button onClick={copyOnlyCode} className="text-white/20 hover:text-purple-400 transition-colors">
+                    <Copy size={16} />
+                  </button>
+                </div>
               </div>
               <Button onClick={copyInviteLink} className="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 font-black text-[10px] uppercase tracking-widest">
-                <Copy size={14} className="mr-2" /> COPIAR MEU LINK
+                <Share2 size={14} className="mr-2" /> COPIAR LINK COMPLETO
               </Button>
             </div>
           </div>
