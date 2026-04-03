@@ -1,9 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, Users, DollarSign, ArrowRight, ShieldCheck, Info } from 'lucide-react';
+import { LayoutGrid, Users, DollarSign, ArrowRight, ShieldCheck, Info, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RoomJoinConfirmationProps {
   isOpen: boolean;
@@ -14,12 +15,26 @@ interface RoomJoinConfirmationProps {
 }
 
 const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: RoomJoinConfirmationProps) => {
+  const [userBalance, setUserBalance] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data } = await supabase.from('profiles').select('balance').eq('id', session.user.id).single();
+        if (data) setUserBalance(Number(data.balance));
+      }
+    };
+    if (isOpen) fetchBalance();
+  }, [isOpen]);
+
   if (!room) return null;
 
   const moduleName = room.modules.name.replace('M', 'Módulo ');
   const entryFee = room.modules.price;
   const prizePool = entryFee * room.max_participants;
   const firstPrize = Math.floor(prizePool * 0.3333);
+  const hasBalance = userBalance >= entryFee;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -34,6 +49,15 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
           </DialogHeader>
 
           <div className="space-y-4 mb-8">
+            {!hasBalance && (
+              <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-400">
+                <AlertTriangle size={20} className="shrink-0" />
+                <p className="text-[9px] font-black uppercase leading-relaxed">
+                  Saldo Insuficiente! Precisas de {entryFee.toLocaleString()} Kz, mas tens apenas {userBalance.toLocaleString()} Kz disponíveis.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                 <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Módulo</p>
@@ -41,7 +65,9 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               </div>
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                 <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Entrada</p>
-                <p className="text-sm font-black text-green-400">{entryFee.toLocaleString()} Kz</p>
+                <p className={hasBalance ? "text-sm font-black text-green-400" : "text-sm font-black text-red-400"}>
+                  {entryFee.toLocaleString()} Kz
+                </p>
               </div>
             </div>
 
@@ -87,8 +113,8 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
             </Button>
             <Button 
               onClick={onConfirm}
-              disabled={loading}
-              className="h-14 rounded-2xl premium-gradient font-black text-xs uppercase tracking-widest shadow-lg shadow-purple-500/20"
+              disabled={loading || !hasBalance}
+              className="h-14 rounded-2xl premium-gradient font-black text-xs uppercase tracking-widest shadow-lg shadow-purple-500/20 disabled:opacity-50"
             >
               {loading ? "PROCESSANDO..." : "CONFIRMAR"}
             </Button>

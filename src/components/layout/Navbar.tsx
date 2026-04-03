@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { User, LogOut, Settings, Plus, Wallet } from 'lucide-react';
+import { User, LogOut, Settings, Plus, Wallet, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -82,7 +82,6 @@ const Navbar = () => {
   };
 
   const currentBalance = Number(profile?.balance || 0);
-  const totalDisplayBalance = currentBalance + pendingAmount;
 
   return (
     <>
@@ -102,21 +101,36 @@ const Navbar = () => {
 
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F111A]/95 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-2 md:px-6">
         <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-2">
-          <Link to="/" className="shrink-0 scale-90 sm:scale-100 origin-left">
-            <Logo className="text-xl md:text-2xl" />
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link to="/" className="shrink-0 scale-90 sm:scale-100 origin-left">
+              <Logo className="text-xl md:text-2xl" />
+            </Link>
+            <Link to="/consult-draw" className="hidden md:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+              <Search size={14} /> Consultar Bilhete
+            </Link>
+          </div>
 
           <div className="flex items-center gap-1.5 md:gap-4">
             {user ? (
               <>
                 <NotificationBell userId={user.id} />
                 
-                <div className="flex items-center bg-[#1A1D29] rounded-xl p-0.5 md:p-1 border border-white/5 max-w-[120px] md:max-w-none">
+                <div className="flex items-center bg-[#1A1D29] rounded-xl p-0.5 md:p-1 border border-white/5">
                   <Link to="/wallet" className="px-2 md:px-4 py-0.5 flex flex-col items-end overflow-hidden">
-                    <span className="text-[6px] md:text-[9px] text-white/30 font-black uppercase truncate">Saldo</span>
-                    <span className="text-[10px] md:text-sm font-black text-green-400 truncate">
-                      {totalDisplayBalance.toLocaleString()} <span className="text-[7px] md:text-[8px]">Kz</span>
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[6px] md:text-[8px] text-green-400 font-black uppercase">Disponível</span>
+                      <span className="text-[10px] md:text-sm font-black text-white">
+                        {currentBalance.toLocaleString()} <span className="text-[7px] md:text-[8px] opacity-30">Kz</span>
+                      </span>
+                    </div>
+                    {pendingAmount > 0 && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-[6px] md:text-[7px] text-amber-500 font-black uppercase">Pendente</span>
+                        <span className="text-[8px] md:text-[10px] font-black text-white/40">
+                          +{pendingAmount.toLocaleString()} Kz
+                        </span>
+                      </div>
+                    )}
                   </Link>
                   <Button 
                     size="icon" 
