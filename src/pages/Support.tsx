@@ -11,7 +11,11 @@ const Support = () => {
   const faqs = [
     {
       q: "Como funciona a premiação?",
-      a: "Em cada sala ganham 2 participantes reais: o 1º leva 33.3% e o 2º leva 33.3%. O restante do valor (33.4%) é retido pela plataforma como taxa de serviço para cobrir custos operacionais e bônus de afiliados."
+      a: "Em cada sala ganham 2 participantes reais (utilizadores registados como tu): o 1º leva 33.3% e o 2º leva 33.3%. O restante do valor (33.4%) é retido pela plataforma apenas como taxa de serviço para cobrir custos operacionais, manutenção e bónus de afiliados. A plataforma NÃO participa nem concorre nos sorteios."
+    },
+    {
+      q: "A plataforma joga contra mim?",
+      a: "Não. O Bora Sortear é apenas um intermediário tecnológico. Todos os participantes em cada mesa são jogadores reais. A plataforma nunca ocupa lugares nas salas e não tem qualquer influência no resultado, que é gerado de forma aleatória entre os utilizadores presentes."
     }
   ];
 

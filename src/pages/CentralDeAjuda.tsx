@@ -17,6 +17,14 @@ const CentralDeAjuda = () => {
       a: "1. Faça login na sua conta. 2. Selecione o módulo desejado. 3. Escolha uma das 3 salas disponíveis. 4. Clique em 'SORTEAR' e confirme sua entrada. 5. Aguarde o encerramento da sala para ver o resultado."
     },
     {
+      q: "A plataforma participa dos sorteios?",
+      a: "Absolutamente não. O Bora Sortear é uma plataforma de intermediação. Todas as vagas em cada mesa são preenchidas exclusivamente por utilizadores reais. A plataforma não possui contas de jogador e não concorre aos prémios."
+    },
+    {
+      q: "O sorteio é justo?",
+      a: "Sim. O sistema utiliza um algoritmo de seleção aleatória entre os IDs dos participantes reais da sala. Ninguém, incluindo a equipa técnica da plataforma, pode prever ou alterar o resultado de um sorteio."
+    },
+    {
       q: "Quanto tempo dura uma sala?",
       a: "Cada sala permanece aberta por até 3 horas. Pode fechar antes se atingir o número máximo de participantes. Você pode entrar até 10 minutos antes do encerramento."
     },
@@ -29,36 +37,12 @@ const CentralDeAjuda = () => {
       a: "Acesse 'Carteira' e clique em 'DEPOSITAR AGORA'. Escolha o método de pagamento (Multicaixa Express ou Unitel Money), informe o valor e anexe o comprovativo. O crédito é liberado após validação (até 15 minutos)."
     },
     {
-      q: "Meu crédito não foi creditado, o que fazer?",
-      a: "Verifique se o comprovativo foi anexado corretamente. Se já se passaram mais de 15 minutos, solicite 'Pedir Urgência' na transação ou entre em contato com nosso suporte via WhatsApp."
-    },
-    {
       q: "Como solicito um saque?",
       a: "Acesse 'Carteira' > 'SOLICITAR SAQUE'. Escolha Multicaixa Express (o número deve estar cadastrado no perfil). O saque é processado em até 24 horas úteis após aprovação."
     },
     {
-      q: "Posso participar em várias salas simultaneamente?",
-      a: "Sim! Não há limite. Você pode participar de quantas salas desejar, desde que tenha créditos suficientes para todas as entradas."
-    },
-    {
-      q: "O que acontece se ganhar?",
-      a: "O prêmio é creditado automaticamente em sua conta após o sorteio. Você receberá uma notificação e poderá visualizar o valor no 'Histórico Financeiro'. Para sacar, solicite normalmente na carteira."
-    },
-    {
-      q: "Meus dados bancários estão seguros?",
-      a: "Absolutamente. Utilizamos criptografia de ponta a ponta, não armazenamos senhas e todos os dados são protegidos conforme a Lei de Proteção de Dados. Seus dados de pagamento são usados apenas para processar saques."
-    },
-    {
       q: "Como funciona o sistema de afiliados?",
-      a: "Cada usuário tem um link de indicação exclusivo. Quando alguém se cadastra usando seu link, você recebe 5% de comissão sobre todos os prêmios que essa pessoa ganhar, para sempre. Acesse 'Afiliados' para ver seu link e estatísticas."
-    },
-    {
-      q: "Posso ter mais de uma conta?",
-      a: "Não. Cada pessoa pode ter apenas uma conta. Contas múltiplas serão detectadas e banidas permanentemente, com perda de todos os créditos e prêmios."
-    },
-    {
-      q: "O que é o bônus de partilha de vitória?",
-      a: "Quando você ganha um prêmio, pode partilhar sua vitória nas redes sociais e receber um bônus de 2% do valor do prêmio diretamente no seu saldo. Basta clicar no botão 'PARTILHAR VITÓRIA' no popup de resultado."
+      a: "Cada usuário tem um link de indicação exclusivo. Quando alguém se cadastra usando seu link, você recebe 1.000 Kz de bónus inicial e 5% de comissão sobre todos os prêmios que essa pessoa ganhar, para sempre."
     }
   ];
 

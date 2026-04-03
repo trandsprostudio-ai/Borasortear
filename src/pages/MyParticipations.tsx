@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DrawOverlay from '@/components/raffle/DrawOverlay';
 import { Button } from '@/components/ui/button';
+import WinnerPenguin from '@/components/ui/WinnerPenguin';
 
 const CountdownItem = ({ expiresAt }: { expiresAt: string }) => {
   const [timeLeft, setTimeLeft] = useState("");
@@ -56,7 +57,7 @@ const MyParticipations = () => {
       }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user?.id]);
+  }, [user?.id, navigate]);
 
   const fetchParticipations = async (userId: string) => {
     const { data } = await supabase
@@ -119,9 +120,12 @@ const MyParticipations = () => {
 
       <main className="max-w-5xl mx-auto px-4 pt-28">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-black italic tracking-tighter uppercase mb-2">Minhas Mesas</h1>
-            <p className="text-white/40 font-bold text-xs uppercase tracking-widest">Acompanhe seus bilhetes ativos e resultados</p>
+          <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
+            <div>
+              <h1 className="text-4xl font-black italic tracking-tighter uppercase mb-2">Minhas Mesas</h1>
+              <p className="text-white/40 font-bold text-xs uppercase tracking-widest">Acompanhe seus bilhetes ativos e resultados</p>
+            </div>
+            <WinnerPenguin className="hidden md:flex scale-75 origin-bottom" />
           </div>
           <Button 
             onClick={() => navigate('/consult-draw')}
@@ -131,6 +135,11 @@ const MyParticipations = () => {
             <Search size={14} className="mr-2" /> BUSCAR POR CÓDIGO
           </Button>
         </header>
+
+        {/* Mascot for Mobile */}
+        <div className="md:hidden flex justify-center mb-8">
+           <WinnerPenguin />
+        </div>
 
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-6">
