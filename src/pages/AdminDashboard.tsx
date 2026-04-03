@@ -75,7 +75,6 @@ const AdminDashboard = () => {
         const pending = txs.filter(t => t.status === 'pending').length;
         const totalPlatformProfit = platformEarnings?.reduce((acc, curr) => acc + Number(curr.prize_amount), 0) || 0;
         
-        // Custo total de bónus de registo (1000 Kz por cada referral_count)
         const totalBonus = (profiles?.reduce((acc, p) => acc + (p.referrals_count || 0), 0) || 0) * 1000;
         const totalCommissions = commissions?.reduce((acc, c) => acc + Number(c.amount), 0) || 0;
 
@@ -167,80 +166,55 @@ const AdminDashboard = () => {
             </div>
           </header>
 
-          {/* Novos Cards de Estatísticas Financeiras */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-            {/* Lucro da Plataforma */}
-            <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 relative group">
-              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Lucro Bruto (33.4%)</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mb-10">
+            {/* Total de Usuários */}
+            <div className="glass-card p-8 rounded-[2.5rem] border-blue-500/20">
+              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Total Jogadores</p>
               <p className="text-4xl font-black italic tracking-tighter text-blue-400">
-                {stats.platformBalance.toLocaleString()} <span className="text-sm not-italic opacity-30">Kz</span>
+                {totalUsers.toLocaleString()}
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <Users size={10} className="text-blue-500" />
+                <span className="text-[8px] font-bold text-white/20 uppercase">Registados</span>
+              </div>
+            </div>
+
+            <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20">
+              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Lucro Bruto (33.4%)</p>
+              <p className="text-3xl font-black italic tracking-tighter text-purple-400">
+                {stats.platformBalance.toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
               </p>
             </div>
 
-            {/* Total de Depósitos */}
             <div className="glass-card p-8 rounded-[2.5rem] border-green-500/20 relative group">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Total Depósitos</p>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  onClick={() => setConfirmConfig({
-                    isOpen: true,
-                    type: 'deposit',
-                    title: 'LIMPAR DEPÓSITOS',
-                    description: 'Deseja apagar permanentemente o histórico de depósitos CONCLUÍDOS?'
-                  })}
-                  className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500"
-                >
+                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'deposit', title: 'LIMPAR DEPÓSITOS', description: 'Deseja apagar permanentemente o histórico de depósitos CONCLUÍDOS?' })} className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
                   <Trash2 size={12} />
                 </Button>
               </div>
               <p className="text-3xl font-black italic tracking-tighter text-green-400">
                 {stats.totalDeposits.toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
               </p>
-              <div className="flex items-center gap-2 mt-2">
-                <ArrowDownLeft size={10} className="text-green-500" />
-                <span className="text-[8px] font-bold text-white/20 uppercase">Volume de Entrada</span>
-              </div>
             </div>
 
-            {/* Total de Saques */}
             <div className="glass-card p-8 rounded-[2.5rem] border-amber-500/20 relative group">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Total Saques</p>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  onClick={() => setConfirmConfig({
-                    isOpen: true,
-                    type: 'withdrawal',
-                    title: 'LIMPAR SAQUES',
-                    description: 'Deseja apagar permanentemente o histórico de saques CONCLUÍDOS?'
-                  })}
-                  className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500"
-                >
+                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'withdrawal', title: 'LIMPAR SAQUES', description: 'Deseja apagar permanentemente o histórico de saques CONCLUÍDOS?' })} className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
                   <Trash2 size={12} />
                 </Button>
               </div>
               <p className="text-3xl font-black italic tracking-tighter text-amber-500">
                 {stats.totalWithdrawals.toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
               </p>
-              <div className="flex items-center gap-2 mt-2">
-                <ArrowUpRight size={10} className="text-amber-500" />
-                <span className="text-[8px] font-bold text-white/20 uppercase">Volume de Saída</span>
-              </div>
             </div>
 
-            {/* Custos de Afiliados */}
-            <div className="glass-card p-8 rounded-[2.5rem] border-white/5 bg-red-500/5">
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Investimento Afiliados</p>
-                <TrendingUp size={12} className="text-red-400" />
-              </div>
+            <div className="glass-card p-8 rounded-[2.5rem] border-red-500/20 bg-red-500/5">
+              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Investimento Afiliados</p>
               <p className="text-3xl font-black italic tracking-tighter text-red-400">
                 -{(stats.affiliateBonusPaid + stats.affiliateCommissionsPaid).toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
               </p>
-              <p className="text-[8px] font-bold text-white/20 uppercase mt-1">Bónus + Comissões</p>
             </div>
           </div>
 
