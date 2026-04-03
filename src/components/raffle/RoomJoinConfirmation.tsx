@@ -3,8 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, Users, Trophy, Info, AlertTriangle, Sparkles, Share2, TrendingUp } from 'lucide-react';
+import { LayoutGrid, Users, Trophy, Info, AlertTriangle, Sparkles, Share2, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface RoomJoinConfirmationProps {
   isOpen: boolean;
@@ -16,25 +18,31 @@ interface RoomJoinConfirmationProps {
 
 const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: RoomJoinConfirmationProps) => {
   const [userBalance, setUserBalance] = useState<number>(0);
+  const [bonusBalance, setBonusBalance] = useState<number>(0);
+  const [useBonus, setUseBonus] = useState(true);
 
   useEffect(() => {
-    const fetchBalance = async () => {
+    const fetchBalances = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const { data } = await supabase.from('profiles').select('balance').eq('id', session.user.id).single();
-        if (data) setUserBalance(Number(data.balance));
+        const { data } = await supabase.from('profiles').select('balance, bonus_balance').eq('id', session.user.id).single();
+        if (data) {
+          setUserBalance(Number(data.balance));
+          setBonusBalance(Number(data.bonus_balance || 0));
+        }
       }
     };
-    if (isOpen) fetchBalance();
+    if (isOpen) fetchBalances();
   }, [isOpen]);
 
   if (!room) return null;
 
   const moduleName = room.modules.name.replace('M', 'Módulo ');
   const entryFee = room.modules.price;
-  const prizePool = entryFee * room.max_participants;
-  const estimatedPrize = Math.floor(prizePool * 0.3333);
-  const hasBalance = userBalance >= entryFee;
+  
+  // Lógica de saldo: Se usar bónus, conta o total. Se não, apenas o real.
+  const fundsAvailable = useBonus ? (userBalance + bonusBalance) : userBalance;
+  const hasBalance = fundsAvailable >= entryFee;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -46,14 +54,34 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Aviso de Saldo Insuficiente */}
             {!hasBalance && (
-              <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-400">
+              <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-400 animate-in fade-in zoom-in duration-300">
                 <AlertTriangle size={20} className="shrink-0" />
                 <p className="text-[9px] font-black uppercase leading-relaxed">
-                  Saldo Insuficiente! Precisas de {entryFee.toLocaleString()} Kz, mas tens apenas {userBalance.toLocaleString()} Kz.
+                  Saldo Insuficiente! Precisas de {entryFee.toLocaleString()} Kz, mas tens apenas {fundsAvailable.toLocaleString()} Kz.
                 </p>
               </div>
             )}
+
+            {/* Opção de Bónus */}
+            <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${useBonus ? 'bg-purple-600 text-white' : 'bg-white/5 text-white/20'}`}>
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <Label htmlFor="use-bonus" className="text-[10px] font-black uppercase tracking-widest cursor-pointer">Usar Saldo de Bónus</Label>
+                  <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Disponível: {bonusBalance.toLocaleString()} Kz</p>
+                </div>
+              </div>
+              <Switch 
+                id="use-bonus" 
+                checked={useBonus} 
+                onCheckedChange={setUseBonus}
+                className="data-[state=checked]:bg-purple-600"
+              />
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
@@ -62,7 +90,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               </div>
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                 <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Custo de Entrada</p>
-                <p className={hasBalance ? "text-xs font-black text-green-400" : "text-xs font-black text-red-400"}>
+                <p className="text-xs font-black text-purple-400">
                   {entryFee.toLocaleString()} Kz
                 </p>
               </div>
@@ -74,11 +102,12 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
                   <TrendingUp size={14} className="text-purple-400" />
                   <span className="text-[10px] font-black uppercase text-purple-400">Prémio Estimado</span>
                 </div>
-                <span className="text-sm font-black text-white italic">{estimatedPrize.toLocaleString()} Kz</span>
+                <span className="text-sm font-black text-white italic">{Math.floor(entryFee * room.max_participants * 0.3333).toLocaleString()} Kz</span>
               </div>
-              <p className="text-[8px] font-bold text-white/30 uppercase leading-relaxed">
-                * Baseado em sala cheia.
-              </p>
+              <div className="flex justify-between items-center">
+                <span className="text-[8px] font-bold text-white/30 uppercase">Teu Saldo Real</span>
+                <span className="text-[9px] font-black text-green-400">{userBalance.toLocaleString()} Kz</span>
+              </div>
             </div>
 
             <div className="bg-green-500/5 border border-green-500/20 p-5 rounded-2xl space-y-2">
@@ -89,25 +118,6 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               <p className="text-[9px] font-bold text-white/60 leading-relaxed uppercase">
                 Mesmo se não ganhares, <span className="text-green-400">recebes 5% vitalício</span> das vitórias dos teus amigos.
               </p>
-            </div>
-
-            <div className="bg-purple-500/5 p-5 rounded-2xl border border-purple-500/10">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2">
-                  <Trophy size={14} className="text-purple-400" />
-                  <span className="text-[10px] font-black uppercase text-white/40">Ocupação</span>
-                </div>
-              </div>
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-[9px] font-bold text-white/40 uppercase">Preenchimento</span>
-                <span className="text-[9px] font-black">{room.current_participants} / {room.max_participants}</span>
-              </div>
-              <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-purple-600 to-blue-500"
-                  style={{ width: `${(room.current_participants / room.max_participants) * 100}%` }}
-                />
-              </div>
             </div>
           </div>
 
