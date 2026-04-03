@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Edit2, User, Loader2, ShieldAlert, ShieldCheck, Trash2, Wallet, Gift, Zap, Sparkles } from 'lucide-react';
+import { Search, Edit2, User, Loader2, ShieldAlert, ShieldCheck, Trash2, Wallet, Gift, Zap, Sparkles, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
@@ -158,7 +158,7 @@ const AdminUsers = () => {
         loading={actionLoading}
       />
 
-      {/* NOVO: Injeção Automática de Bónus */}
+      {/* Injeção Automática de Bónus */}
       <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 bg-purple-500/5">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white">
