@@ -38,14 +38,14 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-md p-0 overflow-hidden">
-        <div className="p-8">
-          <DialogHeader className="mb-8 text-center pt-4">
+      <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-md p-0 overflow-hidden flex flex-col max-h-[95vh]">
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+          <DialogHeader className="mb-6 text-center pt-2">
             <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none mb-2">Estás pronto?</DialogTitle>
             <DialogDescription className="text-[10px] font-bold text-white/40 uppercase tracking-widest">A tua sorte começa nesta mesa</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 mb-6">
+          <div className="space-y-4">
             {!hasBalance && (
               <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-400">
                 <AlertTriangle size={20} className="shrink-0" />
@@ -68,7 +68,6 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               </div>
             </div>
 
-            {/* Informação sobre Prémio Estimado e Divisão */}
             <div className="bg-purple-600/5 border border-purple-500/20 p-5 rounded-2xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -78,18 +77,17 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
                 <span className="text-sm font-black text-white italic">{estimatedPrize.toLocaleString()} Kz</span>
               </div>
               <p className="text-[8px] font-bold text-white/30 uppercase leading-relaxed">
-                * Estimativa baseada no preenchimento total da sala ({room.max_participants} jogadores). A premiação final depende do número real de participantes no momento do sorteio.
+                * Baseado em sala cheia.
               </p>
             </div>
 
-            {/* Secção de Incentivo a Convites e Afiliados */}
-            <div className="bg-green-500/5 border border-green-500/20 p-5 rounded-2xl space-y-3">
+            <div className="bg-green-500/5 border border-green-500/20 p-5 rounded-2xl space-y-2">
               <div className="flex items-center gap-3">
                 <Share2 size={16} className="text-green-500 shrink-0" />
-                <h4 className="text-[10px] font-black uppercase text-green-500">Ganha sempre, ganha mais!</h4>
+                <h4 className="text-[10px] font-black uppercase text-green-500">Ganha sempre!</h4>
               </div>
               <p className="text-[9px] font-bold text-white/60 leading-relaxed uppercase">
-                Convida amigos para preencher a mesa mais rápido! Lembra-te: Mesmo que não ganhes esta rodada, <span className="text-green-400">ganhas 5% de comissão vitalícia</span> sobre cada prémio que os teus amigos ganharem.
+                Mesmo se não ganhares, <span className="text-green-400">recebes 5% vitalício</span> das vitórias dos teus amigos.
               </p>
             </div>
 
@@ -97,27 +95,23 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
                   <Trophy size={14} className="text-purple-400" />
-                  <span className="text-[10px] font-black uppercase text-white/40">Sorteio Automático</span>
-                </div>
-                <div className="flex items-center gap-1 bg-green-500/20 px-2 py-0.5 rounded-full">
-                  <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-[8px] font-black text-green-400">ATIVO</span>
+                  <span className="text-[10px] font-black uppercase text-white/40">Ocupação</span>
                 </div>
               </div>
               <div className="flex justify-between items-end mb-2">
-                <span className="text-[9px] font-bold text-white/40 uppercase">Vagas Preenchidas</span>
+                <span className="text-[9px] font-bold text-white/40 uppercase">Preenchimento</span>
                 <span className="text-[9px] font-black">{room.current_participants} / {room.max_participants}</span>
               </div>
               <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-purple-600 to-blue-500 transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-purple-600 to-blue-500"
                   style={{ width: `${(room.current_participants / room.max_participants) * 100}%` }}
                 />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mt-8">
+          <div className="grid grid-cols-2 gap-3 mt-8 pb-4">
             <Button 
               variant="ghost" 
               onClick={onClose}
@@ -130,7 +124,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               disabled={loading || !hasBalance}
               className="h-14 rounded-2xl premium-gradient font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-500/20 disabled:opacity-50"
             >
-              {loading ? "A ENTRAR..." : "CONFIRMAR ENTRADA"}
+              {loading ? "A ENTRAR..." : "CONFIRMAR"}
             </Button>
           </div>
         </div>

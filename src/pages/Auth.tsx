@@ -67,7 +67,6 @@ const Auth = () => {
         if (password !== confirmPassword) throw new Error("Senhas diferentes.");
         if (!acceptTerms) throw new Error("Aceite os termos.");
 
-        // Validar se o refId é um UUID válido se existir
         const validRefId = (refId && refId.length === 36) ? refId : null;
 
         const { data, error } = await supabase.auth.signUp({
@@ -78,14 +77,13 @@ const Auth = () => {
               full_name: fullName,
               phone_number: cleanPhone,
               express_number: bankInfo,
-              referred_by: validRefId // Passamos aqui para o trigger capturar
+              referred_by: validRefId
             }
           }
         });
         
         if (error) throw error;
 
-        // Garantia extra: Upsert imediato com o referred_by
         if (data.user) {
           await supabase.from('profiles').upsert({ 
             id: data.user.id,
@@ -93,7 +91,7 @@ const Auth = () => {
             last_name: fullName.split(' ').slice(1).join(' '),
             balance: 0,
             referred_by: validRefId,
-            bank_info: bankInfo // Usamos bank_info na tabela profiles para consistência
+            bank_info: bankInfo
           });
         }
       }
@@ -108,12 +106,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0B12] relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[#0A0B12] flex flex-col items-center justify-start overflow-y-auto pt-20 pb-10 px-4">
       <AnimatePresence>
         {showSplash && <SplashScreen message={isLogin ? "Entrando..." : "Criando Conta..."} />}
       </AnimatePresence>
 
-      <Link to="/" className="absolute top-8 left-8 flex items-center gap-2 text-white/40 hover:text-white transition-colors z-10 font-bold text-xs uppercase tracking-widest">
+      <Link to="/" className="fixed top-8 left-8 flex items-center gap-2 text-white/40 hover:text-white transition-colors z-50 font-bold text-xs uppercase tracking-widest bg-[#0A0B12]/80 backdrop-blur-md px-4 py-2 rounded-full">
         <ArrowLeft size={16} />
         <span>Início</span>
       </Link>
@@ -121,7 +119,7 @@ const Auth = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card w-full max-w-lg p-8 rounded-[2.5rem] relative z-10 border-white/5 my-10"
+        className="glass-card w-full max-w-lg p-6 md:p-10 rounded-[2.5rem] border-white/5"
       >
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
