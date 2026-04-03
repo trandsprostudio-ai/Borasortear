@@ -34,24 +34,20 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   const moduleName = room.modules.name.replace('M', 'Módulo ');
   const entryFee = room.modules.price;
   const prizePool = entryFee * room.max_participants;
-  const firstPrize = Math.floor(prizePool * 0.3333);
   const hasBalance = userBalance >= entryFee;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-md p-0 overflow-hidden">
         <div className="p-8">
-          <DialogHeader className="mb-8">
-            <div className="flex items-center gap-6">
-              <div className="flex-1 text-left">
-                <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none mb-2">Estás pronto?</DialogTitle>
-                <DialogDescription className="text-[10px] font-bold text-white/40 uppercase tracking-widest">A tua sorte começa nesta mesa</DialogDescription>
-              </div>
-              <div className="shrink-0 pt-8">
-                {/* Pinguim posicionado na lateral com frases visíveis */}
-                <WinnerPenguin className="w-20 h-20" />
-              </div>
-            </div>
+          {/* Pinguim Sozinho e Centralizado no Topo */}
+          <div className="flex justify-center mb-12 pt-10">
+            <WinnerPenguin className="w-28 h-28 scale-110" />
+          </div>
+
+          <DialogHeader className="mb-8 text-center">
+            <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none mb-2">Estás pronto?</DialogTitle>
+            <DialogDescription className="text-[10px] font-bold text-white/40 uppercase tracking-widest">A tua sorte começa nesta mesa</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mb-6">
