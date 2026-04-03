@@ -36,23 +36,47 @@ const Profile = () => {
   const loadAllData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        navigate('/auth?mode=login');
+        return;
+      }
+
       setUser(session.user);
-      const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
       if (data) {
         setProfile(data);
         if (data.referral_code) {
           await fetchReferralData(data.referral_code);
         }
+      } else {
+        // Se o perfil não existir, forçamos a criação via upsert básico
+        const newCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const { data: createdProfile } = await supabase.from('profiles').upsert({
+          id: session.user.id,
+          first_name: session.user.user_metadata?.full_name?.split(' ')[0] || 'Jogador',
+          referral_code: newCode,
+          balance: 0
+        }).select().single();
+        
+        if (createdProfile) setProfile(createdProfile);
       }
-    } else {
-      navigate('/auth?mode=login');
+    } catch (err) {
+      console.error("Erro fatal ao carregar perfil:", err);
+      toast.error("Erro ao carregar teus dados.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    
-    setLoading(false);
-    setRefreshing(false);
   }, [navigate, fetchReferralData]);
 
   useEffect(() => {
@@ -60,37 +84,50 @@ const Profile = () => {
   }, [loadAllData]);
 
   const copyToClipboard = async (text: string, message: string) => {
+    if (!text) {
+      toast.error("Aguarde o carregamento do código...");
+      return;
+    }
+    
     try {
+      // Tentativa 1: API Moderna
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
-      } else {
-        // Fallback para navegadores sem suporte ou contextos não seguros
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        textArea.style.top = "0";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand('copy');
-        textArea.remove();
+        toast.success(message);
+        return;
       }
-      toast.success(message);
+      
+      // Tentativa 2: Fallback Clássico
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand('copy');
+      textArea.remove();
+      
+      if (successful) toast.success(message);
+      else throw new Error("Cópia falhou");
+      
     } catch (err) {
-      toast.error("Erro ao copiar. Tenta selecionar o texto manualmente.");
+      toast.error("Erro ao copiar. Seleciona o código manualmente.");
     }
   };
 
   const copyInviteLink = () => {
-    if (!profile?.referral_code) return;
-    const link = `${window.location.origin}/auth?mode=signup&ref=${profile.referral_code}`;
+    const code = profile?.referral_code;
+    if (!code) return;
+    const link = `${window.location.origin}/auth?mode=signup&ref=${code}`;
     copyToClipboard(link, "Link de convite copiado!");
   };
 
   const copyOnlyCode = () => {
-    if (!profile?.referral_code) return;
-    copyToClipboard(profile.referral_code, "Código de afiliado copiado!");
+    const code = profile?.referral_code;
+    if (!code) return;
+    copyToClipboard(code, "Código de afiliado copiado!");
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
@@ -147,13 +184,23 @@ const Profile = () => {
               <div>
                 <Label className="text-[9px] font-black text-purple-400 uppercase tracking-widest mb-2 block">Teu Código Único</Label>
                 <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10 group">
-                  <span className="font-black tracking-[0.2em] text-white">{profile?.referral_code || 'A GERAR...'}</span>
-                  <button onClick={copyOnlyCode} className="text-white/20 hover:text-purple-400 transition-colors">
+                  <span className="font-black tracking-[0.2em] text-white">
+                    {profile?.referral_code || 'CARREGANDO...'}
+                  </span>
+                  <button 
+                    onClick={copyOnlyCode} 
+                    disabled={!profile?.referral_code}
+                    className="text-white/20 hover:text-purple-400 transition-colors disabled:opacity-0"
+                  >
                     <Copy size={16} />
                   </button>
                 </div>
               </div>
-              <Button onClick={copyInviteLink} className="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 font-black text-[10px] uppercase tracking-widest">
+              <Button 
+                onClick={copyInviteLink} 
+                disabled={!profile?.referral_code}
+                className="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 font-black text-[10px] uppercase tracking-widest disabled:opacity-50"
+              >
                 <Share2 size={14} className="mr-2" /> COPIAR LINK COMPLETO
               </Button>
             </div>
