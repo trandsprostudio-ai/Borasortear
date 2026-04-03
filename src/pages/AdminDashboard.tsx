@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, Users, Settings, LogOut, RefreshCw, 
   DollarSign, Wallet, ArrowDownLeft, ArrowUpRight,
-  ShieldAlert, Activity, Trash2
+  ShieldAlert, Activity, Trash2, Gift, TrendingUp
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,10 +29,11 @@ const AdminDashboard = () => {
     totalDeposits: 0,
     totalWithdrawals: 0,
     platformBalance: 0,
-    pendingTxs: 0
+    pendingTxs: 0,
+    affiliateBonusPaid: 0,
+    affiliateCommissionsPaid: 0
   });
 
-  // Estado para controle do modal Premium de confirmação
   const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, type: null });
 
   useEffect(() => {
@@ -48,31 +49,43 @@ const AdminDashboard = () => {
     fetchGlobalStats();
     
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, refreshKey]);
 
   const fetchGlobalStats = async () => {
     setLoading(true);
     try {
+      // 1. Contagem de utilizadores
       const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
       setTotalUsers(count || 0);
 
+      // 2. Transações e Lucros
       const { data: txs } = await supabase.from('transactions').select('amount, type, status');
       const { data: platformEarnings } = await supabase
         .from('winners')
         .select('prize_amount')
         .is('user_id', null);
 
+      // 3. Estatísticas de Afiliados
+      const { data: profiles } = await supabase.from('profiles').select('referrals_count, total_earnings');
+      const { data: commissions } = await supabase.from('referral_earnings').select('amount');
+
       if (txs) {
         const deposits = txs.filter(t => t.type === 'deposit' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
         const withdrawals = txs.filter(t => t.type === 'withdrawal' && t.status === 'completed').reduce((acc, t) => acc + Number(t.amount), 0);
         const pending = txs.filter(t => t.status === 'pending').length;
         const totalPlatformProfit = platformEarnings?.reduce((acc, curr) => acc + Number(curr.prize_amount), 0) || 0;
+        
+        // Custo total de bónus de registo (1000 Kz por cada referral_count)
+        const totalBonus = (profiles?.reduce((acc, p) => acc + (p.referrals_count || 0), 0) || 0) * 1000;
+        const totalCommissions = commissions?.reduce((acc, c) => acc + Number(c.amount), 0) || 0;
 
         setStats({
           totalDeposits: deposits,
           totalWithdrawals: withdrawals,
           platformBalance: totalPlatformProfit,
-          pendingTxs: pending
+          pendingTxs: pending,
+          affiliateBonusPaid: totalBonus,
+          affiliateCommissionsPaid: totalCommissions
         });
       }
     } catch (error) {
@@ -105,7 +118,6 @@ const AdminDashboard = () => {
 
   const handleGlobalRefresh = () => {
     setRefreshKey(prev => prev + 1);
-    fetchGlobalStats();
   };
 
   const handleLogout = () => {
@@ -140,67 +152,55 @@ const AdminDashboard = () => {
                 <Activity className="text-white" size={24} />
               </div>
               <div>
-                <h1 className="text-3xl font-black italic tracking-tighter uppercase">Painel Admin</h1>
-                <p className="text-white/40 text-sm font-bold uppercase">Gestão da Plataforma</p>
+                <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Painel Admin</h1>
+                <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-1">Gestão Central da Plataforma</p>
               </div>
             </div>
             
             <div className="flex items-center gap-3 w-full md:w-auto">
-              <Button variant="outline" onClick={handleGlobalRefresh} className="flex-1 md:flex-none border-white/10 bg-white/5 h-12 rounded-xl font-black text-xs uppercase">
-                <RefreshCw size={16} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+              <Button variant="outline" onClick={handleGlobalRefresh} className="flex-1 md:flex-none border-white/10 bg-white/5 h-12 rounded-xl font-black text-[10px] uppercase tracking-widest">
+                <RefreshCw size={14} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Atualizar
               </Button>
-              <Button onClick={handleLogout} variant="ghost" className="flex-1 md:flex-none h-12 rounded-xl bg-red-500/10 text-red-400 font-black text-xs uppercase border border-red-500/20">
-                <LogOut size={16} className="mr-2" /> Sair
+              <Button onClick={handleLogout} variant="ghost" className="flex-1 md:flex-none h-12 rounded-xl bg-red-500/10 text-red-400 font-black text-[10px] uppercase tracking-widest border border-red-500/20">
+                <LogOut size={14} className="mr-2" /> Sair
               </Button>
             </div>
           </header>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
             <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20">
-              <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Jogadores</p>
-              <p className="text-4xl font-black italic tracking-tighter">{totalUsers}</p>
+              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Lucro Bruto (33.4%)</p>
+              <p className="text-4xl font-black italic tracking-tighter text-blue-400">
+                {stats.platformBalance.toLocaleString()} <span className="text-sm not-italic opacity-30">Kz</span>
+              </p>
             </div>
 
             <div className="glass-card p-8 rounded-[2.5rem] border-green-500/20">
               <div className="flex justify-between items-start mb-2">
-                <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Depósitos</p>
-                <button 
-                  onClick={() => setConfirmConfig({
-                    isOpen: true,
-                    type: 'deposit',
-                    title: 'LIMPAR DEPÓSITOS',
-                    description: 'Tens a certeza que pretendes eliminar todo o histórico de depósitos concluídos? Esta ação é irreversível.'
-                  })} 
-                  className="text-white/10 hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Investimento Bónus</p>
+                <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center text-green-500">
+                  <Gift size={16} />
+                </div>
               </div>
-              <p className="text-3xl font-black italic tracking-tighter text-green-400">{stats.totalDeposits.toLocaleString()} Kz</p>
+              <p className="text-3xl font-black italic tracking-tighter text-green-400">-{stats.affiliateBonusPaid.toLocaleString()} Kz</p>
+              <p className="text-[8px] font-bold text-white/20 uppercase mt-1">Gasto em Bónus de Registo</p>
             </div>
 
             <div className="glass-card p-8 rounded-[2.5rem] border-amber-500/20">
               <div className="flex justify-between items-start mb-2">
-                <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Saques</p>
-                <button 
-                  onClick={() => setConfirmConfig({
-                    isOpen: true,
-                    type: 'withdrawal',
-                    title: 'LIMPAR SAQUES',
-                    description: 'Tens a certeza que pretendes eliminar todo o histórico de saques concluídos? Esta ação é irreversível.'
-                  })} 
-                  className="text-white/10 hover:text-red-500"
-                >
-                  <Trash2 size={14} />
-                </button>
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Comissões Pagas</p>
+                <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-500">
+                  <TrendingUp size={16} />
+                </div>
               </div>
-              <p className="text-3xl font-black italic tracking-tighter text-amber-500">{stats.totalWithdrawals.toLocaleString()} Kz</p>
+              <p className="text-3xl font-black italic tracking-tighter text-amber-500">-{stats.affiliateCommissionsPaid.toLocaleString()} Kz</p>
+              <p className="text-[8px] font-bold text-white/20 uppercase mt-1">Custo Vitalício de 5%</p>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-blue-500/20 bg-blue-500/5">
-              <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">LUCRO (TAXA 33.4%)</p>
-              <p className="text-3xl font-black italic tracking-tighter text-blue-400">
-                {stats.platformBalance.toLocaleString()} <span className="text-sm not-italic opacity-60">Kz</span>
+            <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
+              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Utilizadores Totais</p>
+              <p className="text-3xl font-black italic tracking-tighter flex items-center gap-3">
+                {totalUsers} <Users size={20} className="text-white/10" />
               </p>
             </div>
           </div>
