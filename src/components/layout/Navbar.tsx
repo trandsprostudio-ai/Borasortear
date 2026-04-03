@@ -160,7 +160,17 @@ const Navbar = () => {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <Button onClick={() => navigate('/auth?mode=signup')} className="premium-gradient font-black px-4 md:px-6 rounded-xl text-[10px] uppercase h-10">
+                <Button 
+                  variant="ghost"
+                  onClick={() => navigate('/auth?mode=login')} 
+                  className="text-white/60 hover:text-white hover:bg-white/5 font-black px-4 rounded-xl text-[10px] uppercase h-10"
+                >
+                  ENTRAR
+                </Button>
+                <Button 
+                  onClick={() => navigate('/auth?mode=signup')} 
+                  className="premium-gradient font-black px-4 md:px-6 rounded-xl text-[10px] uppercase h-10"
+                >
                   CRIAR CONTA
                 </Button>
               </div>
