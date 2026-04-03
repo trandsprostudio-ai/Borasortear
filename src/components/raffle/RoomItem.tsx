@@ -20,12 +20,12 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
     <div className="glass-card p-5 rounded-[1.5rem] border-white/5 relative overflow-hidden transition-all hover:border-purple-500/30">
       <div className="flex justify-between items-center mb-4">
         <div className="flex flex-col">
-          <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">SALA ATIVA</span>
+          <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em]">MESA DISPONÍVEL</span>
           <h3 className="text-sm font-black italic tracking-tighter text-white/80">#{room.id.slice(0, 6)}</h3>
         </div>
         <div className="flex items-center gap-1.5 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20">
           <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-[8px] font-black text-green-500 uppercase">Live</span>
+          <span className="text-[8px] font-black text-green-500 uppercase">Aberto</span>
         </div>
       </div>
 
@@ -63,7 +63,7 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
           <Loader2 className="animate-spin" size={14} />
         ) : (
           <>
-            ENTRAR AGORA
+            SORTEAR AGORA
             <ArrowRight size={12} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
           </>
         )}

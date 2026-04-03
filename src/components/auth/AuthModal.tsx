@@ -14,37 +14,51 @@ interface AuthModalProps {
 const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const navigate = useNavigate();
 
-  const handleGoToAuth = () => {
+  const handleGoToLogin = () => {
     onClose();
-    navigate('/auth');
+    navigate('/auth?mode=login');
+  };
+
+  const handleGoToSignup = () => {
+    onClose();
+    navigate('/auth?mode=signup');
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="glass-card border-white/10 rounded-3xl max-w-sm">
-        <DialogHeader className="text-center">
-          <DialogTitle className="text-2xl font-black italic tracking-tighter">BORA JOGAR?</DialogTitle>
-          <DialogDescription className="text-white/40 font-bold text-xs uppercase tracking-widest">
-            Acesse sua conta com seu número de telefone
+      <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-sm p-8">
+        <DialogHeader className="text-center mb-6">
+          <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase">BORA JOGAR?</DialogTitle>
+          <DialogDescription className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+            Entre agora ou crie sua conta grátis
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-3 mt-4">
+        <div className="space-y-4">
           <Button 
-            onClick={handleGoToAuth}
-            className="w-full h-14 premium-gradient rounded-2xl font-black text-lg flex items-center justify-center gap-3"
+            onClick={handleGoToLogin}
+            className="w-full h-14 premium-gradient rounded-2xl font-black text-sm flex items-center justify-center gap-3 uppercase tracking-widest shadow-lg shadow-purple-500/20"
           >
-            <Phone size={20} /> ENTRAR COM TELEFONE
+            <Phone size={18} /> ENTRAR COM TELEFONE
           </Button>
           
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/5"></span></div>
+            <div className="relative flex justify-center text-[8px] font-black uppercase"><span className="bg-[#111827] px-4 text-white/20">OU</span></div>
+          </div>
+
           <Button 
-            variant="ghost"
-            onClick={handleGoToAuth}
-            className="w-full h-12 rounded-2xl font-black text-xs text-white/40 hover:text-white hover:bg-white/5 uppercase tracking-widest"
+            variant="outline"
+            onClick={handleGoToSignup}
+            className="w-full h-14 rounded-2xl border-white/5 bg-white/5 hover:bg-white/10 font-black text-sm flex items-center justify-center gap-3 uppercase tracking-widest"
           >
-            <UserPlus size={16} className="mr-2" /> Criar nova conta
+            <UserPlus size={18} /> CRIAR CONTA GRÁTIS
           </Button>
         </div>
+
+        <p className="text-[8px] text-white/20 font-bold uppercase text-center mt-8 leading-relaxed">
+          Ao entrar, você concorda com nossos <br /> termos de uso e política de privacidade.
+        </p>
       </DialogContent>
     </Dialog>
   );

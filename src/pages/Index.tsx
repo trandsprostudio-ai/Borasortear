@@ -11,6 +11,7 @@ import RoomItem from '@/components/raffle/RoomItem';
 import NewsTicker from '@/components/layout/NewsTicker';
 import HallOfFame from '@/components/raffle/HallOfFame';
 import TicketConfirmationModal from '@/components/raffle/TicketConfirmationModal';
+import RoomJoinConfirmation from '@/components/raffle/RoomJoinConfirmation';
 import { motion, AnimatePresence } from 'framer-motion';
 import AuthModal from '@/components/auth/AuthModal';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ const Index = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [ticketModal, setTicketModal] = useState<{ open: boolean; code: string } | null>(null);
+  const [confirmingRoom, setConfirmingRoom] = useState<any>(null);
 
   const navigate = useNavigate();
 
@@ -63,15 +65,26 @@ const Index = () => {
     return () => { supabase.removeChannel(roomsChannel); };
   }, [selectedModule]);
 
-  const handleJoinRoom = async (room: any) => {
+  const handleOpenConfirm = async (room: any) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setIsAuthModalOpen(true); return; }
+    if (!session) { 
+      setIsAuthModalOpen(true); 
+      return; 
+    }
+    setConfirmingRoom(room);
+  };
+
+  const handleJoinRoom = async () => {
+    if (!confirmingRoom) return;
     
-    setActionLoading(room.id);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    
+    setActionLoading(confirmingRoom.id);
     try {
       const { data, error } = await supabase.rpc('join_room_secure', {
         p_user_id: session.user.id,
-        p_room_id: room.id,
+        p_room_id: confirmingRoom.id,
         p_price: selectedModule.price
       });
 
@@ -92,6 +105,7 @@ const Index = () => {
         toast.error("Esta conta está suspensa.");
       } else if (data) {
         setTicketModal({ open: true, code: data });
+        setConfirmingRoom(null);
       } else {
         toast.error("Ocorreu um erro inesperado ao processar sua entrada.");
       }
@@ -142,7 +156,7 @@ const Index = () => {
                   onClick={() => navigate('/central-de-ajuda')}
                   className="h-10 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 font-black text-[9px] uppercase tracking-widest px-4"
                 >
-                  <HelpCircle size={14} className="mr-2" /> REGRAS
+                  <HelpCircle size={14} className="mr-2" /> COMO FUNCIONA
                 </Button>
               </div>
             </header>
@@ -166,7 +180,7 @@ const Index = () => {
                   <div className="w-8 h-8 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500">
                     <LayoutGrid size={16} />
                   </div>
-                  <h2 className="text-lg font-black italic tracking-tighter uppercase">Mesas Ativas ({selectedModule?.name})</h2>
+                  <h2 className="text-lg font-black italic tracking-tighter uppercase">Mesas Ativas ({selectedModule?.name.replace('M', 'Módulo ')})</h2>
                 </div>
               </div>
 
@@ -182,7 +196,7 @@ const Index = () => {
                     >
                       <RoomItem 
                         room={room} 
-                        onJoin={() => handleJoinRoom(room)}
+                        onJoin={() => handleOpenConfirm(room)}
                         loading={actionLoading === room.id}
                       />
                     </motion.div>
@@ -231,10 +245,17 @@ const Index = () => {
           isOpen={ticketModal.open}
           onClose={() => setTicketModal(null)}
           ticketCode={ticketModal.code}
-          moduleName={selectedModule?.name}
+          moduleName={selectedModule?.name.replace('M', 'Módulo ')}
           price={selectedModule?.price}
         />
       )}
+      <RoomJoinConfirmation 
+        isOpen={!!confirmingRoom}
+        onClose={() => setConfirmingRoom(null)}
+        onConfirm={handleJoinRoom}
+        room={confirmingRoom}
+        loading={!!actionLoading}
+      />
       <Footer />
     </div>
   );

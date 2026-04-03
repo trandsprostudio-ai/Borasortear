@@ -20,11 +20,14 @@ const getIcon = (name: string) => {
 };
 
 const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
+  // Converte 'M100' para 'Módulo 100'
+  const displayName = module.name.replace('M', 'Módulo ');
+
   return (
     <button
       onClick={onSelect}
       className={cn(
-        "relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-300 min-w-[110px] group",
+        "relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-300 min-w-[130px] group",
         isSelected 
           ? "bg-purple-600/10 border-purple-500 shadow-[0_0_20px_rgba(124,58,237,0.2)]" 
           : "bg-white/5 border-white/5 hover:bg-white/10"
@@ -41,7 +44,7 @@ const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
         "text-[8px] font-black uppercase tracking-[0.2em] mb-1",
         isSelected ? "text-purple-400" : "text-white/20"
       )}>
-        {module.name}
+        {displayName}
       </span>
       
       <span className="text-sm font-black italic tracking-tighter">
