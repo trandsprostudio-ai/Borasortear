@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Ticket, Trophy, Clock, AlertCircle, CheckCircle2, Loader2, Share2, TrendingUp, ShieldCheck } from 'lucide-react';
+import { Search, Ticket, Trophy, Clock, AlertCircle, CheckCircle2, Loader2, Share2, TrendingUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +25,7 @@ const ConsultDraw = () => {
     setResult(null);
 
     try {
+      // Busca pelo bilhete
       const { data: participant, error: pError } = await supabase
         .from('participants')
         .select(`
@@ -40,17 +41,19 @@ const ConsultDraw = () => {
       if (pError) throw pError;
 
       if (!participant) {
-        setError('Código de bilhete não encontrado. Verifique se digitou corretamente.');
+        setError('Código de bilhete não encontrado. Verifica se digitaste corretamente (ex: 8 dígitos).');
         setLoading(false);
         return;
       }
 
+      // Busca dados do usuário para divisão de bônus
       const { data: profile } = await supabase
         .from('profiles')
         .select('referred_by, first_name')
         .eq('id', participant.user_id)
         .single();
 
+      // Verifica se há vencedor se a sala terminou
       let winnerInfo = null;
       if (participant.rooms.status === 'finished') {
         const { data: winner } = await supabase
@@ -62,7 +65,7 @@ const ConsultDraw = () => {
         winnerInfo = winner;
       }
 
-      const totalPool = participant.rooms.modules.price * participant.rooms.current_participants;
+      const totalPool = participant.rooms.modules.price * participant.rooms.max_participants;
       const share = totalPool * 0.3333;
       
       const referralBonus = winnerInfo ? winnerInfo.prize_amount * 0.05 : 0;
@@ -94,7 +97,7 @@ const ConsultDraw = () => {
       <main className="max-w-2xl mx-auto px-4 pt-28">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-black mb-4 italic tracking-tighter uppercase">Consultar Bilhete</h1>
-          <p className="text-muted-foreground font-bold text-xs uppercase tracking-widest">Insira o código de 8 dígitos gerado na sua participação</p>
+          <p className="text-muted-foreground font-bold text-xs uppercase tracking-widest">Insere o código de 8 dígitos para ver o teu resultado</p>
         </div>
 
         <form onSubmit={handleSearch} className="relative mb-12">
@@ -102,7 +105,7 @@ const ConsultDraw = () => {
             <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={24} />
             <Input 
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
               placeholder="EX: A1B2C3D4"
               className="bg-white/5 border-white/10 h-16 pl-14 pr-32 rounded-2xl text-xl font-black tracking-[0.2em] focus:border-purple-500/50 transition-all"
               maxLength={12}
@@ -145,7 +148,7 @@ const ConsultDraw = () => {
                         <Trophy size={40} />
                       </div>
                       <h2 className="text-3xl font-black italic tracking-tighter text-green-400 mb-1">VOCÊ GANHOU!</h2>
-                      <p className="text-sm font-bold text-white/60 uppercase tracking-widest">Prêmio de {result.winner.prize_amount.toLocaleString()} Kz</p>
+                      <p className="text-sm font-bold text-white/60 uppercase tracking-widest">Prémio de {result.winner.prize_amount.toLocaleString()} Kz</p>
                     </>
                   ) : result.rooms.status === 'finished' ? (
                     <>
@@ -185,31 +188,23 @@ const ConsultDraw = () => {
               <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
-                    <TrendingUp size={14} className="text-purple-500" /> Divisão de Prêmios da Mesa
+                    <TrendingUp size={14} className="text-purple-500" /> Divisão de Prémios da Mesa
                   </h3>
-                  <span className="text-[9px] font-black text-white/20 uppercase">Total Arrecadado: {result.divisions.total.toLocaleString()} Kz</span>
+                  <span className="text-[9px] font-black text-white/20 uppercase">Total na Mesa: {result.divisions.total.toLocaleString()} Kz</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (33%)</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">1º Lugar (33.3%)</p>
                     <p className="text-xl font-black text-green-400">{result.divisions.first.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">2º Lugar (33%)</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">2º Lugar (33.3%)</p>
                     <p className="text-xl font-black text-blue-400">{result.divisions.second.toLocaleString()} Kz</p>
                   </div>
                   <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">3º Lugar (33%)</p>
-                    <p className="text-xl font-black text-white/40">{result.divisions.third.toLocaleString()} Kz</p>
+                    <p className="text-[9px] font-black text-white/20 uppercase mb-1">Taxa Plaf (33.4%)</p>
+                    <p className="text-xl font-black text-white/20">{result.divisions.third.toLocaleString()} Kz</p>
                   </div>
-                </div>
-                <div className="bg-purple-500/10 p-4 rounded-2xl border border-purple-500/20 mt-4">
-                  <p className="text-[9px] font-black text-purple-400 uppercase mb-1 flex items-center gap-1">
-                    <Share2 size={10} /> Bônus de Indicação (5%)
-                  </p>
-                  <p className="text-xl font-black text-purple-400">
-                    {result.profiles?.referred_by ? `${(result.divisions.first * 0.05).toLocaleString()} Kz` : '0 Kz'}
-                  </p>
                 </div>
               </div>
             </motion.div>
