@@ -51,48 +51,41 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email: internalEmail, password });
+        const { error: authError } = await supabase.auth.signInWithPassword({ 
+          email: internalEmail, 
+          password 
+        });
         if (authError) throw authError;
-
-        const { data: profile } = await supabase.from('profiles').select('is_banned').eq('id', authData.user.id).single();
-        if (profile?.is_banned) {
-          await supabase.auth.signOut();
-          toast.error("Esta conta foi banida.");
-          setLoading(false);
-          return;
-        }
       } else {
         if (!age || parseInt(age) < 18) throw new Error("Mínimo 18 anos.");
         if (password !== confirmPassword) throw new Error("As senhas não coincidem.");
         if (!acceptTerms) throw new Error("Deves aceitar os termos.");
 
-        // Registo oficial
-        const { data: signUpData, error } = await supabase.auth.signUp({
+        // Registo com metadados de referência
+        const { data, error } = await supabase.auth.signUp({
           email: internalEmail,
           password,
           options: {
             data: { 
               full_name: fullName,
               phone_number: cleanPhone,
-              express_number: bankInfo,
-              referred_by: refId 
+              referred_by: refId // ID do padrinho
             }
           }
         });
         
         if (error) throw error;
-
-        // REDUNDÂNCIA: Tentar gravar o perfil manualmente se o trigger atrasar
-        if (signUpData.user) {
+        
+        // Se o registo foi um sucesso, garantimos que o perfil existe
+        if (data.user && refId) {
           await supabase.from('profiles').upsert({
-            id: signUpData.user.id,
+            id: data.user.id,
             first_name: fullName.split(' ')[0],
-            referred_by: refId && refId.length === 36 ? refId : null,
-            balance: 0,
+            referred_by: refId,
             bank_info: bankInfo
           });
         }
-        
+
         toast.success("Conta criada com sucesso!");
       }
       
