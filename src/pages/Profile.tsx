@@ -22,7 +22,7 @@ const Profile = () => {
 
   const fetchReferralData = useCallback(async (userId: string) => {
     try {
-      // 1. Procurar todos os perfis onde o "padrinho" é o utilizador logado
+      // Busca exata: quem tem o meu ID no campo referred_by
       const { data: refList, error: refError } = await supabase
         .from('profiles')
         .select('id, first_name, created_at')
@@ -30,7 +30,7 @@ const Profile = () => {
 
       if (refError) throw refError;
 
-      // 2. Calcular bónus ganhos
+      // Busca ganhos
       const { data: refEarnings } = await supabase
         .from('transactions')
         .select('amount')
