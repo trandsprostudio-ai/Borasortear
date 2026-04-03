@@ -17,6 +17,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '@/components/ui/SplashScreen';
 import TransactionModal from '@/components/wallet/TransactionModal';
@@ -141,24 +147,31 @@ const Navbar = () => {
                   </Button>
                 </div>
                 
-                <div className="relative group">
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white cursor-pointer shrink-0">
-                    <User size={16} />
-                  </div>
-                  <div className="absolute top-full right-0 mt-2 w-44 bg-[#1A1D29] border border-white/10 rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2 z-50">
-                    <Link to="/profile" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-[10px] font-black uppercase">
-                      <Settings size={14} /> Perfil
-                    </Link>
-                    <Link to="/wallet" className="flex items-center gap-3 p-3 hover:bg-white/5 rounded-xl text-[10px] font-black uppercase">
-                      <Wallet size={14} /> Carteira
-                    </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white cursor-pointer shrink-0 outline-none focus:ring-2 focus:ring-purple-500/50">
+                      <User size={16} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-[#1A1D29] border-white/10 rounded-2xl p-2 z-50">
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center gap-3 p-3 cursor-pointer hover:bg-white/5 rounded-xl text-[10px] font-black uppercase text-white/60 hover:text-white transition-colors">
+                        <Settings size={14} /> Perfil
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/wallet" className="flex items-center gap-3 p-3 cursor-pointer hover:bg-white/5 rounded-xl text-[10px] font-black uppercase text-white/60 hover:text-white transition-colors">
+                        <Wallet size={14} /> Carteira
+                      </Link>
+                    </DropdownMenuItem>
+                    
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <button className="w-full flex items-center gap-3 p-3 hover:bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 uppercase">
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="w-full flex items-center gap-3 p-3 cursor-pointer hover:bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 uppercase">
                           <LogOut size={14} /> Sair
-                        </button>
+                        </DropdownMenuItem>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="glass-card border-white/10 rounded-3xl w-[90vw] max-w-sm">
+                      <AlertDialogContent className="glass-card border-white/10 rounded-3xl w-[90vw] max-w-sm z-[100]">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="text-xl font-black italic">SAIR AGORA?</AlertDialogTitle>
                         </AlertDialogHeader>
@@ -168,8 +181,8 @@ const Navbar = () => {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  </div>
-                </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <div className="flex items-center gap-2">

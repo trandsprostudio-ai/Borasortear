@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { LayoutGrid, Users, Trophy, Info, AlertTriangle, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import WinnerPenguin from '../ui/WinnerPenguin';
 
 interface RoomJoinConfirmationProps {
   isOpen: boolean;
@@ -40,12 +39,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-md p-0 overflow-hidden">
         <div className="p-8">
-          {/* Pinguim Sozinho e Centralizado no Topo */}
-          <div className="flex justify-center mb-12 pt-10">
-            <WinnerPenguin className="w-28 h-28 scale-110" />
-          </div>
-
-          <DialogHeader className="mb-8 text-center">
+          <DialogHeader className="mb-8 text-center pt-4">
             <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none mb-2">Estás pronto?</DialogTitle>
             <DialogDescription className="text-[10px] font-bold text-white/40 uppercase tracking-widest">A tua sorte começa nesta mesa</DialogDescription>
           </DialogHeader>
