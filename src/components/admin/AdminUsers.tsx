@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Edit2, User, Loader2, ShieldAlert, ShieldCheck, Trash2, Wallet, Gift } from 'lucide-react';
+import { Search, Edit2, User, Loader2, ShieldAlert, ShieldCheck, Trash2, Wallet, Gift, Zap, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
@@ -17,6 +17,12 @@ const AdminUsers = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editBalance, setEditBalance] = useState<string>('');
   const [editBonusBalance, setEditBonusBalance] = useState<string>('');
+  
+  // Estados para Injeção Automática
+  const [autoBonusAmount, setAutoBonusAmount] = useState('');
+  const [autoBonusUserCount, setAutoBonusUserCount] = useState('');
+  const [isDistributing, setIsDistributing] = useState(false);
+
   const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, userId: null, action: null });
 
   useEffect(() => {
@@ -40,6 +46,35 @@ const AdminUsers = () => {
     }
   };
 
+  const handleAutoDistribute = async () => {
+    const amt = parseFloat(autoBonusAmount);
+    const count = parseInt(autoBonusUserCount);
+
+    if (isNaN(amt) || amt <= 0 || isNaN(count) || count <= 0) {
+      toast.error("Insira valores válidos para a distribuição.");
+      return;
+    }
+
+    setIsDistributing(true);
+    try {
+      const { error } = await supabase.rpc('distribute_random_bonus', {
+        p_amount: amt,
+        p_user_count: count
+      });
+
+      if (error) throw error;
+
+      toast.success(`Bónus de ${amt} Kz distribuído para ${count} jogadores!`);
+      setAutoBonusAmount('');
+      setAutoBonusUserCount('');
+      fetchUsers();
+    } catch (error: any) {
+      toast.error("Erro na distribuição: " + error.message);
+    } finally {
+      setIsDistributing(false);
+    }
+  };
+
   const handleUpdateBalances = async (userId: string) => {
     const newBalance = parseFloat(editBalance);
     const newBonusBalance = parseFloat(editBonusBalance);
@@ -51,12 +86,16 @@ const AdminUsers = () => {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ balance: newBalance, bonus_balance: newBonusBalance })
+      .update({ 
+        balance: newBalance, 
+        bonus_balance: newBonusBalance,
+        updated_at: new Date().toISOString() // Força atualização do timestamp
+      })
       .eq('id', userId);
 
     if (error) toast.error("Erro ao atualizar saldos");
     else {
-      toast.success("Saldos atualizados!");
+      toast.success("Saldos atualizados com sucesso!");
       setEditingId(null);
       fetchUsers();
     }
@@ -85,17 +124,14 @@ const AdminUsers = () => {
       const response = await fetch(`https://ifdskxgsijmpqayufxgg.supabase.co/functions/v1/admin-delete-user`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession() ? (await supabase.auth.getSession()).data.session?.access_token : ''}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ userId })
       });
 
-      const result = await response.json();
+      if (!response.ok) throw new Error("Falha na exclusão remota");
 
-      if (!response.ok) throw new Error(result.error || "Falha na exclusão");
-
-      toast.success("Utilizador e conta removidos permanentemente!");
+      toast.success("Utilizador removido do sistema!");
       setConfirmConfig({ isOpen: false });
       fetchUsers();
     } catch (err: any) {
@@ -111,7 +147,7 @@ const AdminUsers = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <ActionConfirmModal 
         isOpen={confirmConfig.isOpen}
         onClose={() => !actionLoading && setConfirmConfig({ isOpen: false })}
@@ -122,14 +158,62 @@ const AdminUsers = () => {
         loading={actionLoading}
       />
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-        <Input 
-          placeholder="Buscar jogador..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="bg-white/5 border-white/10 h-12 pl-12 rounded-xl"
-        />
+      {/* NOVO: Injeção Automática de Bónus */}
+      <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 bg-purple-500/5">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white">
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black italic tracking-tighter uppercase">Injeção Automática</h3>
+            <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Distribuir bónus aleatórios para a comunidade</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-white/40 ml-1">Valor do Bónus (Kz)</label>
+            <Input 
+              type="number" 
+              placeholder="Ex: 500" 
+              value={autoBonusAmount}
+              onChange={(e) => setAutoBonusAmount(e.target.value)}
+              className="bg-white/5 border-white/10 h-12 rounded-xl"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase text-white/40 ml-1">Nº de Jogadores</label>
+            <Input 
+              type="number" 
+              placeholder="Ex: 10" 
+              value={autoBonusUserCount}
+              onChange={(e) => setAutoBonusUserCount(e.target.value)}
+              className="bg-white/5 border-white/10 h-12 rounded-xl"
+            />
+          </div>
+          <Button 
+            onClick={handleAutoDistribute} 
+            disabled={isDistributing}
+            className="h-12 premium-gradient rounded-xl font-black text-[10px] uppercase tracking-widest"
+          >
+            {isDistributing ? <Loader2 className="animate-spin" /> : <><Zap size={14} className="mr-2" /> DISPARAR BÓNUS</>}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="relative max-w-md flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+          <Input 
+            placeholder="Buscar jogador por nome ou ID..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-white/5 border-white/10 h-12 pl-12 rounded-xl"
+          />
+        </div>
+        <Button variant="ghost" onClick={fetchUsers} className="text-white/20 hover:text-white">
+          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+        </Button>
       </div>
 
       <div className="glass-card rounded-3xl overflow-hidden border-white/5">
@@ -169,9 +253,15 @@ const AdminUsers = () => {
                       </div>
                     ) : (
                       <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2"><span className="font-black text-green-400">{Number(u.balance).toLocaleString()} Kz</span></div>
-                        <div className="flex items-center gap-2"><span className="font-black text-purple-400">{Number(u.bonus_balance || 0).toLocaleString()} Kz</span></div>
-                        <button onClick={() => { setEditingId(u.id); setEditBalance(u.balance.toString()); setEditBonusBalance((u.bonus_balance || 0).toString()); }} className="text-[9px] font-black text-white/20 hover:text-white uppercase mt-1">Editar</button>
+                        <div className="flex items-center gap-2">
+                          <Wallet size={12} className="text-green-500/40" />
+                          <span className="font-black text-green-400">{Number(u.balance).toLocaleString()} Kz</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Gift size={12} className="text-purple-500/40" />
+                          <span className="font-black text-purple-400">{Number(u.bonus_balance || 0).toLocaleString()} Kz</span>
+                        </div>
+                        <button onClick={() => { setEditingId(u.id); setEditBalance(u.balance.toString()); setEditBonusBalance((u.bonus_balance || 0).toString()); }} className="text-[9px] font-black text-white/20 hover:text-white uppercase mt-1 text-left">Editar Individual</button>
                       </div>
                     )}
                   </TableCell>

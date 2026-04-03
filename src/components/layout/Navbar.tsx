@@ -41,6 +41,7 @@ const Navbar = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        subscribeToProfile(session.user.id);
       }
     };
     checkSession();
@@ -50,6 +51,7 @@ const Navbar = () => {
       setUser(currentUser);
       if (currentUser) {
         fetchProfile(currentUser.id);
+        subscribeToProfile(currentUser.id);
       }
     });
 
@@ -59,6 +61,20 @@ const Navbar = () => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (data) setProfile(data);
+  };
+
+  // Sincronização em Tempo Real do Perfil (Saldo, Bónus, etc)
+  const subscribeToProfile = (userId: string) => {
+    const channel = supabase.channel(`realtime-profile-${userId}`)
+      .on('postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, 
+        (payload) => {
+          setProfile(payload.new);
+        }
+      )
+      .subscribe();
+    
+    return () => { supabase.removeChannel(channel); };
   };
 
   const handleLogout = async () => {
