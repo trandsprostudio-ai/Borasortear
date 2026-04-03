@@ -60,11 +60,7 @@ const Auth = () => {
         if (password !== confirmPassword) throw new Error("As senhas não coincidem.");
         if (!acceptTerms) throw new Error("Deves aceitar os termos.");
 
-        // Recuperar código de indicação do localStorage
         const storedRefCode = localStorage.getItem('referral_code');
-        
-        // Gerar código de afiliado único para o novo usuário
-        const myReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
 
         const { data, error } = await supabase.auth.signUp({
           email: internalEmail,
@@ -73,29 +69,24 @@ const Auth = () => {
             data: { 
               full_name: fullName,
               phone_number: cleanPhone,
-              referral_code: myReferralCode,
-              referred_by: storedRefCode // Captura automática
+              referred_by: storedRefCode // Envia o CÓDIGO de texto
             }
           }
         });
         
         if (error) throw error;
         
-        // Garantir que o perfil é criado com os dados corretos
+        // Limpar o código usado após o registo
         if (data.user) {
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            first_name: fullName.split(' ')[0],
-            referral_code: myReferralCode,
-            referred_by: storedRefCode,
-            bank_info: bankInfo
-          });
-          
-          // Limpar o código usado após o registo com sucesso
           localStorage.removeItem('referral_code');
+          
+          // Atualizar o IBAN/Express no perfil recém-criado
+          await supabase.from('profiles').update({
+            bank_info: bankInfo
+          }).eq('id', data.user.id);
         }
 
-        toast.success("Conta criada! Ganhaste acesso à plataforma.");
+        toast.success("Conta criada com sucesso!");
       }
       
       setShowSplash(true);
@@ -103,7 +94,7 @@ const Auth = () => {
       
     } catch (error: any) {
       setLoading(false);
-      toast.error(error.message);
+      toast.error(error.message || "Erro ao processar pedido.");
     }
   };
 
@@ -133,7 +124,7 @@ const Auth = () => {
           {localStorage.getItem('referral_code') && !isLogin && (
             <div className="mt-2 inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
               <ShieldCheck size={12} className="text-purple-400" />
-              <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">Convite Detetado</span>
+              <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">Convite Ativo</span>
             </div>
           )}
         </div>
