@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { User, Smartphone, ShieldCheck, Loader2, Trophy, Zap, Share2, Copy, Users, CheckCircle2, Star, Award, Medal, RefreshCw } from 'lucide-react';
+import { User, Smartphone, ShieldCheck, Loader2, Trophy, Zap, Share2, Copy, Users, CheckCircle2, Star, Award, Medal, RefreshCw, DollarSign } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,32 +17,18 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [referrals, setReferrals] = useState<any[]>([]);
-  const [referralStats, setReferralStats] = useState({ count: 0, totalEarned: 0 });
   const navigate = useNavigate();
 
-  const fetchReferralData = useCallback(async (userId: string) => {
+  const fetchReferralData = useCallback(async (myCode: string) => {
     try {
-      // Busca exata: quem tem o meu ID no campo referred_by
+      // Busca indicados pelo código
       const { data: refList, error: refError } = await supabase
         .from('profiles')
         .select('id, first_name, created_at')
-        .eq('referred_by', userId);
+        .eq('referred_by', myCode);
 
       if (refError) throw refError;
-
-      // Busca ganhos
-      const { data: refEarnings } = await supabase
-        .from('transactions')
-        .select('amount')
-        .eq('user_id', userId)
-        .eq('status', 'completed')
-        .ilike('payment_method', '%Indicação%');
-
       setReferrals(refList || []);
-      setReferralStats({
-        count: refList?.length || 0,
-        totalEarned: refEarnings?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0
-      });
     } catch (err) {
       console.error("Erro ao carregar indicados:", err);
     }
@@ -56,7 +42,9 @@ const Profile = () => {
       setUser(session.user);
       const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
       setProfile(data);
-      await fetchReferralData(session.user.id);
+      if (data?.referral_code) {
+        await fetchReferralData(data.referral_code);
+      }
     } else {
       navigate('/auth?mode=login');
     }
@@ -70,16 +58,17 @@ const Profile = () => {
   }, [loadAllData]);
 
   const copyInviteLink = () => {
-    const link = `${window.location.origin}/auth?mode=signup&ref=${user.id}`;
+    if (!profile?.referral_code) return;
+    const link = `${window.location.origin}/?ref=${profile.referral_code}`;
     navigator.clipboard.writeText(link);
-    toast.success("Link de convite copiado!");
+    toast.success("Link de afiliado copiado!");
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
-  const rank = referralStats.count >= 10 ? { label: 'DIAMANTE', color: 'text-cyan-400', icon: Award } :
-               referralStats.count >= 5 ? { label: 'OURO', color: 'text-amber-500', icon: Trophy } :
-               referralStats.count >= 2 ? { label: 'PRATA', color: 'text-slate-300', icon: Medal } :
+  const rank = referrals.length >= 10 ? { label: 'DIAMANTE', color: 'text-cyan-400', icon: Award } :
+               referrals.length >= 5 ? { label: 'OURO', color: 'text-amber-500', icon: Trophy } :
+               referrals.length >= 2 ? { label: 'PRATA', color: 'text-slate-300', icon: Medal } :
                { label: 'BRONZE', color: 'text-orange-600', icon: Star };
 
   return (
@@ -105,14 +94,14 @@ const Profile = () => {
               
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white/5 p-3 rounded-2xl">
-                  <Trophy size={16} className="text-amber-500 mx-auto mb-1" />
-                  <p className="text-[10px] font-black text-white/20 uppercase">Bônus</p>
-                  <p className="font-black text-xs">{referralStats.totalEarned.toLocaleString()} Kz</p>
+                  <DollarSign size={16} className="text-green-500 mx-auto mb-1" />
+                  <p className="text-[10px] font-black text-white/20 uppercase">Comissões</p>
+                  <p className="font-black text-xs">{Number(profile?.total_earnings || 0).toLocaleString()} Kz</p>
                 </div>
                 <div className="bg-white/5 p-3 rounded-2xl">
                   <Users size={16} className="text-purple-500 mx-auto mb-1" />
-                  <p className="text-[10px] font-black text-white/20 uppercase">Amigos</p>
-                  <p className="font-black">{referralStats.count}</p>
+                  <p className="text-[10px] font-black text-white/20 uppercase">Indicados</p>
+                  <p className="font-black">{profile?.referrals_count || 0}</p>
                 </div>
               </div>
 
@@ -121,14 +110,16 @@ const Profile = () => {
                 onClick={() => loadAllData(true)} 
                 className="mt-6 w-full text-[9px] font-black uppercase tracking-widest text-white/10 hover:text-white"
               >
-                <RefreshCw size={12} className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} /> Atualizar Dados
+                <RefreshCw size={12} className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} /> Sincronizar Dados
               </Button>
             </div>
 
             <div className="glass-card p-6 rounded-[2rem] border-purple-500/20 bg-purple-500/5">
-              <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Share2 size={14} /> Link de Convite
-              </h4>
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                  <Share2 size={14} /> Teu Código: <span className="text-white bg-white/10 px-2 py-0.5 rounded">{profile?.referral_code}</span>
+                </h4>
+              </div>
               <Button onClick={copyInviteLink} className="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 font-black text-[10px] uppercase tracking-widest">
                 <Copy size={14} className="mr-2" /> COPIAR MEU LINK
               </Button>
@@ -138,7 +129,7 @@ const Profile = () => {
           <div className="lg:col-span-2 space-y-8">
             <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
               <h3 className="text-xl font-black italic tracking-tighter uppercase mb-8 flex items-center gap-3">
-                <Users className="text-purple-500" /> Lista de Convidados ({referrals.length})
+                <Users className="text-purple-500" /> Rede de Afiliados ({referrals.length})
               </h3>
 
               <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
@@ -151,19 +142,19 @@ const Profile = () => {
                         </div>
                         <div>
                           <p className="text-sm font-black uppercase">@{ref.first_name}</p>
-                          <p className="text-[9px] font-bold text-white/20 uppercase">Cadastrado via link</p>
+                          <p className="text-[9px] font-bold text-white/20 uppercase">Membro desde {new Date(ref.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full">
                         <CheckCircle2 size={12} className="text-green-500" />
-                        <span className="text-[8px] font-black text-green-500 uppercase">Vínculo Ativo</span>
+                        <span className="text-[8px] font-black text-green-500 uppercase">Ativo</span>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="text-center py-20">
                     <Users size={32} className="mx-auto mb-4 text-white/5" />
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Ainda não convidaste nenhum amigo.</p>
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Ainda não tens afiliados ativos.</p>
                   </div>
                 )}
               </div>

@@ -16,7 +16,6 @@ import SplashScreen from '@/components/ui/SplashScreen';
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
-  const refId = searchParams.get('ref'); 
   const roomId = searchParams.get('room');
   
   const [isLogin, setIsLogin] = useState(mode === 'login');
@@ -61,21 +60,42 @@ const Auth = () => {
         if (password !== confirmPassword) throw new Error("As senhas não coincidem.");
         if (!acceptTerms) throw new Error("Deves aceitar os termos.");
 
-        // Registo enviando o refId nos metadados. O Trigger do DB fará o resto.
-        const { error } = await supabase.auth.signUp({
+        // Recuperar código de indicação do localStorage
+        const storedRefCode = localStorage.getItem('referral_code');
+        
+        // Gerar código de afiliado único para o novo usuário
+        const myReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+        const { data, error } = await supabase.auth.signUp({
           email: internalEmail,
           password,
           options: {
             data: { 
               full_name: fullName,
               phone_number: cleanPhone,
-              referred_by: refId && refId.length === 36 ? refId : null
+              referral_code: myReferralCode,
+              referred_by: storedRefCode // Captura automática
             }
           }
         });
         
         if (error) throw error;
-        toast.success("Conta criada com sucesso!");
+        
+        // Garantir que o perfil é criado com os dados corretos
+        if (data.user) {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            first_name: fullName.split(' ')[0],
+            referral_code: myReferralCode,
+            referred_by: storedRefCode,
+            bank_info: bankInfo
+          });
+          
+          // Limpar o código usado após o registo com sucesso
+          localStorage.removeItem('referral_code');
+        }
+
+        toast.success("Conta criada! Ganhaste acesso à plataforma.");
       }
       
       setShowSplash(true);
@@ -110,7 +130,7 @@ const Auth = () => {
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
             {isLogin ? 'Entrar' : 'Criar Conta'}
           </h1>
-          {refId && !isLogin && (
+          {localStorage.getItem('referral_code') && !isLogin && (
             <div className="mt-2 inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
               <ShieldCheck size={12} className="text-purple-400" />
               <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">Convite Detetado</span>

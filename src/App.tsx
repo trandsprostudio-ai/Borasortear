@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Wallet from "./pages/Wallet";
@@ -23,12 +24,25 @@ import ScrollToTop from "./components/layout/ScrollToTop";
 
 const queryClient = new QueryClient();
 
+const ReferralHandler = () => {
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      localStorage.setItem('referral_code', ref);
+      console.log("[Affiliate] Referral code saved:", ref);
+    }
+  }, []);
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ReferralHandler />
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
