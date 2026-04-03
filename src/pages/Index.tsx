@@ -137,8 +137,8 @@ const Index = () => {
           <div className="flex-1 space-y-12">
             <header className="space-y-6 relative">
               {/* O Pinguim da Sorte como Guia na Hero Section */}
-              <div className="absolute -top-10 -right-4 md:right-20 pointer-events-none hidden sm:block">
-                <WinnerPenguin className="w-40 h-40" />
+              <div className="absolute -top-16 -right-10 md:right-20 pointer-events-none hidden sm:block">
+                <WinnerPenguin className="w-52 h-52" />
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
