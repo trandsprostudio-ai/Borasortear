@@ -151,6 +151,13 @@ const Index = () => {
                 <p className="text-white/30 font-bold text-[10px] uppercase tracking-widest max-w-xs leading-relaxed">
                   Entra numa mesa, aguarda o sorteio e triplica o teu saldo em segundos.
                 </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/central-de-ajuda')}
+                  className="border-white/10 bg-white/5 hover:bg-white/10 h-12 rounded-xl font-black text-[10px] uppercase tracking-widest"
+                >
+                  <HelpCircle size={14} className="mr-2 text-purple-400" /> COMO FUNCIONA
+                </Button>
               </div>
             </header>
 
