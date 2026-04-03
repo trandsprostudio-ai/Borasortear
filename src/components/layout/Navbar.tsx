@@ -63,7 +63,6 @@ const Navbar = () => {
     if (data) setProfile(data);
   };
 
-  // Sincronização em Tempo Real do Perfil (Saldo, Bónus, etc)
   const subscribeToProfile = (userId: string) => {
     const channel = supabase.channel(`realtime-profile-${userId}`)
       .on('postgres_changes', 
@@ -111,6 +110,7 @@ const Navbar = () => {
 
       <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0F111A]/95 backdrop-blur-xl border-b border-white/5 h-16 flex items-center px-2 md:px-6">
         <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-2">
+          {/* Logo - Escala reduzida no mobile */}
           <div className="flex items-center gap-4">
             <Link to="/" className="shrink-0 scale-90 sm:scale-100 origin-left">
               <Logo className="text-xl md:text-2xl" />
@@ -122,6 +122,7 @@ const Navbar = () => {
               <>
                 <NotificationBell userId={user.id} />
                 
+                {/* Balance Display - Compactado para Mobile */}
                 <div className="flex items-center bg-[#1A1D29] rounded-xl p-0.5 md:p-1 border border-white/5">
                   <Link to="/wallet" className="px-2 md:px-4 py-0.5 flex flex-col items-end">
                     <span className="text-[6px] md:text-[8px] text-purple-400 font-black uppercase">Saldo Total</span>
@@ -138,9 +139,10 @@ const Navbar = () => {
                   </Button>
                 </div>
                 
+                {/* User Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white cursor-pointer outline-none">
+                    <button className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white cursor-pointer outline-none shrink-0">
                       <User size={16} />
                     </button>
                   </DropdownMenuTrigger>
@@ -164,10 +166,11 @@ const Navbar = () => {
                       <AlertDialogContent className="glass-card border-white/10 rounded-3xl w-[90vw] max-w-sm z-[100]">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="text-xl font-black italic">SAIR AGORA?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-xs font-bold text-white/40 uppercase tracking-widest">A sua sessão será encerrada com segurança.</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                          <AlertDialogCancel className="rounded-xl mt-0">VOLTAR</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleLogout} className="rounded-xl bg-red-500">CONFIRMAR</AlertDialogAction>
+                          <AlertDialogCancel className="rounded-xl mt-0 font-black text-[10px] uppercase tracking-widest">VOLTAR</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleLogout} className="rounded-xl bg-red-500 font-black text-[10px] uppercase tracking-widest">CONFIRMAR</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -175,17 +178,17 @@ const Navbar = () => {
                 </DropdownMenu>
               </>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 md:gap-2">
                 <Button 
                   variant="ghost"
                   onClick={() => navigate('/auth?mode=login')} 
-                  className="text-white/60 hover:text-white hover:bg-white/5 font-black px-4 rounded-xl text-[10px] uppercase h-10"
+                  className="text-white/60 hover:text-white hover:bg-white/5 font-black px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] uppercase h-9 md:h-10"
                 >
                   ENTRAR
                 </Button>
                 <Button 
                   onClick={() => navigate('/auth?mode=signup')} 
-                  className="premium-gradient font-black px-4 md:px-6 rounded-xl text-[10px] uppercase h-10"
+                  className="premium-gradient font-black px-3 md:px-6 rounded-xl text-[9px] md:text-[10px] uppercase h-9 md:h-10"
                 >
                   CRIAR CONTA
                 </Button>
