@@ -146,7 +146,7 @@ const Index = () => {
               </div>
               
               <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-[0.85]">
-                A TUA SORTE <br /> <span className="text-purple-500">NAS TUAS MÃOS.</span>
+                A TUA SORTE <br /> <span className="text-purple-500">NAS TUAS MÃOS</span>
               </h1>
               
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
