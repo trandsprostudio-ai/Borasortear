@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Phone, Lock, User, CreditCard, ShieldCheck, UserCheck, Smartphone } from 'lucide-react';
+import { ArrowLeft, Phone, Lock, User, ShieldCheck, UserCheck, Smartphone } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -67,6 +67,9 @@ const Auth = () => {
         if (password !== confirmPassword) throw new Error("Senhas diferentes.");
         if (!acceptTerms) throw new Error("Aceite os termos.");
 
+        // Validar se o refId é um UUID válido se existir
+        const validRefId = (refId && refId.length === 36) ? refId : null;
+
         const { data, error } = await supabase.auth.signUp({
           email: internalEmail,
           password,
@@ -74,21 +77,23 @@ const Auth = () => {
             data: { 
               full_name: fullName,
               phone_number: cleanPhone,
-              express_number: bankInfo
+              express_number: bankInfo,
+              referred_by: validRefId // Passamos aqui para o trigger capturar
             }
           }
         });
         
         if (error) throw error;
 
+        // Garantia extra: Upsert imediato com o referred_by
         if (data.user) {
           await supabase.from('profiles').upsert({ 
             id: data.user.id,
             first_name: fullName.split(' ')[0],
             last_name: fullName.split(' ').slice(1).join(' '),
             balance: 0,
-            referred_by: refId || null,
-            express_number: bankInfo
+            referred_by: validRefId,
+            bank_info: bankInfo // Usamos bank_info na tabela profiles para consistência
           });
         }
       }
@@ -125,6 +130,12 @@ const Auth = () => {
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
             {isLogin ? 'Acessar' : 'Cadastro'}
           </h1>
+          {refId && !isLogin && (
+            <div className="mt-2 inline-flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20">
+              <ShieldCheck size={12} className="text-green-500" />
+              <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Convite Ativo</span>
+            </div>
+          )}
         </div>
 
         <form className="space-y-4" onSubmit={handleAuth}>
