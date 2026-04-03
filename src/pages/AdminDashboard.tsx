@@ -95,32 +95,19 @@ const AdminDashboard = () => {
     const { type } = confirmConfig;
     
     try {
-      if (type === 'affiliates') {
-        // Limpa histórico de ganhos de afiliados
-        const { error: err1 } = await supabase.from('referral_earnings').delete().filter('amount', 'gte', 0);
-        // Reseta os contadores nos perfis de utilizadores
-        const { error: err2 } = await supabase.from('profiles').update({ 
-          referrals_count: 0, 
-          total_earnings: 0 
-        }).filter('referrals_count', 'gte', 0);
+      const response = await fetch(`https://ifdskxgsijmpqayufxgg.supabase.co/functions/v1/admin-system-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type })
+      });
 
-        if (err1 || err2) throw (err1 || err2);
-        toast.success("Dados de investimento em afiliados resetados!");
-      } else {
-        const { error } = await supabase
-          .from('transactions')
-          .delete()
-          .eq('type', type)
-          .eq('status', 'completed');
+      if (!response.ok) throw new Error("Falha no reset administrativo");
 
-        if (error) throw error;
-        toast.success(`Histórico de ${type === 'deposit' ? 'DEPÓSITOS' : 'SAQUES'} limpo!`);
-      }
-      
+      toast.success("Dados resetados com sucesso!");
       setConfirmConfig({ isOpen: false });
       fetchGlobalStats();
     } catch (err: any) {
-      toast.error("Erro ao limpar dados da plataforma. Verifique as permissões.");
+      toast.error("Erro ao resetar dados.");
     }
   };
 
@@ -179,8 +166,13 @@ const AdminDashboard = () => {
               </p>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20">
-              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Lucro Bruto (33.4%)</p>
+            <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 relative group">
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Lucro Bruto (33.4%)</p>
+                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'profit', title: 'LIMPAR LUCROS', description: 'Deseja zerar o lucro acumulado da plataforma?' })} className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
+                  <Trash2 size={12} />
+                </Button>
+              </div>
               <p className="text-3xl font-black italic tracking-tighter text-purple-400">
                 {stats.platformBalance.toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
               </p>
