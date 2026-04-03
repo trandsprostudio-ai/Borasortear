@@ -41,8 +41,13 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   const moduleName = room.modules.name.replace('M', 'Módulo ');
   const entryFee = room.modules.price;
   
+  // Lógica de validação solicitada:
+  // Se usar bónus, soma os dois. Mas se usar bónus e o bónus for 0, deve invalidar.
   const fundsAvailable = useBonus ? (userBalance + bonusBalance) : userBalance;
-  const hasBalance = fundsAvailable >= entryFee;
+  
+  // Impedir sorteio se: (Saldo insuficiente) OU (Opção bónus ativa mas bónus é zero)
+  const isInvalidSelection = (useBonus && bonusBalance <= 0) || (fundsAvailable < entryFee);
+  const hasBalance = !isInvalidSelection;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -62,7 +67,10 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-400">
                 <AlertTriangle size={20} className="shrink-0" />
                 <p className="text-[9px] font-black uppercase leading-relaxed">
-                  Saldo Insuficiente! Precisas de {entryFee.toLocaleString()} Kz, mas tens apenas {fundsAvailable.toLocaleString()} Kz.
+                  {useBonus && bonusBalance <= 0 
+                    ? "Não tens saldo de bónus disponível para utilizar. Desativa a opção ou faz uma recarga."
+                    : `Saldo Insuficiente! Precisas de ${entryFee.toLocaleString()} Kz, mas tens apenas ${fundsAvailable.toLocaleString()} Kz.`
+                  }
                 </p>
               </div>
             )}
