@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LayoutGrid, Loader2, Sparkles, HelpCircle, Gift, ArrowRight, ShieldCheck } from 'lucide-react';
+import { LayoutGrid, Loader2, Sparkles, HelpCircle, Gift, ArrowRight, ShieldCheck, UserPlus } from 'lucide-react';
 import ModuleCard from '@/components/raffle/ModuleCard';
 import RoomItem from '@/components/raffle/RoomItem';
 import NewsTicker from '@/components/layout/NewsTicker';
@@ -26,10 +26,17 @@ const Index = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [ticketModal, setTicketModal] = useState<{ open: boolean; code: string } | null>(null);
   const [confirmingRoom, setConfirmingRoom] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
 
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    };
+    fetchUser();
+
     const fetchModules = async () => {
       const { data: modData } = await supabase
         .from('modules')
@@ -147,17 +154,27 @@ const Index = () => {
                 A TUA SORTE <br /> <span className="text-purple-500">NAS TUAS MÃOS.</span>
               </h1>
               
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                 <p className="text-white/30 font-bold text-[10px] uppercase tracking-widest max-w-xs leading-relaxed">
                   Entra numa mesa, aguarda o sorteio e triplica o teu saldo em segundos.
                 </p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate('/central-de-ajuda')}
-                  className="h-10 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 font-black text-[9px] uppercase tracking-widest px-4"
-                >
-                  <HelpCircle size={14} className="mr-2" /> COMO FUNCIONA
-                </Button>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  {!user && (
+                    <Button 
+                      onClick={() => navigate('/auth?mode=signup')}
+                      className="h-12 rounded-xl premium-gradient font-black text-[10px] uppercase tracking-widest px-8 shadow-xl shadow-purple-500/20"
+                    >
+                      <UserPlus size={16} className="mr-2" /> CRIAR CONTA AGORA
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/central-de-ajuda')}
+                    className="h-12 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 font-black text-[9px] uppercase tracking-widest px-4"
+                  >
+                    <HelpCircle size={14} className="mr-2" /> COMO FUNCIONA
+                  </Button>
+                </div>
               </div>
             </header>
 

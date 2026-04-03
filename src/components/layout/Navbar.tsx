@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { User, LogOut, Settings, Plus, Wallet, Search } from 'lucide-react';
+import { User, LogOut, Settings, Plus, Wallet, Search, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate } from 'react-router-dom';
@@ -172,7 +172,22 @@ const Navbar = () => {
                 </div>
               </>
             ) : (
-              <Button onClick={() => navigate('/auth?mode=login')} className="bg-purple-600 font-black px-4 md:px-6 rounded-xl text-[10px] uppercase h-10">ENTRAR</Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate('/auth?mode=login')} 
+                  className="text-white/40 hover:text-white font-black px-4 rounded-xl text-[10px] uppercase h-10 hidden sm:flex"
+                >
+                  ENTRAR
+                </Button>
+                <Button 
+                  onClick={() => navigate('/auth?mode=signup')} 
+                  className="premium-gradient font-black px-4 md:px-6 rounded-xl text-[10px] uppercase h-10"
+                >
+                  <UserPlus size={14} className="mr-2 hidden sm:inline" />
+                  CRIAR CONTA
+                </Button>
+              </div>
             )}
           </div>
         </div>
