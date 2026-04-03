@@ -82,7 +82,6 @@ const AdminUsers = () => {
     setActionLoading(true);
     
     try {
-      // Chamada para a Edge Function que tem permissões de Admin
       const response = await fetch(`https://ifdskxgsijmpqayufxgg.supabase.co/functions/v1/admin-delete-user`, {
         method: 'POST',
         headers: {
@@ -183,7 +182,23 @@ const AdminUsers = () => {
                   </TableCell>
                   <TableCell className="p-6 text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setConfirmConfig({ isOpen: true, userId: u.id, currentStatus: u.is_banned, action: 'ban', title: u.is_banned ? 'DESBANIR' : 'BANIR', description: `Banir @${u.first_name}?`, variant: u.is_banned ? 'success' : 'danger' })} className="h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest text-red-400"><ShieldAlert size={14} className="mr-2" /> {u.is_banned ? 'Ativar' : 'Banir'}</Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setConfirmConfig({ 
+                          isOpen: true, 
+                          userId: u.id, 
+                          currentStatus: u.is_banned, 
+                          action: 'ban', 
+                          title: u.is_banned ? 'DESBANIR JOGADOR' : 'BANIR JOGADOR', 
+                          description: u.is_banned ? `Deseja reativar a conta de @${u.first_name}?` : `Deseja suspender a conta de @${u.first_name}?`, 
+                          variant: u.is_banned ? 'success' : 'danger' 
+                        })} 
+                        className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest ${u.is_banned ? 'text-green-400' : 'text-red-400'}`}
+                      >
+                        {u.is_banned ? <ShieldCheck size={14} className="mr-2" /> : <ShieldAlert size={14} className="mr-2" />}
+                        {u.is_banned ? 'Ativar' : 'Banir'}
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => setConfirmConfig({ isOpen: true, userId: u.id, action: 'delete', title: 'EXCLUIR JOGADOR', description: `REMOVER PERMANENTEMENTE @${u.first_name}? Esta ação apaga a conta e o perfil.`, variant: 'danger' })} className="h-9 w-9 rounded-xl text-red-500/40 hover:text-red-500"><Trash2 size={16} /></Button>
                     </div>
                   </TableCell>
