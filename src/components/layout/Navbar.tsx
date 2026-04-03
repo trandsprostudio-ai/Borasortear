@@ -31,7 +31,6 @@ import NotificationBell from './NotificationBell';
 const Navbar = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [pendingAmount, setPendingAmount] = useState(0);
   const [showExitSplash, setShowExitSplash] = useState(false);
   const [isDepositOpen, setIsDepositOpen] = useState(false);
   const navigate = useNavigate();
@@ -42,7 +41,6 @@ const Navbar = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
-        fetchPendingAmount(session.user.id);
       }
     };
     checkSession();
@@ -52,7 +50,6 @@ const Navbar = () => {
       setUser(currentUser);
       if (currentUser) {
         fetchProfile(currentUser.id);
-        fetchPendingAmount(currentUser.id);
       }
     });
 
@@ -62,20 +59,6 @@ const Navbar = () => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (data) setProfile(data);
-  };
-
-  const fetchPendingAmount = async (userId: string) => {
-    const { data } = await supabase
-      .from('transactions')
-      .select('amount')
-      .eq('user_id', userId)
-      .eq('type', 'deposit')
-      .eq('status', 'pending');
-    
-    if (data) {
-      const total = data.reduce((acc, t) => acc + Number(t.amount), 0);
-      setPendingAmount(total);
-    }
   };
 
   const handleLogout = async () => {
@@ -88,6 +71,8 @@ const Navbar = () => {
   };
 
   const currentBalance = Number(profile?.balance || 0);
+  const bonusBalance = Number(profile?.bonus_balance || 0);
+  const totalDisplayBalance = currentBalance + bonusBalance;
 
   return (
     <>
@@ -98,7 +83,10 @@ const Navbar = () => {
       {user && (
         <TransactionModal 
           isOpen={isDepositOpen} 
-          onClose={() => setIsDepositOpen(false)} 
+          onClose={() => {
+            setIsDepositOpen(false);
+            fetchProfile(user.id);
+          }} 
           type="deposit" 
           user={user} 
           currentBalance={currentBalance} 
@@ -111,9 +99,6 @@ const Navbar = () => {
             <Link to="/" className="shrink-0 scale-90 sm:scale-100 origin-left">
               <Logo className="text-xl md:text-2xl" />
             </Link>
-            <Link to="/consult-draw" className="hidden md:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-              <Search size={14} /> Consultar Bilhete
-            </Link>
           </div>
 
           <div className="flex items-center gap-1.5 md:gap-4">
@@ -122,21 +107,11 @@ const Navbar = () => {
                 <NotificationBell userId={user.id} />
                 
                 <div className="flex items-center bg-[#1A1D29] rounded-xl p-0.5 md:p-1 border border-white/5">
-                  <Link to="/wallet" className="px-2 md:px-4 py-0.5 flex flex-col items-end overflow-hidden">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[6px] md:text-[8px] text-green-400 font-black uppercase">Disponível</span>
-                      <span className="text-[10px] md:text-sm font-black text-white">
-                        {currentBalance.toLocaleString()} <span className="text-[7px] md:text-[8px] opacity-30">Kz</span>
-                      </span>
-                    </div>
-                    {pendingAmount > 0 && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-[6px] md:text-[7px] text-amber-500 font-black uppercase">Pendente</span>
-                        <span className="text-[8px] md:text-[10px] font-black text-white/40">
-                          +{pendingAmount.toLocaleString()} Kz
-                        </span>
-                      </div>
-                    )}
+                  <Link to="/wallet" className="px-2 md:px-4 py-0.5 flex flex-col items-end">
+                    <span className="text-[6px] md:text-[8px] text-purple-400 font-black uppercase">Saldo Total</span>
+                    <span className="text-[10px] md:text-sm font-black text-white">
+                      {totalDisplayBalance.toLocaleString()} <span className="text-[7px] md:text-[8px] opacity-30">Kz</span>
+                    </span>
                   </Link>
                   <Button 
                     size="icon" 
@@ -149,22 +124,21 @@ const Navbar = () => {
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white cursor-pointer shrink-0 outline-none focus:ring-2 focus:ring-purple-500/50">
+                    <button className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white cursor-pointer outline-none">
                       <User size={16} />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 bg-[#1A1D29] border-white/10 rounded-2xl p-2 z-50">
                     <DropdownMenuItem asChild>
-                      <Link to="/profile" className="flex items-center gap-3 p-3 cursor-pointer hover:bg-white/5 rounded-xl text-[10px] font-black uppercase text-white/60 hover:text-white transition-colors">
+                      <Link to="/profile" className="flex items-center gap-3 p-3 cursor-pointer hover:bg-white/5 rounded-xl text-[10px] font-black uppercase text-white/60">
                         <Settings size={14} /> Perfil
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/wallet" className="flex items-center gap-3 p-3 cursor-pointer hover:bg-white/5 rounded-xl text-[10px] font-black uppercase text-white/60 hover:text-white transition-colors">
+                      <Link to="/wallet" className="flex items-center gap-3 p-3 cursor-pointer hover:bg-white/5 rounded-xl text-[10px] font-black uppercase text-white/60">
                         <Wallet size={14} /> Carteira
                       </Link>
                     </DropdownMenuItem>
-                    
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="w-full flex items-center gap-3 p-3 cursor-pointer hover:bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 uppercase">
@@ -186,18 +160,7 @@ const Navbar = () => {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  onClick={() => navigate('/auth?mode=login')} 
-                  className="text-white/40 hover:text-white font-black px-4 rounded-xl text-[10px] uppercase h-10 hidden sm:flex"
-                >
-                  ENTRAR
-                </Button>
-                <Button 
-                  onClick={() => navigate('/auth?mode=signup')} 
-                  className="premium-gradient font-black px-4 md:px-6 rounded-xl text-[10px] uppercase h-10"
-                >
-                  <UserPlus size={14} className="mr-2 hidden sm:inline" />
+                <Button onClick={() => navigate('/auth?mode=signup')} className="premium-gradient font-black px-4 md:px-6 rounded-xl text-[10px] uppercase h-10">
                   CRIAR CONTA
                 </Button>
               </div>
