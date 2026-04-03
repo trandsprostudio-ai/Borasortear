@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AuthModal from '@/components/auth/AuthModal';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import WinnerPenguin from '@/components/ui/WinnerPenguin';
 
 const Index = () => {
   const [modules, setModules] = useState<any[]>([]);
@@ -134,7 +135,12 @@ const Index = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           
           <div className="flex-1 space-y-12">
-            <header className="space-y-6">
+            <header className="space-y-6 relative">
+              {/* O Pinguim da Sorte como Guia na Hero Section */}
+              <div className="absolute -top-10 -right-4 md:right-20 pointer-events-none hidden sm:block">
+                <WinnerPenguin className="w-40 h-40" />
+              </div>
+
               <div className="flex flex-wrap items-center gap-3">
                 <div className="inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20">
                   <Sparkles size={12} className="text-purple-400" />
@@ -233,6 +239,11 @@ const Index = () => {
           <aside className="w-full lg:w-[320px] shrink-0">
             <HallOfFame />
           </aside>
+        </div>
+
+        {/* Pinguim no Mobile/Bottom para companhia constante */}
+        <div className="fixed bottom-24 right-4 z-40 sm:hidden">
+          <WinnerPenguin className="w-24 h-24" />
         </div>
 
         <section className="mt-24 pt-16 border-t border-white/5">
