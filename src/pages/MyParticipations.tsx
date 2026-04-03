@@ -3,12 +3,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, History, CheckCircle2, XCircle } from 'lucide-react';
+import { LayoutGrid, Users, Clock, Trophy, Ticket, Loader2, History, CheckCircle2, XCircle, Search, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import DrawOverlay from '@/components/raffle/DrawOverlay';
 import { Button } from '@/components/ui/button';
 import PenguinMascot from '@/components/ui/PenguinMascot';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,7 +36,6 @@ const MyParticipations = () => {
   const [participations, setParticipations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
   const [winnersList, setWinnersList] = useState<Record<string, any[]>>({});
   const navigate = useNavigate();
 
@@ -103,57 +101,21 @@ const MyParticipations = () => {
     return () => { supabase.removeChannel(channel); };
   }, [user?.id, navigate, fetchParticipations]);
 
-  const handleShowResult = async (p: any) => {
-    // Se já temos os vencedores no estado, usamos. Senão, buscamos na hora.
-    let winners = winnersList[p.rooms.id];
-    
-    if (!winners || winners.length === 0) {
-      const { data: freshWinners } = await supabase
-        .from('winners')
-        .select('*, profiles(first_name)')
-        .eq('draw_id', p.rooms.id)
-        .order('position', { ascending: true });
-        
-      if (freshWinners && freshWinners.length > 0) {
-        winners = freshWinners;
-        setWinnersList(prev => ({ ...prev, [p.rooms.id]: freshWinners }));
-      }
-    }
-
-    if (winners && winners.length > 0) {
-      setSelectedResult({
-        isOpen: true,
-        winners: winners.map(w => ({
-          name: w.user_id ? (w.profiles?.first_name || 'Anónimo') : 'Plataforma',
-          prize: Number(w.prize_amount).toLocaleString() + ' Kz',
-          position: w.position,
-          userId: w.user_id
-        })),
-        roomInfo: `MESA #${p.rooms.id.slice(0, 8)}`
-      });
-    } else {
-      toast.info("O resultado está a ser gerado. Aguarde uns segundos.");
-    }
-  };
-
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
   const activeParticipations = participations.filter(p => p.rooms.status === 'open' || p.rooms.status === 'processing');
-  const historyParticipations = participations.filter(p => p.rooms.status === 'finished');
+  
+  // Filtro de 48 horas para o histórico
+  const historyParticipations = participations.filter(p => {
+    if (p.rooms.status !== 'finished') return false;
+    const diff = new Date().getTime() - new Date(p.rooms.created_at).getTime();
+    return diff < 48 * 60 * 60 * 1000;
+  });
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
       <Navbar />
       
-      {selectedResult && (
-        <DrawOverlay 
-          isOpen={selectedResult.isOpen}
-          onClose={() => setSelectedResult(null)}
-          winners={selectedResult.winners}
-          roomInfo={selectedResult.roomInfo}
-        />
-      )}
-
       <main className="max-w-5xl mx-auto px-4 pt-28">
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
@@ -173,7 +135,7 @@ const MyParticipations = () => {
               Ativas ({activeParticipations.length})
             </TabsTrigger>
             <TabsTrigger value="history" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
-              Histórico (72h)
+              Histórico (48h)
             </TabsTrigger>
           </TabsList>
 
@@ -226,67 +188,98 @@ const MyParticipations = () => {
 
           <TabsContent value="history">
             {historyParticipations.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {historyParticipations.map((p) => {
                   const roomWinners = winnersList[p.rooms.id] || [];
-                  const iWon = roomWinners.some((w: any) => w.user_id === user?.id);
-                  const myPosition = roomWinners.find((w: any) => w.user_id === user?.id)?.position;
+                  const myWinData = roomWinners.find((w: any) => w.user_id === user?.id);
+                  const iWon = !!myWinData;
                   
                   return (
                     <motion.div 
                       key={p.id} 
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      onClick={() => handleShowResult(p)}
-                      className="glass-card p-5 rounded-3xl border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer hover:bg-white/5 transition-all group"
+                      className="glass-card p-6 rounded-[2rem] border-white/5 relative overflow-hidden"
                     >
-                      <div className="flex items-center gap-5 w-full md:w-auto">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
-                          iWon ? 'bg-green-500/20 text-green-400 border border-green-500/20' : 'bg-white/5 text-white/20'
-                        }`}>
-                          {iWon ? <Trophy size={28} /> : <History size={28} />}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-white/20">Finalizado</span>
-                            <span className="text-[9px] font-black text-white/10">•</span>
-                            <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">{new Date(p.rooms.created_at).toLocaleDateString()}</span>
+                      <div className="flex flex-col md:flex-row justify-between gap-6">
+                        {/* Info Principal */}
+                        <div className="space-y-4 flex-1">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                              iWon ? 'bg-green-500/20 text-green-400 border border-green-500/20' : 'bg-white/5 text-white/20'
+                            }`}>
+                              {iWon ? <Trophy size={24} /> : <History size={24} />}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-white/20">Sorteio Finalizado</span>
+                                <span className="text-[8px] font-black text-white/10">•</span>
+                                <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">{new Date(p.rooms.created_at).toLocaleDateString()} - {new Date(p.rooms.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
+                              <h4 className="text-lg font-black uppercase italic tracking-tighter">{p.rooms.modules.name} <span className="text-[10px] not-italic text-white/20 ml-2">#{p.rooms.id.slice(0, 8)}</span></h4>
+                            </div>
                           </div>
-                          <h4 className="text-sm font-black uppercase tracking-tighter">{p.rooms.modules.name} - {p.rooms.modules.price.toLocaleString()} Kz</h4>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] font-bold text-white/40 uppercase">Bilhete:</span>
-                            <span className="text-[10px] font-black text-purple-400 tracking-widest bg-purple-500/10 px-2 py-0.5 rounded">{p.ticket_code}</span>
-                          </div>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-                        <div className="text-right">
-                          <p className="text-[9px] font-black text-white/20 uppercase mb-1">Resultado</p>
-                          <div className="flex items-center gap-2">
-                            {iWon ? (
-                              <>
-                                <span className="text-xs font-black text-green-400 uppercase tracking-widest">{myPosition}º LUGAR</span>
-                                <CheckCircle2 size={14} className="text-green-500" />
-                              </>
-                            ) : (
-                              <>
-                                <span className="text-xs font-black text-white/30 uppercase tracking-widest">NÃO PREMIADO</span>
-                                <XCircle size={14} className="text-white/20" />
-                              </>
-                            )}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                <p className="text-[8px] font-black text-white/20 uppercase mb-1">Bilhete</p>
+                                <div className="flex items-center gap-2">
+                                  <Ticket size={12} className="text-purple-400" />
+                                  <span className="text-[10px] font-black text-purple-400 tracking-widest">{p.ticket_code}</span>
+                                </div>
+                             </div>
+                             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                <p className="text-[8px] font-black text-white/20 uppercase mb-1">Entrada</p>
+                                <span className="text-[10px] font-black">{p.rooms.modules.price.toLocaleString()} Kz</span>
+                             </div>
+                             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                <p className="text-[8px] font-black text-white/20 uppercase mb-1">Mesa</p>
+                                <div className="flex items-center gap-2">
+                                  <Hash size={12} className="text-white/20" />
+                                  <span className="text-[10px] font-black uppercase">{p.rooms.id.slice(0, 8)}</span>
+                                </div>
+                             </div>
+                             <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                <p className="text-[8px] font-black text-white/20 uppercase mb-1">Participantes</p>
+                                <span className="text-[10px] font-black">{p.rooms.max_participants}</span>
+                             </div>
                           </div>
                         </div>
-                        <ChevronRight size={20} className="text-white/10 group-hover:text-purple-500 transition-colors" />
+
+                        {/* Resultado Visual */}
+                        <div className={`min-w-[180px] rounded-3xl p-6 flex flex-col items-center justify-center text-center border ${
+                          iWon ? 'bg-green-500/10 border-green-500/20' : 'bg-white/5 border-white/5'
+                        }`}>
+                          <div className="mb-2">
+                            {iWon ? <CheckCircle2 size={32} className="text-green-500" /> : <XCircle size={32} className="text-white/20" />}
+                          </div>
+                          <h5 className={`text-sm font-black uppercase tracking-widest mb-1 ${iWon ? 'text-green-400' : 'text-white/30'}`}>
+                            {iWon ? 'PREMIADO!' : 'NÃO PREMIADO'}
+                          </h5>
+                          {iWon && (
+                            <div className="mt-2">
+                              <p className="text-[8px] font-black text-green-500/40 uppercase mb-0.5">{myWinData.position}º Lugar</p>
+                              <p className="text-xl font-black text-green-400 italic">+{Number(myWinData.prize_amount).toLocaleString()} Kz</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   );
                 })}
+
+                <div className="bg-white/5 border border-dashed border-white/10 p-8 rounded-[2.5rem] text-center">
+                  <Search size={24} className="mx-auto mb-4 text-white/20" />
+                  <p className="text-xs font-bold text-white/30 uppercase tracking-widest leading-relaxed">
+                    Sorteios com mais de 48 horas não aparecem aqui.<br />
+                    Para ver resultados antigos, utilize o nosso <Link to="/consult-draw" className="text-purple-400 hover:underline">Consultor de Bilhetes</Link>
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="text-center py-20 bg-white/5 rounded-[3rem] border border-dashed border-white/10">
                 <History size={40} className="mx-auto mb-4 text-white/10" />
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Nenhum histórico nas últimas 72 horas</p>
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Nenhum histórico nas últimas 48 horas</p>
               </div>
             )}
           </TabsContent>
