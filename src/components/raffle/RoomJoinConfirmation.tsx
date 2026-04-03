@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, AlertTriangle, Share2, TrendingUp, Wallet, Gift } from 'lucide-react';
+import { LayoutGrid, AlertTriangle, Share2, TrendingUp, Wallet, Gift, DollarSign, Trophy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -40,12 +40,9 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
 
   const moduleName = room.modules.name.replace('M', 'Módulo ');
   const entryFee = room.modules.price;
+  const estimatedPrize = Math.floor((entryFee * room.max_participants) * 0.333);
   
-  // Lógica de validação solicitada:
-  // Se usar bónus, soma os dois. Mas se usar bónus e o bónus for 0, deve invalidar.
   const fundsAvailable = useBonus ? (userBalance + bonusBalance) : userBalance;
-  
-  // Impedir sorteio se: (Saldo insuficiente) OU (Opção bónus ativa mas bónus é zero)
   const isInvalidSelection = (useBonus && bonusBalance <= 0) || (fundsAvailable < entryFee);
   const hasBalance = !isInvalidSelection;
 
@@ -63,19 +60,39 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Aviso de Saldo Insuficiente */}
             {!hasBalance && (
               <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 text-red-400">
                 <AlertTriangle size={20} className="shrink-0" />
                 <p className="text-[9px] font-black uppercase leading-relaxed">
                   {useBonus && bonusBalance <= 0 
-                    ? "Não tens saldo de bónus disponível para utilizar. Desativa a opção ou faz uma recarga."
+                    ? "Não tens saldo de bónus disponível. Desativa a opção ou faz uma recarga para continuar."
                     : `Saldo Insuficiente! Precisas de ${entryFee.toLocaleString()} Kz, mas tens apenas ${fundsAvailable.toLocaleString()} Kz.`
                   }
                 </p>
               </div>
             )}
 
-            <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex items-center justify-between">
+            {/* Resumo Financeiro */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wallet size={12} className="text-green-500" />
+                  <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Saldo Real</p>
+                </div>
+                <p className="text-sm font-black text-white italic">{userBalance.toLocaleString()} Kz</p>
+              </div>
+              <div className="bg-purple-600/5 p-4 rounded-2xl border border-purple-500/10">
+                <div className="flex items-center gap-2 mb-1">
+                  <Trophy size={12} className="text-purple-400" />
+                  <p className="text-[8px] font-black text-purple-400 uppercase tracking-widest">Prémio Est.</p>
+                </div>
+                <p className="text-sm font-black text-purple-400 italic">{estimatedPrize.toLocaleString()} Kz</p>
+              </div>
+            </div>
+
+            {/* Opção de Bónus */}
+            <div className="bg-white/5 border border-white/10 p-5 rounded-2xl flex items-center justify-between transition-all hover:bg-white/10">
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-1">
                   <Gift size={14} className="text-purple-400" />
@@ -91,18 +108,20 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               />
             </div>
 
+            {/* Detalhes da Mesa */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                 <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Mesa</p>
                 <p className="text-xs font-black text-white uppercase">{moduleName}</p>
               </div>
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Custo</p>
+                <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Custo de Entrada</p>
                 <p className="text-xs font-black text-purple-400">{entryFee.toLocaleString()} Kz</p>
               </div>
             </div>
           </div>
 
+          {/* Botões de Ação */}
           <div className="grid grid-cols-2 gap-3 mt-8 pb-4">
             <Button 
               variant="ghost" 
