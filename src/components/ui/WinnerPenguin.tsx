@@ -23,111 +23,111 @@ const WinnerPenguin = ({ className = "" }: { className?: string }) => {
   }, []);
 
   return (
-    <div className={`flex flex-col items-center justify-center w-full max-w-[280px] mx-auto ${className}`}>
+    <div className={`flex flex-col items-center justify-center w-full max-w-[320px] mx-auto ${className}`}>
       {/* Balão de Fala Responsivo */}
-      <div className="relative mb-4 w-full px-2 flex justify-center min-h-[60px]">
+      <div className="relative mb-2 w-full px-4 flex justify-center min-h-[70px]">
         <AnimatePresence mode="wait">
           <motion.div
             key={index}
             initial={{ opacity: 0, scale: 0.8, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: -10 }}
-            className="bg-white text-[#0A0B12] px-4 py-2.5 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.6)] border-2 border-purple-500 relative max-w-full"
+            className="bg-white text-[#0A0B12] px-5 py-3 rounded-[1.5rem] shadow-[0_15px_50px_rgba(0,0,0,0.5)] border-2 border-purple-500 relative max-w-full"
           >
-            <p className="text-[10px] md:text-[11px] font-black italic text-center uppercase tracking-tight leading-tight break-words">
+            <p className="text-[10px] md:text-[11px] font-black italic text-center uppercase tracking-tight leading-tight">
               {phrases[index]}
             </p>
-            {/* Triângulo do Balão */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white" />
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[10px] border-t-white" />
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Pinguim Animado */}
+      {/* Pinguim Realista Fofinho */}
       <div className="relative">
         <motion.div 
-          animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.3, 0.1] }}
+          animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
           transition={{ duration: 4, repeat: Infinity }}
-          className="absolute inset-0 bg-yellow-400/20 blur-3xl rounded-full"
+          className="absolute inset-0 bg-purple-500/10 blur-3xl rounded-full"
         />
 
         <motion.div 
-          animate={{ y: [0, -6, 0] }}
+          animate={{ y: [0, -5, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="relative w-36 h-36 md:w-48 md:h-48 z-10"
+          className="relative w-40 h-40 md:w-52 md:h-52 z-10"
         >
-          <svg viewBox="0 0 24 24" className="w-full h-full drop-shadow-2xl overflow-visible">
-            {/* Braço Esquerdo Animado */}
-            <motion.path 
-              d="M6 12C4 13 3 15 3 17" 
-              stroke="#0F111A" 
-              strokeWidth="2.5" 
-              strokeLinecap="round"
-              animate={{ rotate: [0, -15, 0], x: [0, -2, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-              style={{ originX: "6px", originY: "12px" }}
-            />
-
-            {/* Braço Direito Animado (Acenando) */}
-            <motion.path 
-              d="M18 12C20 11 22 9 22 7" 
-              stroke="#0F111A" 
-              strokeWidth="2.5" 
-              strokeLinecap="round"
-              animate={{ rotate: [0, 20, 0], y: [0, -2, 0] }}
-              transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
-              style={{ originX: "18px", originY: "12px" }}
-            />
-
-            {/* Corpo Principal (Preto) */}
+          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl overflow-visible">
+            {/* Corpo Principal Arredondado */}
             <path 
-              d="M12 2C8.5 2 6 5 6 9C6 11 6.5 12.5 7.5 14C6.5 16 6 18 6 20C6 21 7 22 12 22C17 22 18 21 18 20C18 18 17.5 16 16.5 14C17.5 12.5 18 11 18 9C18 5 15.5 2 12 2Z" 
-              fill="#0F111A" 
+              d="M50 10C35 10 25 25 25 45C25 70 30 90 50 90C70 90 75 70 75 45C75 25 65 10 50 10Z" 
+              fill="#1A1D29" 
+            />
+
+            {/* Barbatanas (Braços) Integradas com Movimento Suave */}
+            <motion.path 
+              d="M26 45C20 45 15 55 18 65" 
+              stroke="#1A1D29" strokeWidth="10" strokeLinecap="round"
+              animate={{ rotate: [0, -8, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              style={{ originX: '26px', originY: '45px' }}
+            />
+            <motion.path 
+              d="M74 45C80 45 85 55 82 65" 
+              stroke="#1A1D29" strokeWidth="10" strokeLinecap="round"
+              animate={{ rotate: [0, 10, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              style={{ originX: '74px', originY: '45px' }}
             />
             
-            {/* Camisa Amarela */}
+            {/* Camisa Amarela com Curvatura */}
             <path 
-              d="M7.5 14C6.5 16 6 18 6 20C6 20.5 6.5 21 8 21H16C17.5 21 18 20.5 18 20C18 18 17.5 16 16.5 14C15.5 13 14.5 12.5 12 12.5C9.5 12.5 8.5 13 7.5 14Z" 
+              d="M28 55C28 75 35 88 50 88C65 88 72 75 72 55C60 52 40 52 28 55Z" 
               fill="#FACC15" 
             />
 
-            {/* Texto na Camisa */}
+            {/* Texto BORA? na Camisa */}
             <text 
-              x="12" 
-              y="17" 
-              fontSize="1.8" 
-              fill="#0F111A" 
-              fontWeight="900" 
-              textAnchor="middle" 
-              style={{ fontStyle: 'italic' }}
+              x="50" y="75" 
+              fontSize="8" fill="#1A1D29" fontWeight="900" textAnchor="middle" 
+              style={{ fontStyle: 'italic', letterSpacing: '-0.05em' }}
             >
               BORA?
             </text>
 
-            {/* Barriga Branca Pequena */}
-            <circle cx="12" cy="19.5" r="1.5" fill="white" />
+            {/* Peito Branco Fofinho */}
+            <path 
+              d="M50 58C42 58 38 65 38 75C38 82 42 86 50 86C58 86 62 82 62 75C62 65 58 58 50 58Z" 
+              fill="white" 
+            />
 
-            {/* Olhos */}
-            <circle cx="10" cy="7.5" r="1.5" fill="white" />
-            <circle cx="14" cy="7.5" r="1.5" fill="white" />
-            <circle cx="10" cy="7.5" r="0.8" fill="black" />
-            <circle cx="14" cy="7.5" r="0.8" fill="black" />
+            {/* Rosto - Olhos Grandes e Fofos */}
+            <circle cx="42" cy="35" r="4.5" fill="white" />
+            <circle cx="58" cy="35" r="4.5" fill="white" />
+            <circle cx="42.5" cy="35" r="2.5" fill="black" />
+            <circle cx="57.5" cy="35" r="2.5" fill="black" />
+            {/* Brilho nos Olhos */}
+            <circle cx="41.5" cy="33.5" r="1" fill="white" />
+            <circle cx="56.5" cy="33.5" r="1" fill="white" />
 
-            {/* Bico */}
-            <path d="M12 8.5L10.5 10.5H13.5L12 8.5Z" fill="#F97316" />
+            {/* Bochechas Rosadas */}
+            <circle cx="34" cy="42" r="3" fill="#FFB7B7" opacity="0.4" />
+            <circle cx="66" cy="42" r="3" fill="#FFB7B7" opacity="0.4" />
 
-            {/* Patas */}
-            <path d="M9 21.5L7.5 22.5H10.5L9 21.5Z" fill="#F97316" />
-            <path d="M15 21.5L13.5 22.5H16.5L15 21.5Z" fill="#F97316" />
+            {/* Bico Realista Arredondado */}
+            <path d="M50 38L45 44H55L50 38Z" fill="#F97316" />
+            <circle cx="50" cy="43" r="1.5" fill="#F97316" />
+
+            {/* Patas Laranja Arredondadas */}
+            <circle cx="40" cy="89" r="4" fill="#F97316" />
+            <circle cx="60" cy="89" r="4" fill="#F97316" />
           </svg>
 
-          {/* Efeito de Brilho na Estrela */}
+          {/* Moedas Flutuantes de Sucesso */}
           <motion.div 
-            animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="absolute -top-1 -right-1 text-2xl drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+            animate={{ y: [-20, -40], opacity: [0, 1, 0], scale: [0.5, 1.2, 0.5] }}
+            transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+            className="absolute top-0 right-4 text-xl"
           >
-            ⭐
+            💰
           </motion.div>
         </motion.div>
       </div>
