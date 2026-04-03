@@ -11,21 +11,14 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import PenguinMascot from '@/components/ui/PenguinMascot';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatDateTime, getTimeRemaining, isWithinHours } from '@/utils/date-utils';
 
 const CountdownItem = ({ expiresAt }: { expiresAt: string }) => {
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
-    const calculate = () => {
-      const diff = new Date(expiresAt).getTime() - new Date().getTime();
-      if (diff <= 0) return "SORTEANDO...";
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
-      return `${h}h ${m}m ${s}s`;
-    };
-    const timer = setInterval(() => setTimeLeft(calculate()), 1000);
-    setTimeLeft(calculate());
+    const timer = setInterval(() => setTimeLeft(getTimeRemaining(expiresAt)), 1000);
+    setTimeLeft(getTimeRemaining(expiresAt));
     return () => clearInterval(timer);
   }, [expiresAt]);
 
@@ -105,11 +98,10 @@ const MyParticipations = () => {
 
   const activeParticipations = participations.filter(p => p.rooms.status === 'open' || p.rooms.status === 'processing');
   
-  // Filtro de 48 horas para o histórico
+  // Filtro de 48 horas usando o utilitário profissional
   const historyParticipations = participations.filter(p => {
     if (p.rooms.status !== 'finished') return false;
-    const diff = new Date().getTime() - new Date(p.rooms.created_at).getTime();
-    return diff < 48 * 60 * 60 * 1000;
+    return isWithinHours(p.rooms.created_at, 48);
   });
 
   return (
@@ -171,7 +163,7 @@ const MyParticipations = () => {
                       </div>
                       <div className="flex items-center gap-2 text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
                         <Clock size={12} />
-                        <span className="text-[10px] font-black uppercase"><CountdownItem expiresAt={p.rooms.expires_at} /></span>
+                        <span className="text-[10px] font-black uppercase tracking-widest"><CountdownItem expiresAt={p.rooms.expires_at} /></span>
                       </div>
                     </div>
                   </motion.div>
@@ -202,7 +194,6 @@ const MyParticipations = () => {
                       className="glass-card p-6 rounded-[2rem] border-white/5 relative overflow-hidden"
                     >
                       <div className="flex flex-col md:flex-row justify-between gap-6">
-                        {/* Info Principal */}
                         <div className="space-y-4 flex-1">
                           <div className="flex items-center gap-3">
                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
@@ -214,7 +205,7 @@ const MyParticipations = () => {
                               <div className="flex items-center gap-2 mb-0.5">
                                 <span className="text-[8px] font-black uppercase tracking-widest text-white/20">Sorteio Finalizado</span>
                                 <span className="text-[8px] font-black text-white/10">•</span>
-                                <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">{new Date(p.rooms.created_at).toLocaleDateString()} - {new Date(p.rooms.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">{formatDateTime(p.rooms.created_at)}</span>
                               </div>
                               <h4 className="text-lg font-black uppercase italic tracking-tighter">{p.rooms.modules.name} <span className="text-[10px] not-italic text-white/20 ml-2">#{p.rooms.id.slice(0, 8)}</span></h4>
                             </div>
@@ -246,7 +237,6 @@ const MyParticipations = () => {
                           </div>
                         </div>
 
-                        {/* Resultado Visual */}
                         <div className={`min-w-[180px] rounded-3xl p-6 flex flex-col items-center justify-center text-center border ${
                           iWon ? 'bg-green-500/10 border-green-500/20' : 'bg-white/5 border-white/5'
                         }`}>
