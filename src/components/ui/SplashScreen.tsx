@@ -2,43 +2,57 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
-import Logo from '../layout/Logo';
+import PenguinMascot from './PenguinMascot';
 
 interface SplashScreenProps {
   message?: string;
 }
 
 const SplashScreen = ({ message = "Processando..." }: SplashScreenProps) => {
+  const isLogout = message.toLowerCase().includes('sair') || message.toLowerCase().includes('saindo');
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[999] bg-[#0A0B12] flex flex-col items-center justify-center p-6 text-center"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0A0B12]/95 backdrop-blur-xl"
     >
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
-        <Logo className="scale-150" />
-      </motion.div>
+      <div className="relative flex flex-col items-center">
+        {/* Mascote exclusiva para Logout */}
+        {isLogout ? (
+          <PenguinMascot page="logout" className="mb-8 scale-125" />
+        ) : (
+          <motion.div
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 10, -10, 0]
+            }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-24 h-24 bg-gradient-to-br from-purple-600 to-blue-600 rounded-[2rem] shadow-[0_0_50px_rgba(124,58,237,0.3)] flex items-center justify-center mb-8"
+          >
+            <span className="text-4xl">💰</span>
+          </motion.div>
+        )}
 
-      <div className="space-y-4">
-        <Loader2 className="animate-spin text-purple-500 mx-auto" size={32} />
-        <p className="text-white/40 font-black text-xs uppercase tracking-[0.3em] animate-pulse">
+        <motion.p
+          animate={{ opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="text-xl font-black italic tracking-tighter uppercase text-white"
+        >
           {message}
-        </p>
-      </div>
-
-      <div className="absolute bottom-12 w-full max-w-[200px] h-1 bg-white/5 rounded-full overflow-hidden">
-        <motion.div
-          animate={{ x: [-200, 200] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-          className="w-1/2 h-full bg-gradient-to-r from-transparent via-purple-500 to-transparent"
-        />
+        </motion.p>
+        
+        <div className="mt-6 flex gap-1">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.1 }}
+              className="w-1.5 h-1.5 bg-purple-500 rounded-full"
+            />
+          ))}
+        </div>
       </div>
     </motion.div>
   );

@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AuthModal from '@/components/auth/AuthModal';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import WinnerPenguin from '@/components/ui/WinnerPenguin';
+import PenguinMascot from '@/components/ui/PenguinMascot';
 
 const Index = () => {
   const [modules, setModules] = useState<any[]>([]);
@@ -141,14 +141,6 @@ const Index = () => {
                   <Sparkles size={12} className="text-purple-400" />
                   <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">Elite Gaming</span>
                 </div>
-                <div className="flex items-center gap-2 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-green-400">ATIVO AGORA</span>
-                </div>
-                <div className="flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20">
-                  <ShieldCheck size={12} className="text-blue-400" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-blue-400">SISTEMA SEGURO</span>
-                </div>
               </div>
               
               <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-[0.85]">
@@ -159,23 +151,6 @@ const Index = () => {
                 <p className="text-white/30 font-bold text-[10px] uppercase tracking-widest max-w-xs leading-relaxed">
                   Entra numa mesa, aguarda o sorteio e triplica o teu saldo em segundos.
                 </p>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  {!user && (
-                    <Button 
-                      onClick={() => navigate('/auth?mode=signup')}
-                      className="h-12 rounded-xl premium-gradient font-black text-[10px] uppercase tracking-widest px-8 shadow-xl shadow-purple-500/20"
-                    >
-                      <UserPlus size={16} className="mr-2" /> CRIAR CONTA AGORA
-                    </Button>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigate('/central-de-ajuda')}
-                    className="h-12 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 font-black text-[9px] uppercase tracking-widest px-4"
-                  >
-                    <HelpCircle size={14} className="mr-2" /> COMO FUNCIONA
-                  </Button>
-                </div>
               </div>
             </header>
 
@@ -193,15 +168,6 @@ const Index = () => {
             </section>
 
             <section className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500">
-                    <LayoutGrid size={16} />
-                  </div>
-                  <h2 className="text-lg font-black italic tracking-tighter uppercase">Mesas Ativas ({selectedModule?.name.replace('M', 'Módulo ')})</h2>
-                </div>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <AnimatePresence mode="popLayout">
                   {rooms.map((room) => (
@@ -220,13 +186,6 @@ const Index = () => {
                     </motion.div>
                   ))}
                 </AnimatePresence>
-                
-                {rooms.length === 0 && !loading && (
-                  <div className="col-span-full py-16 text-center glass-card rounded-[2rem] border-dashed border-white/10">
-                    <Loader2 className="animate-spin text-white/10 mx-auto mb-3" size={32} />
-                    <p className="text-white/20 font-black uppercase text-[9px] tracking-widest">Preparando novas salas para ti...</p>
-                  </div>
-                )}
               </div>
             </section>
           </div>
@@ -236,30 +195,10 @@ const Index = () => {
           </aside>
         </div>
 
-        {/* Pinguim Flutuante - Agora VISÍVEL em todos os dispositivos e FIXO no scroll */}
+        {/* Mascote Fixa na Home */}
         <div className="fixed bottom-24 right-4 md:right-8 z-[100] pointer-events-none">
-          <WinnerPenguin className="w-24 h-24 md:w-32 md:h-32" />
+          <PenguinMascot page="home" className="pointer-events-auto" />
         </div>
-
-        <section className="mt-24 pt-16 border-t border-white/5">
-          <div className="glass-card p-10 rounded-[3rem] border-purple-500/10 bg-gradient-to-br from-purple-600/5 to-transparent relative overflow-hidden">
-            <div className="max-w-3xl relative z-10 space-y-6">
-              <div className="inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20">
-                <Gift size={12} className="text-purple-400" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">PROGRAMA DE AFILIADOS</span>
-              </div>
-              
-              <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none">Ganhe com <span className="text-green-400">cada vitória</span> dos seus amigos</h2>
-              <p className="text-white/30 font-bold text-[10px] uppercase tracking-widest mb-10 leading-relaxed max-w-xl">
-                Sempre que um indicado seu ganhar um prémio, você recebe automaticamente 5% do valor na sua carteira. Sem limites, sem taxas.
-              </p>
-              
-              <Button onClick={() => navigate('/affiliates')} className="h-14 px-8 rounded-2xl premium-gradient font-black text-sm uppercase tracking-widest shadow-xl shadow-purple-500/20">
-                SABER MAIS <ArrowRight size={18} className="ml-2" />
-              </Button>
-            </div>
-          </div>
-        </section>
       </main>
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
