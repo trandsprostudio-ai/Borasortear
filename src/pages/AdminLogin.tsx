@@ -18,8 +18,8 @@ const AdminLogin = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const adminId = "933271690Ramos";
-    const adminPass = "933271690Ramos";
+    const adminId = "901627339";
+    const adminPass = "9016";
 
     if (id === adminId && password === adminPass) {
       setShowSplash(true);
