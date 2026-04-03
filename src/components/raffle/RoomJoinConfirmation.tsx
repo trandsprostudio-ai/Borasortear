@@ -135,7 +135,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
             {/* Incentivo de Afiliado */}
             <div className="bg-purple-600/5 border border-purple-500/10 p-4 rounded-xl">
               <p className="text-[10px] font-bold text-white/40 uppercase text-center leading-relaxed tracking-tight">
-                Incentiva a entrada de colegas e ganha <span className="text-purple-400">5% vitalício</span> sobre os prémios que eles ganharem nesta mesa!
+                Incentiva a entrada de colegas e ganha <span className="text-purple-400">5% vitalício</span> sobre os prémios que eles ganharem no <span className="text-purple-400">BORA SORTEIAR!</span>
               </p>
             </div>
           </div>
