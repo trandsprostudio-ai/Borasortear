@@ -126,7 +126,6 @@ const Index = () => {
 
   if (loading) return <div className="min-h-screen bg-[#0A0B12] flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
-  // Verifica se qualquer formulário ou modal está aberto para ocultar a mascote fixa
   const isAnyModalOpen = !!confirmingRoom || isAuthModalOpen || !!ticketModal;
 
   return (
@@ -205,14 +204,14 @@ const Index = () => {
           </aside>
         </div>
 
-        {/* Mascote Fixa na Home (Oculta se houver modal aberto) */}
+        {/* Mascote Fixa na Home - Ajustada para Mobile (right-2) */}
         <AnimatePresence>
           {!isAnyModalOpen && (
             <motion.div 
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
-              className="fixed bottom-24 right-4 md:right-8 z-[100] pointer-events-none"
+              className="fixed bottom-24 right-2 md:right-8 z-[100] pointer-events-none"
             >
               <PenguinMascot page="home" className="pointer-events-auto" />
             </motion.div>
