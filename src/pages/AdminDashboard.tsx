@@ -54,18 +54,15 @@ const AdminDashboard = () => {
   const fetchGlobalStats = async () => {
     setLoading(true);
     try {
-      // 1. Contagem de utilizadores
       const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
       setTotalUsers(count || 0);
 
-      // 2. Transações e Lucros
       const { data: txs } = await supabase.from('transactions').select('amount, type, status');
       const { data: platformEarnings } = await supabase
         .from('winners')
         .select('prize_amount')
         .is('user_id', null);
 
-      // 3. Estatísticas de Afiliados
       const { data: profiles } = await supabase.from('profiles').select('referrals_count, total_earnings');
       const { data: commissions } = await supabase.from('referral_earnings').select('amount');
 
@@ -96,27 +93,35 @@ const AdminDashboard = () => {
 
   const handleClearHistory = async () => {
     const { type } = confirmConfig;
-    const label = type === 'deposit' ? 'DEPÓSITOS' : 'SAQUES';
-
+    
     try {
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('type', type)
-        .eq('status', 'completed');
+      if (type === 'affiliates') {
+        // Limpa histórico de ganhos de afiliados
+        const { error: err1 } = await supabase.from('referral_earnings').delete().filter('amount', 'gte', 0);
+        // Reseta os contadores nos perfis de utilizadores
+        const { error: err2 } = await supabase.from('profiles').update({ 
+          referrals_count: 0, 
+          total_earnings: 0 
+        }).filter('referrals_count', 'gte', 0);
 
-      if (error) throw error;
+        if (err1 || err2) throw (err1 || err2);
+        toast.success("Dados de investimento em afiliados resetados!");
+      } else {
+        const { error } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('type', type)
+          .eq('status', 'completed');
+
+        if (error) throw error;
+        toast.success(`Histórico de ${type === 'deposit' ? 'DEPÓSITOS' : 'SAQUES'} limpo!`);
+      }
       
-      toast.success(`Histórico de ${label} limpo com sucesso!`);
       setConfirmConfig({ isOpen: false });
       fetchGlobalStats();
     } catch (err: any) {
-      toast.error("Erro ao limpar dados da plataforma.");
+      toast.error("Erro ao limpar dados da plataforma. Verifique as permissões.");
     }
-  };
-
-  const handleGlobalRefresh = () => {
-    setRefreshKey(prev => prev + 1);
   };
 
   const handleLogout = () => {
@@ -157,7 +162,7 @@ const AdminDashboard = () => {
             </div>
             
             <div className="flex items-center gap-3 w-full md:w-auto">
-              <Button variant="outline" onClick={handleGlobalRefresh} className="flex-1 md:flex-none border-white/10 bg-white/5 h-12 rounded-xl font-black text-[10px] uppercase tracking-widest">
+              <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)} className="flex-1 md:flex-none border-white/10 bg-white/5 h-12 rounded-xl font-black text-[10px] uppercase tracking-widest">
                 <RefreshCw size={14} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Atualizar
               </Button>
               <Button onClick={handleLogout} variant="ghost" className="flex-1 md:flex-none h-12 rounded-xl bg-red-500/10 text-red-400 font-black text-[10px] uppercase tracking-widest border border-red-500/20">
@@ -167,16 +172,11 @@ const AdminDashboard = () => {
           </header>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mb-10">
-            {/* Total de Usuários */}
             <div className="glass-card p-8 rounded-[2.5rem] border-blue-500/20">
               <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Total Jogadores</p>
               <p className="text-4xl font-black italic tracking-tighter text-blue-400">
                 {totalUsers.toLocaleString()}
               </p>
-              <div className="flex items-center gap-2 mt-2">
-                <Users size={10} className="text-blue-500" />
-                <span className="text-[8px] font-bold text-white/20 uppercase">Registados</span>
-              </div>
             </div>
 
             <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20">
@@ -210,8 +210,13 @@ const AdminDashboard = () => {
               </p>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-red-500/20 bg-red-500/5">
-              <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Investimento Afiliados</p>
+            <div className="glass-card p-8 rounded-[2.5rem] border-red-500/20 bg-red-500/5 relative group">
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Investimento Afiliados</p>
+                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'affiliates', title: 'LIMPAR AFILIADOS', description: 'Deseja zerar as estatísticas de afiliados (Contagem e Comissões)?' })} className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
+                  <Trash2 size={12} />
+                </Button>
+              </div>
               <p className="text-3xl font-black italic tracking-tighter text-red-400">
                 -{(stats.affiliateBonusPaid + stats.affiliateCommissionsPaid).toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
               </p>
