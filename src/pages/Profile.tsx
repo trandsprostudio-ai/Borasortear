@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import FloatingNav from '@/components/layout/FloatingNav';
 import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
+import MoneyPenguin from '@/components/ui/MoneyPenguin';
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -59,7 +60,6 @@ const Profile = () => {
           await fetchReferralData(data.referral_code);
         }
       } else {
-        // Se o perfil não existir, forçamos a criação via upsert básico
         const newCode = Math.random().toString(36).substring(2, 10).toUpperCase();
         const { data: createdProfile } = await supabase.from('profiles').upsert({
           id: session.user.id,
@@ -90,14 +90,12 @@ const Profile = () => {
     }
     
     try {
-      // Tentativa 1: API Moderna
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
         toast.success(message);
         return;
       }
       
-      // Tentativa 2: Fallback Clássico
       const textArea = document.createElement("textarea");
       textArea.value = text;
       textArea.style.position = "fixed";
@@ -207,37 +205,8 @@ const Profile = () => {
           </div>
 
           <div className="lg:col-span-2 space-y-8">
-            <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
-              <h3 className="text-xl font-black italic tracking-tighter uppercase mb-8 flex items-center gap-3">
-                <Users className="text-purple-500" /> Rede de Afiliados ({referrals.length})
-              </h3>
-
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                {referrals.length > 0 ? (
-                  referrals.map((ref, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 font-black">
-                          {ref.first_name?.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-black uppercase">@{ref.first_name}</p>
-                          <p className="text-[9px] font-bold text-white/20 uppercase">Membro desde {new Date(ref.created_at).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full">
-                        <CheckCircle2 size={12} className="text-green-500" />
-                        <span className="text-[8px] font-black text-green-500 uppercase">Ativo</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-20">
-                    <Users size={32} className="mx-auto mb-4 text-white/5" />
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Ainda não tens afiliados ativos.</p>
-                  </div>
-                )}
-              </div>
+            <div className="glass-card p-8 rounded-[2.5rem] border-white/5 flex items-center justify-center min-h-[400px]">
+              <MoneyPenguin />
             </div>
           </div>
         </div>
