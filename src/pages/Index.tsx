@@ -136,11 +136,6 @@ const Index = () => {
           
           <div className="flex-1 space-y-12">
             <header className="space-y-6 relative">
-              {/* O Pinguim da Sorte como Guia na Hero Section */}
-              <div className="absolute -top-16 -right-10 md:right-20 pointer-events-none hidden sm:block">
-                <WinnerPenguin className="w-52 h-52" />
-              </div>
-
               <div className="flex flex-wrap items-center gap-3">
                 <div className="inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20">
                   <Sparkles size={12} className="text-purple-400" />
@@ -241,9 +236,9 @@ const Index = () => {
           </aside>
         </div>
 
-        {/* Pinguim no Mobile/Bottom para companhia constante */}
-        <div className="fixed bottom-24 right-4 z-40 sm:hidden">
-          <WinnerPenguin className="w-24 h-24" />
+        {/* Pinguim Flutuante - Agora VISÍVEL em todos os dispositivos e FIXO no scroll */}
+        <div className="fixed bottom-24 right-4 md:right-8 z-[100] pointer-events-none">
+          <WinnerPenguin className="w-24 h-24 md:w-32 md:h-32" />
         </div>
 
         <section className="mt-24 pt-16 border-t border-white/5">
