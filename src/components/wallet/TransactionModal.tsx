@@ -63,14 +63,8 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
     { 
       group: "🌍 ÁFRICA",
       methods: [
-        { id: 'express', name: 'Multicaixa Express', icon: Smartphone, color: 'text-blue-400', available: true, details: { label: 'Número Express', value: '933 271 690', owner: 'BORA SORTEIAR' } },
+        { id: 'express', name: 'Multicaixa Express', icon: Smartphone, color: 'text-blue-400', available: true, details: { label: 'Número Express', value: '942 259 240', owner: 'BORA SORTEIAR' } },
         { id: 'unitel', name: 'Unitel Money', icon: Smartphone, color: 'text-orange-400', available: true, details: { label: 'Pagamento de Serviços', entity: '00930', reference: '942259240', owner: 'BORA SORTEIAR' } },
-      ]
-    },
-    { 
-      group: "🌐 INTERNACIONAL",
-      methods: [
-        { id: 'airtm', name: 'Airtm', icon: Globe, color: 'text-blue-500', available: true, details: { label: 'E-mail Airtm', value: 'albertinoramod@gmail.com', notice: 'Este é o e-mail de uma empresa associada. O saldo leva em média 1h para refletir.' } },
       ]
     },
     { 
@@ -355,7 +349,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
             </div>
             <h3 className="text-2xl font-black italic tracking-tighter mb-2 uppercase">SOLICITAÇÃO ENVIADA</h3>
             <p className="text-xs text-white/40 font-bold mb-8 leading-relaxed uppercase tracking-widest">
-              A sua recarga foi solicitada. O comprovativo será validado em até 15 minutos (ou 1h para Airtm).
+              A sua recarga foi solicitada. O comprovativo será validado em até 15 minutos.
             </p>
             <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-purple-600 font-black">ENTENDIDO</Button>
           </div>
