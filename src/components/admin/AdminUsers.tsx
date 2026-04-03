@@ -80,6 +80,25 @@ const AdminUsers = () => {
     }
   };
 
+  const handleDeleteUser = async () => {
+    const { userId } = confirmConfig;
+    try {
+      // Exclui o perfil da tabela public.profiles
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast.success("Perfil do utilizador removido com sucesso!");
+      setConfirmConfig({ isOpen: false });
+      fetchUsers();
+    } catch (err: any) {
+      toast.error("Erro ao excluir utilizador: " + err.message);
+    }
+  };
+
   const filteredUsers = users.filter(u => 
     u.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.id.includes(searchTerm)
@@ -99,7 +118,7 @@ const AdminUsers = () => {
       <ActionConfirmModal 
         isOpen={confirmConfig.isOpen}
         onClose={() => setConfirmConfig({ isOpen: false })}
-        onConfirm={confirmConfig.action === 'ban' ? toggleBan : () => {}}
+        onConfirm={confirmConfig.action === 'ban' ? toggleBan : handleDeleteUser}
         title={confirmConfig.title}
         description={confirmConfig.description}
         variant={confirmConfig.variant}
@@ -199,23 +218,41 @@ const AdminUsers = () => {
                     </div>
                   </TableCell>
                   <TableCell className="p-6 text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setConfirmConfig({
-                        isOpen: true,
-                        userId: u.id,
-                        currentStatus: u.is_banned,
-                        action: 'ban',
-                        title: u.is_banned ? 'DESBANIR JOGADOR' : 'BANIR JOGADOR',
-                        description: `Deseja realmente ${u.is_banned ? 'desbanir' : 'banir'} @${u.first_name}?`,
-                        variant: u.is_banned ? 'success' : 'danger'
-                      })}
-                      className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest ${u.is_banned ? 'text-green-400 hover:bg-green-400/10' : 'text-red-400 hover:bg-red-400/10'}`}
-                    >
-                      {u.is_banned ? <ShieldCheck size={14} className="mr-2" /> : <ShieldAlert size={14} className="mr-2" />}
-                      {u.is_banned ? 'Desbanir' : 'Banir'}
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setConfirmConfig({
+                          isOpen: true,
+                          userId: u.id,
+                          currentStatus: u.is_banned,
+                          action: 'ban',
+                          title: u.is_banned ? 'DESBANIR JOGADOR' : 'BANIR JOGADOR',
+                          description: `Deseja realmente ${u.is_banned ? 'desbanir' : 'banir'} @${u.first_name}?`,
+                          variant: u.is_banned ? 'success' : 'danger'
+                        })}
+                        className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase tracking-widest ${u.is_banned ? 'text-green-400 hover:bg-green-400/10' : 'text-red-400 hover:bg-red-400/10'}`}
+                      >
+                        {u.is_banned ? <ShieldCheck size={14} className="mr-2" /> : <ShieldAlert size={14} className="mr-2" />}
+                        {u.is_banned ? 'Desbanir' : 'Banir'}
+                      </Button>
+
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setConfirmConfig({
+                          isOpen: true,
+                          userId: u.id,
+                          action: 'delete',
+                          title: 'EXCLUIR UTILIZADOR',
+                          description: `Tem certeza que deseja remover permanentemente @${u.first_name}? Esta ação não pode ser desfeita.`,
+                          variant: 'danger'
+                        })}
+                        className="h-9 w-9 rounded-xl text-red-500/40 hover:text-red-500 hover:bg-red-500/10"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
