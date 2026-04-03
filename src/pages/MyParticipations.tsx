@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, Activity, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, Copy, Wallet, DollarSign, Search, CheckCircle2, XCircle, History } from 'lucide-react';
+import { LayoutGrid, Users, Clock, Trophy, Ticket, Loader2, ChevronRight, History, CheckCircle2, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import { useNavigate } from 'react-router-dom';
@@ -38,8 +38,50 @@ const MyParticipations = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [selectedResult, setSelectedResult] = useState<any>(null);
-  const [winnersList, setWinnersList] = useState<Record<string, any>>({});
+  const [winnersList, setWinnersList] = useState<Record<string, any[]>>({});
   const navigate = useNavigate();
+
+  const fetchWinnersForRooms = useCallback(async (roomIds: string[]) => {
+    if (roomIds.length === 0) return;
+    
+    const { data: winners } = await supabase
+      .from('winners')
+      .select('*, profiles(first_name)')
+      .in('draw_id', roomIds)
+      .order('position', { ascending: true });
+    
+    if (winners) {
+      const winnersMap: Record<string, any[]> = {};
+      winners.forEach(w => {
+        if (!winnersMap[w.draw_id]) winnersMap[w.draw_id] = [];
+        winnersMap[w.draw_id].push(w);
+      });
+      setWinnersList(prev => ({ ...prev, ...winnersMap }));
+    }
+  }, []);
+
+  const fetchParticipations = useCallback(async (userId: string) => {
+    const { data, error } = await supabase
+      .from('participants')
+      .select('*, rooms(*, modules(*))')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast.error("Erro ao carregar participações");
+      return;
+    }
+
+    if (data) {
+      setParticipations(data);
+      const finishedRoomIds = data
+        .filter(p => p.rooms.status === 'finished')
+        .map(p => p.rooms.id);
+      
+      await fetchWinnersForRooms(finishedRoomIds);
+    }
+    setLoading(false);
+  }, [fetchWinnersForRooms]);
 
   useEffect(() => {
     const getSession = async () => {
@@ -59,62 +101,38 @@ const MyParticipations = () => {
       }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user?.id, navigate]);
-
-  const fetchParticipations = async (userId: string) => {
-    const { data } = await supabase
-      .from('participants')
-      .select('*, rooms(*, modules(*))')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-
-    if (data) {
-      setParticipations(data);
-      // Buscar vencedores para as salas finalizadas
-      const finishedRoomIds = data
-        .filter(p => p.rooms.status === 'finished')
-        .map(p => p.rooms.id);
-      
-      if (finishedRoomIds.length > 0) {
-        const { data: winners } = await supabase
-          .from('winners')
-          .select('*')
-          .in('draw_id', finishedRoomIds);
-        
-        if (winners) {
-          const winnersMap: Record<string, any> = {};
-          winners.forEach(w => {
-            if (!winnersMap[w.draw_id]) winnersMap[w.draw_id] = [];
-            winnersMap[w.draw_id].push(w);
-          });
-          setWinnersList(winnersMap);
-        }
-      }
-    }
-    setLoading(false);
-  };
+  }, [user?.id, navigate, fetchParticipations]);
 
   const handleShowResult = async (p: any) => {
-    const { data: winners } = await supabase
-      .from('winners')
-      .select('*, profiles(first_name)')
-      .eq('draw_id', p.rooms.id)
-      .order('position', { ascending: true });
+    // Se já temos os vencedores no estado, usamos. Senão, buscamos na hora.
+    let winners = winnersList[p.rooms.id];
+    
+    if (!winners || winners.length === 0) {
+      const { data: freshWinners } = await supabase
+        .from('winners')
+        .select('*, profiles(first_name)')
+        .eq('draw_id', p.rooms.id)
+        .order('position', { ascending: true });
+        
+      if (freshWinners && freshWinners.length > 0) {
+        winners = freshWinners;
+        setWinnersList(prev => ({ ...prev, [p.rooms.id]: freshWinners }));
+      }
+    }
 
     if (winners && winners.length > 0) {
       setSelectedResult({
         isOpen: true,
         winners: winners.map(w => ({
-          name: w.profiles?.first_name || 'Jogador',
-          prize: w.prize_amount.toLocaleString() + ' Kz',
+          name: w.user_id ? (w.profiles?.first_name || 'Anónimo') : 'Plataforma',
+          prize: Number(w.prize_amount).toLocaleString() + ' Kz',
           position: w.position,
-          userId: w.user_id,
-          amount: w.prize_amount
+          userId: w.user_id
         })),
         roomInfo: `MESA #${p.rooms.id.slice(0, 8)}`
       });
     } else {
-      toast.error("O resultado ainda está sendo processado.");
+      toast.info("O resultado está a ser gerado. Aguarde uns segundos.");
     }
   };
 
@@ -210,9 +228,9 @@ const MyParticipations = () => {
             {historyParticipations.length > 0 ? (
               <div className="space-y-4">
                 {historyParticipations.map((p) => {
-                  const myWinners = winnersList[p.rooms.id] || [];
-                  const iWon = myWinners.some((w: any) => w.user_id === user?.id);
-                  const myPosition = myWinners.find((w: any) => w.user_id === user?.id)?.position;
+                  const roomWinners = winnersList[p.rooms.id] || [];
+                  const iWon = roomWinners.some((w: any) => w.user_id === user?.id);
+                  const myPosition = roomWinners.find((w: any) => w.user_id === user?.id)?.position;
                   
                   return (
                     <motion.div 
