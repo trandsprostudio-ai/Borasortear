@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { LayoutGrid, Users, Trophy, Info, AlertTriangle, Sparkles } from 'lucide-react';
+import { LayoutGrid, Users, Trophy, Info, AlertTriangle, Sparkles, Share2, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface RoomJoinConfirmationProps {
@@ -33,6 +33,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   const moduleName = room.modules.name.replace('M', 'Módulo ');
   const entryFee = room.modules.price;
   const prizePool = entryFee * room.max_participants;
+  const estimatedPrize = Math.floor(prizePool * 0.3333);
   const hasBalance = userBalance >= entryFee;
 
   return (
@@ -67,11 +68,36 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               </div>
             </div>
 
+            {/* Informação sobre Prémio Estimado e Divisão */}
+            <div className="bg-purple-600/5 border border-purple-500/20 p-5 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={14} className="text-purple-400" />
+                  <span className="text-[10px] font-black uppercase text-purple-400">Prémio Estimado</span>
+                </div>
+                <span className="text-sm font-black text-white italic">{estimatedPrize.toLocaleString()} Kz</span>
+              </div>
+              <p className="text-[8px] font-bold text-white/30 uppercase leading-relaxed">
+                * Estimativa baseada no preenchimento total da sala ({room.max_participants} jogadores). A premiação final depende do número real de participantes no momento do sorteio.
+              </p>
+            </div>
+
+            {/* Secção de Incentivo a Convites e Afiliados */}
+            <div className="bg-green-500/5 border border-green-500/20 p-5 rounded-2xl space-y-3">
+              <div className="flex items-center gap-3">
+                <Share2 size={16} className="text-green-500 shrink-0" />
+                <h4 className="text-[10px] font-black uppercase text-green-500">Ganha sempre, ganha mais!</h4>
+              </div>
+              <p className="text-[9px] font-bold text-white/60 leading-relaxed uppercase">
+                Convida amigos para preencher a mesa mais rápido! Lembra-te: Mesmo que não ganhes esta rodada, <span className="text-green-400">ganhas 5% de comissão vitalícia</span> sobre cada prémio que os teus amigos ganharem.
+              </p>
+            </div>
+
             <div className="bg-purple-500/5 p-5 rounded-2xl border border-purple-500/10">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
                   <Trophy size={14} className="text-purple-400" />
-                  <span className="text-[10px] font-black uppercase text-white/40">3 Vencedores nesta Sala</span>
+                  <span className="text-[10px] font-black uppercase text-white/40">Sorteio Automático</span>
                 </div>
                 <div className="flex items-center gap-1 bg-green-500/20 px-2 py-0.5 rounded-full">
                   <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />
@@ -79,7 +105,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
                 </div>
               </div>
               <div className="flex justify-between items-end mb-2">
-                <span className="text-[9px] font-bold text-white/40 uppercase">Preenchimento da Mesa</span>
+                <span className="text-[9px] font-bold text-white/40 uppercase">Vagas Preenchidas</span>
                 <span className="text-[9px] font-black">{room.current_participants} / {room.max_participants}</span>
               </div>
               <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
@@ -91,14 +117,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
             </div>
           </div>
 
-          <div className="bg-amber-500/5 p-5 rounded-2xl border border-amber-500/10 mb-8 flex gap-3">
-            <Sparkles size={18} className="text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-[9px] font-bold text-white/60 leading-relaxed uppercase">
-              Vais entrar numa mesa em andamento! O sorteio acontece <span className="text-white">logo que a sala lote</span> ou o <span className="text-white">tempo estimado termine</span>. Boa sorte!
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 mt-8">
             <Button 
               variant="ghost" 
               onClick={onClose}
