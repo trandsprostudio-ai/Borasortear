@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion } from 'framer-motion';
-import { Users, DollarSign, Share2, Trophy, Zap, ShieldCheck, Gift, Megaphone, ArrowRight, Loader2, Copy, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Users, DollarSign, Share2, Trophy, Zap, ShieldCheck, Gift, Megaphone, ArrowRight, Loader2, Copy, CheckCircle2, TrendingUp, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import Footer from '@/components/layout/Footer';
