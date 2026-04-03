@@ -16,7 +16,7 @@ import SplashScreen from '@/components/ui/SplashScreen';
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
-  const refId = searchParams.get('ref');
+  const refId = searchParams.get('ref'); // Captura o ID de quem convidou
   const roomId = searchParams.get('room');
   
   const [isLogin, setIsLogin] = useState(mode === 'login');
@@ -67,6 +67,7 @@ const Auth = () => {
         if (password !== confirmPassword) throw new Error("Senhas diferentes.");
         if (!acceptTerms) throw new Error("Aceite os termos.");
 
+        // Validar se o refId é um UUID válido antes de enviar
         const validRefId = (refId && refId.length === 36) ? refId : null;
 
         const { data, error } = await supabase.auth.signUp({
@@ -77,13 +78,14 @@ const Auth = () => {
               full_name: fullName,
               phone_number: cleanPhone,
               express_number: bankInfo,
-              referred_by: validRefId
+              referred_by: validRefId // Aqui criamos a ligação oficial no Auth
             }
           }
         });
         
         if (error) throw error;
 
+        // Garantia de Sincronização: Criamos/Atualizamos o perfil imediatamente com o vínculo
         if (data.user) {
           await supabase.from('profiles').upsert({ 
             id: data.user.id,
@@ -92,7 +94,7 @@ const Auth = () => {
             balance: 0,
             referred_by: validRefId,
             bank_info: bankInfo
-          });
+          }, { onConflict: 'id' });
         }
       }
       

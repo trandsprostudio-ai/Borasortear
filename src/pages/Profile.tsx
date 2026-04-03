@@ -38,16 +38,32 @@ const Profile = () => {
   }, [navigate]);
 
   const fetchReferralData = async (userId: string) => {
-    const [refList, refEarnings] = await Promise.all([
-      supabase.from('profiles').select('first_name, created_at').eq('referred_by', userId).order('created_at', { ascending: false }),
-      supabase.from('transactions').select('amount').eq('user_id', userId).eq('payment_method', 'Bônus de Indicação').eq('status', 'completed')
-    ]);
+    try {
+      // Buscar a lista real de pessoas convidadas por este utilizador
+      const { data: refList, error: refError } = await supabase
+        .from('profiles')
+        .select('first_name, created_at')
+        .eq('referred_by', userId)
+        .order('created_at', { ascending: false });
 
-    if (refList.data) setReferrals(refList.data);
-    setReferralStats({
-      count: refList.data?.length || 0,
-      totalEarned: refEarnings.data?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0
-    });
+      if (refError) throw refError;
+
+      // Buscar bónus ganhos (transações de indicação)
+      const { data: refEarnings } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('user_id', userId)
+        .eq('payment_method', 'Bônus de Indicação')
+        .eq('status', 'completed');
+
+      setReferrals(refList || []);
+      setReferralStats({
+        count: refList?.length || 0,
+        totalEarned: refEarnings?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0
+      });
+    } catch (err) {
+      console.error("Erro ao carregar indicados:", err);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -59,7 +75,7 @@ const Profile = () => {
         .update({
           first_name: profile.first_name,
           last_name: profile.last_name,
-          bank_info: profile.bank_info, // Usando bank_info para armazenar o número express por compatibilidade
+          bank_info: profile.bank_info,
         })
         .eq('id', user.id);
 
@@ -81,9 +97,9 @@ const Profile = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
   const getRank = () => {
-    if (referralStats.count > 10) return { label: 'DIAMANTE', color: 'text-cyan-400', icon: Award };
-    if (referralStats.count > 5) return { label: 'OURO', color: 'text-amber-500', icon: Trophy };
-    if (referralStats.count > 2) return { label: 'PRATA', color: 'text-slate-300', icon: Medal };
+    if (referralStats.count >= 10) return { label: 'DIAMANTE', color: 'text-cyan-400', icon: Award };
+    if (referralStats.count >= 5) return { label: 'OURO', color: 'text-amber-500', icon: Trophy };
+    if (referralStats.count >= 2) return { label: 'PRATA', color: 'text-slate-300', icon: Medal };
     return { label: 'BRONZE', color: 'text-orange-600', icon: Star };
   };
 
@@ -113,8 +129,8 @@ const Profile = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-white/5 p-3 rounded-2xl">
                   <Trophy size={16} className="text-amber-500 mx-auto mb-1" />
-                  <p className="text-[10px] font-black text-white/20 uppercase">Vitórias</p>
-                  <p className="font-black">0</p>
+                  <p className="text-[10px] font-black text-white/20 uppercase">Bônus Total</p>
+                  <p className="font-black text-xs">{referralStats.totalEarned.toLocaleString()} Kz</p>
                 </div>
                 <div className="bg-white/5 p-3 rounded-2xl">
                   <Users size={16} className="text-purple-500 mx-auto mb-1" />
@@ -126,10 +142,10 @@ const Profile = () => {
 
             <div className="glass-card p-6 rounded-[2rem] border-purple-500/20 bg-purple-500/5">
               <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Share2 size={14} /> Programa de Afiliados
+                <Share2 size={14} /> Link de Convite
               </h4>
               <p className="text-[11px] font-bold text-white/40 mb-4 leading-relaxed">
-                Você ganha <span className="text-green-400">5% de bônus</span> sobre cada prêmio que seus amigos ganharem!
+                Ganha <span className="text-green-400">5% de bônus vitalício</span> sobre os prêmios dos teus amigos!
               </p>
               <Button 
                 onClick={copyInviteLink}
@@ -143,7 +159,7 @@ const Profile = () => {
           <div className="lg:col-span-2 space-y-8">
             <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
               <h3 className="text-xl font-black italic tracking-tighter uppercase mb-8 flex items-center gap-3">
-                <ShieldCheck className="text-purple-500" /> Configurações de Saque
+                <ShieldCheck className="text-purple-500" /> Dados Pessoais
               </h3>
 
               <form onSubmit={handleSave} className="space-y-6">
@@ -177,7 +193,6 @@ const Profile = () => {
                       className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 w-full focus:outline-none focus:border-purple-500/50 text-lg font-black tracking-widest" 
                     />
                   </div>
-                  <p className="text-[9px] font-bold text-white/20 uppercase ml-1">Certifique-se de que este número possui uma conta Multicaixa Express ativa.</p>
                 </div>
 
                 <Button 
@@ -185,7 +200,7 @@ const Profile = () => {
                   disabled={saving}
                   className="w-full premium-gradient h-14 rounded-2xl font-black text-lg shadow-xl shadow-purple-500/20"
                 >
-                  {saving ? <Loader2 className="animate-spin" /> : 'SALVAR DADOS DE SAQUE'}
+                  {saving ? <Loader2 className="animate-spin" /> : 'SALVAR DADOS'}
                 </Button>
               </form>
             </div>
@@ -193,7 +208,7 @@ const Profile = () => {
             <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-                  <Users className="text-purple-500" /> Amigos que usaram seu link
+                  <Users className="text-purple-500" /> Lista de Convidados ({referrals.length})
                 </h3>
               </div>
 
@@ -207,16 +222,19 @@ const Profile = () => {
                         </div>
                         <div>
                           <p className="text-sm font-black uppercase">@{ref.first_name}</p>
-                          <p className="text-[9px] font-bold text-white/20 uppercase">Entrou em {new Date(ref.created_at).toLocaleDateString()}</p>
+                          <p className="text-[9px] font-bold text-white/20 uppercase">Membro desde {new Date(ref.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
-                      <CheckCircle2 size={18} className="text-green-500/40" />
+                      <div className="flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full">
+                        <CheckCircle2 size={12} className="text-green-500" />
+                        <span className="text-[8px] font-black text-green-500 uppercase">Vínculo Ativo</span>
+                      </div>
                     </div>
                   ))
                 ) : (
                   <div className="text-center py-10">
                     <Users size={32} className="mx-auto mb-4 text-white/5" />
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Você ainda não indicou ninguém.</p>
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">Nenhum convidado registado ainda.</p>
                   </div>
                 )}
               </div>
