@@ -22,15 +22,10 @@ const TermosDeUso = () => {
           <section className="space-y-4">
             <h2 className="text-2xl font-black italic tracking-tighter uppercase text-purple-500">6. Distribuição de Prêmios</h2>
             <p className="text-sm text-white/40 font-bold leading-relaxed">
-              Os prêmios são creditados automaticamente na conta dos vencedores. A distribuição do valor total arrecadado em cada mesa segue a seguinte divisão: 
+              Os prêmios são creditados automaticamente na conta dos vencedores. Em cada mesa, o sistema realiza a seleção de 3 vencedores entre os participantes reais que ocupam as vagas disponíveis. 
             </p>
-            <ul className="text-sm text-white/40 font-bold leading-relaxed space-y-2 ml-4">
-              <li className="flex items-center gap-2">• 33.3% para o 1º Colocado</li>
-              <li className="flex items-center gap-2">• 33.3% para o 2º Colocado</li>
-              <li className="flex items-center gap-2">• 33.4% como Taxa de Intermediação e Manutenção da Plataforma</li>
-            </ul>
             <p className="text-sm text-white/40 font-bold leading-relaxed mt-2">
-              Esta taxa é utilizada para garantir a estabilidade do sistema, processamento de pagamentos e suporte 24/7.
+              A plataforma retém uma taxa de intermediação utilizada para garantir a estabilidade do sistema, processamento de pagamentos, suporte 24/7 e financiamento do programa de bónus de afiliados.
             </p>
           </section>
         </div>
