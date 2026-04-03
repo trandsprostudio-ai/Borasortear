@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Phone, Lock, User, ShieldCheck, UserCheck, Smartphone, Gift } from 'lucide-react';
+import { ArrowLeft, Phone, Lock, User, ShieldCheck, UserCheck, Smartphone, Gift, Loader2 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -63,6 +63,22 @@ const Auth = () => {
         if (!acceptTerms) throw new Error("Deves aceitar os termos.");
 
         const finalRefCode = manualRefCode.trim().toUpperCase();
+
+        // VALIDAÇÃO CRÍTICA: Verificar se o código de convite existe no sistema
+        if (finalRefCode) {
+          const { data: refOwner, error: refError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('referral_code', finalRefCode)
+            .maybeSingle();
+          
+          if (refError) throw refError;
+          if (!refOwner) {
+            setLoading(false);
+            toast.error("Código de convite inválido ou inexistente!");
+            return;
+          }
+        }
 
         const { data, error } = await supabase.auth.signUp({
           email: internalEmail,
@@ -164,7 +180,12 @@ const Auth = () => {
                 </div>
                 <div className="relative">
                   <Gift className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={manualRefCode} onChange={(e) => setManualRefCode(e.target.value)} placeholder="EX: ABC123D" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 uppercase" />
+                  <Input 
+                    value={manualRefCode} 
+                    onChange={(e) => setManualRefCode(e.target.value.toUpperCase())} 
+                    placeholder="EX: ABC123D" 
+                    className="bg-white/5 border-white/10 h-12 pl-12 uppercase font-black"
+                  />
                 </div>
               </div>
 
@@ -209,7 +230,7 @@ const Auth = () => {
           )}
 
           <Button type="submit" disabled={loading} className="w-full premium-gradient h-14 rounded-2xl font-black text-lg mt-4">
-            {loading ? 'A PROCESSAR...' : isLogin ? 'ENTRAR AGORA' : 'FINALIZAR REGISTO'}
+            {loading ? <Loader2 className="animate-spin" /> : isLogin ? 'ENTRAR AGORA' : 'FINALIZAR REGISTO'}
           </Button>
         </form>
 
