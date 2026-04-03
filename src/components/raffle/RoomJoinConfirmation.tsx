@@ -41,12 +41,17 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-md p-0 overflow-hidden">
         <div className="p-8">
-          <DialogHeader className="text-center mb-6">
-            <div className="flex justify-center mb-4">
-              <WinnerPenguin />
+          <DialogHeader className="mb-8">
+            <div className="flex items-center gap-6">
+              <div className="flex-1 text-left">
+                <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none mb-2">Estás pronto?</DialogTitle>
+                <DialogDescription className="text-[10px] font-bold text-white/40 uppercase tracking-widest">A tua sorte começa nesta mesa</DialogDescription>
+              </div>
+              <div className="shrink-0 pt-8">
+                {/* Pinguim posicionado na lateral com frases visíveis */}
+                <WinnerPenguin className="w-20 h-20" />
+              </div>
             </div>
-            <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase">Estás pronto?</DialogTitle>
-            <DialogDescription className="text-[10px] font-bold text-white/40 uppercase tracking-widest">A tua sorte começa nesta mesa</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mb-6">
