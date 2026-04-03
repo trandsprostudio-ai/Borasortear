@@ -37,7 +37,9 @@ const AdminDashboard = () => {
   const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, type: null });
 
   useEffect(() => {
-    if (localStorage.getItem('admin_session') !== 'true') {
+    // Verificação de Segurança de Sessão
+    const session = localStorage.getItem('admin_session');
+    if (session !== 'true') {
       navigate('/admin-login');
       return;
     }
@@ -113,8 +115,10 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     setShowExitSplash(true);
+    // Limpeza Total da Sessão
     setTimeout(() => {
       localStorage.removeItem('admin_session');
+      sessionStorage.clear();
       navigate('/');
     }, 2000);
   };

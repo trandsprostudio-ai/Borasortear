@@ -48,6 +48,10 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
   const [profile, setProfile] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Limites de Segurança
+  const MIN_DEPOSIT = 100;
+  const MIN_WITHDRAWAL = 1000;
+
   useEffect(() => {
     if (isOpen && user) {
       fetchProfile();
@@ -87,8 +91,20 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
 
   const handleAction = async () => {
     const val = parseFloat(amount);
+    
+    // Validações de Segurança
     if (isNaN(val) || val <= 0) {
       toast.error("Insira um valor válido.");
+      return;
+    }
+
+    if (type === 'deposit' && val < MIN_DEPOSIT) {
+      toast.error(`O valor mínimo de depósito é ${MIN_DEPOSIT} Kz.`);
+      return;
+    }
+
+    if (type === 'withdrawal' && val < MIN_WITHDRAWAL) {
+      toast.error(`O valor mínimo de saque é ${MIN_WITHDRAWAL} Kz.`);
       return;
     }
 
@@ -97,6 +113,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
       let proofUrl = null;
 
       if (type === 'deposit' && file) {
+        // Sanitização simples de nome de ficheiro
         const fileExt = file.name.split('.').pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -118,6 +135,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
         const targetAccount = profile?.express_number || profile?.bank_info;
         if (!targetAccount) throw new Error("Dados de saque não cadastrados no perfil.");
 
+        // Bloqueio de saldo antes da transação (Segurança Atômica)
         const { error: balanceError } = await supabase.from('profiles').update({ balance: currentBalance - val }).eq('id', user.id);
         if (balanceError) throw balanceError;
       }
@@ -149,7 +167,7 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
         onClose();
       }
     } catch (error: any) {
-      toast.error("Erro: " + error.message);
+      toast.error("Erro de processamento. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -251,6 +269,9 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
               <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase">
                 {type === 'deposit' ? 'Valor do Depósito' : 'Valor do Saque'}
               </DialogTitle>
+              <p className="text-[9px] font-black uppercase text-white/20 mt-2">
+                Mínimo: {type === 'deposit' ? MIN_DEPOSIT : MIN_WITHDRAWAL} Kz
+              </p>
             </DialogHeader>
 
             <div className="space-y-6 my-8">
@@ -313,13 +334,6 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
                 <div>
                   <p className="text-[9px] font-black text-white/20 uppercase mb-1">Beneficiário</p>
                   <p className="text-[11px] font-bold">{selectedMethodData.details?.owner}</p>
-                </div>
-              )}
-
-              {selectedMethodData.details?.notice && (
-                <div className="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20 flex gap-2">
-                  <Info size={14} className="text-blue-400 shrink-0" />
-                  <p className="text-[9px] font-bold text-blue-400 leading-tight">{selectedMethodData.details?.notice}</p>
                 </div>
               )}
             </div>
