@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Phone, Lock, User, ShieldCheck, UserCheck, Smartphone } from 'lucide-react';
+import { ArrowLeft, Phone, Lock, User, ShieldCheck, UserCheck, Smartphone, Gift } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
   const roomId = searchParams.get('room');
+  const urlRef = searchParams.get('ref');
   
   const [isLogin, setIsLogin] = useState(mode === 'login');
   const [loading, setLoading] = useState(false);
@@ -28,6 +29,7 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [age, setAge] = useState('');
   const [bankInfo, setBankInfo] = useState('');
+  const [manualRefCode, setManualRefCode] = useState(urlRef || localStorage.getItem('referral_code') || '');
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const navigate = useNavigate();
@@ -60,7 +62,7 @@ const Auth = () => {
         if (password !== confirmPassword) throw new Error("As senhas não coincidem.");
         if (!acceptTerms) throw new Error("Deves aceitar os termos.");
 
-        const storedRefCode = localStorage.getItem('referral_code');
+        const finalRefCode = manualRefCode.trim().toUpperCase();
 
         const { data, error } = await supabase.auth.signUp({
           email: internalEmail,
@@ -69,18 +71,15 @@ const Auth = () => {
             data: { 
               full_name: fullName,
               phone_number: cleanPhone,
-              referred_by: storedRefCode // Envia o CÓDIGO de texto
+              referred_by: finalRefCode || null
             }
           }
         });
         
         if (error) throw error;
         
-        // Limpar o código usado após o registo
         if (data.user) {
           localStorage.removeItem('referral_code');
-          
-          // Atualizar o IBAN/Express no perfil recém-criado
           await supabase.from('profiles').update({
             bank_info: bankInfo
           }).eq('id', data.user.id);
@@ -121,12 +120,6 @@ const Auth = () => {
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
             {isLogin ? 'Entrar' : 'Criar Conta'}
           </h1>
-          {localStorage.getItem('referral_code') && !isLogin && (
-            <div className="mt-2 inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
-              <ShieldCheck size={12} className="text-purple-400" />
-              <span className="text-[8px] font-black text-purple-400 uppercase tracking-widest">Convite Ativo</span>
-            </div>
-          )}
         </div>
 
         <form className="space-y-4" onSubmit={handleAuth}>
@@ -161,6 +154,17 @@ const Auth = () => {
                 <div className="relative">
                   <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número para receber prémios" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                </div>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <div className="flex justify-between items-center ml-1">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-white/40">Código de Convite (Opcional)</Label>
+                  <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Bónus de 200 Kz</span>
+                </div>
+                <div className="relative">
+                  <Gift className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input value={manualRefCode} onChange={(e) => setManualRefCode(e.target.value)} placeholder="EX: ABC123D" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12 uppercase" />
                 </div>
               </div>
 

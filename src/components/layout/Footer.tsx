@@ -24,7 +24,7 @@ const Footer = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Ocultar Footer se estiver em páginas administrativas ou se houver um Splash Screen ativo (via atributo no body ou rota)
+  // Ocultar Footer se estiver em páginas administrativas ou na página de autenticação
   const isAdminPath = location.pathname.toLowerCase().includes('admin');
   const isAuthPath = location.pathname === '/auth';
   
@@ -40,7 +40,7 @@ const Footer = () => {
           <div className="flex flex-col items-center md:items-start gap-1">
             <div className="flex items-center gap-2">
               <p className="text-white/20 text-[10px] font-black uppercase tracking-widest">
-                © 2026 BORA SORTEAR • PLATAFORMA PREMIUM
+                © 2026 BORA SORTEIR • PLATAFORMA PREMIUM
               </p>
               <Link 
                 to="/admin-login" 
