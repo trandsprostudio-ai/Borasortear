@@ -111,36 +111,38 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
       />
 
       <Tabs defaultValue="deposits" className="w-full">
-        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-12 mb-6 w-full md:w-auto">
-          <TabsTrigger value="deposits" className="flex-1 md:flex-none rounded-lg px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-green-600">
-            Depósitos ({pendingDeposits.length})
-          </TabsTrigger>
-          <TabsTrigger value="withdrawals" className="flex-1 md:flex-none rounded-lg px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-amber-600">
-            Saques ({pendingWithdrawals.length})
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex-1 md:flex-none rounded-lg px-6 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10">
-            Histórico
-          </TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto no-scrollbar mb-6">
+          <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-auto flex w-max md:w-auto">
+            <TabsTrigger value="deposits" className="rounded-lg px-4 md:px-6 py-2 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-green-600">
+              Depósitos ({pendingDeposits.length})
+            </TabsTrigger>
+            <TabsTrigger value="withdrawals" className="rounded-lg px-4 md:px-6 py-2 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-amber-600">
+              Saques ({pendingWithdrawals.length})
+            </TabsTrigger>
+            <TabsTrigger value="history" className="rounded-lg px-4 md:px-6 py-2 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-white/10">
+              Histórico
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="deposits">
-          <div className="glass-card rounded-3xl overflow-hidden border-white/5">
+          <div className="glass-card rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border-white/5">
             <div className="overflow-x-auto">
-              <Table className="min-w-[800px]">
+              <Table className="min-w-[700px] md:min-w-[800px]">
                 <TableHeader className="bg-white/5">
                   <TableRow className="border-white/5">
-                    <TableHead className="text-[10px] font-black uppercase p-6">Jogador / Status</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase p-6">Valor</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase p-6">Comprovativo</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ações</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase p-4 md:p-6">Jogador / Status</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase p-4 md:p-6">Valor</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase p-4 md:p-6">Comprovativo</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase p-4 md:p-6 text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingDeposits.length > 0 ? pendingDeposits.map((tx) => (
                     <TableRow key={tx.id} className="border-white/5 hover:bg-white/5">
-                      <TableCell className="p-6">
+                      <TableCell className="p-4 md:p-6">
                         <div className="flex flex-col gap-1">
-                          <span className="font-black uppercase text-xs">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
+                          <span className="font-black uppercase text-xs truncate max-w-[150px]">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
                           <div className="flex items-center gap-2">
                             <span className="text-[8px] text-white/20 uppercase font-black">{new Date(tx.created_at).toLocaleTimeString()}</span>
                             {tx.acceleration_requested && (
@@ -151,16 +153,16 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="p-6 font-black text-green-400 text-lg">{Number(tx.amount).toLocaleString()} Kz</TableCell>
-                      <TableCell className="p-6">
+                      <TableCell className="p-4 md:p-6 font-black text-green-400 text-base md:text-lg">{Number(tx.amount).toLocaleString()} Kz</TableCell>
+                      <TableCell className="p-4 md:p-6">
                         {tx.proof_url && (
                           <Button asChild variant="outline" size="sm" className="h-8 border-purple-500/30 bg-purple-500/10 text-purple-400 text-[9px] font-black uppercase">
-                            <a href={tx.proof_url} target="_blank" rel="noopener noreferrer"><ExternalLink size={12} className="mr-2" /> Ver Anexo</a>
+                            <a href={tx.proof_url} target="_blank" rel="noopener noreferrer"><ExternalLink size={12} className="mr-1 md:mr-2" /> <span className="hidden md:inline">Ver Anexo</span></a>
                           </Button>
                         )}
                       </TableCell>
-                      <TableCell className="p-6 text-right">
-                        <div className="flex justify-end gap-2">
+                      <TableCell className="p-4 md:p-6 text-right">
+                        <div className="flex justify-end gap-1 md:gap-2">
                           <Button onClick={() => setConfirmConfig({ 
                             isOpen: true, 
                             tx, 
@@ -168,7 +170,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                             title: 'APROVAR DEPÓSITO', 
                             description: `Deseja creditar ${Number(tx.amount).toLocaleString()} Kz para ${tx.profiles?.first_name}?`,
                             variant: 'success'
-                          })} className="h-8 bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-3 rounded-lg">Aprovar</Button>
+                          })} className="h-8 bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-2 md:px-3 rounded-lg">Aprovar</Button>
                           
                           <Button onClick={() => setConfirmConfig({ 
                             isOpen: true, 
@@ -178,7 +180,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                             title: 'MARCAR COMO FALSO', 
                             description: `O comprovativo de ${tx.profiles?.first_name} é falso? Isso penalizará o jogador.`,
                             variant: 'danger'
-                          })} variant="ghost" className="h-8 text-red-500 border border-red-500/20 text-[9px] font-black uppercase px-3">Falso</Button>
+                          })} variant="ghost" className="h-8 text-red-500 border border-red-500/20 text-[9px] font-black uppercase px-2 md:px-3">Falso</Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -192,20 +194,20 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         </TabsContent>
 
         <TabsContent value="withdrawals">
-          <div className="glass-card rounded-3xl overflow-hidden border-white/5">
+          <div className="glass-card rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border-white/5">
             <div className="overflow-x-auto">
-              <Table className="min-w-[800px]">
+              <Table className="min-w-[600px] md:min-w-[800px]">
                 <TableHeader className="bg-white/5">
                   <TableRow className="border-white/5">
-                    <TableHead className="text-[10px] font-black uppercase p-6">Jogador / IBAN / Express</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase p-6">Valor</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ações</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase p-4 md:p-6">Jogador / IBAN / Express</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase p-4 md:p-6">Valor</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase p-4 md:p-6 text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingWithdrawals.length > 0 ? pendingWithdrawals.map((tx) => (
                     <TableRow key={tx.id} className="border-white/5 hover:bg-white/5">
-                      <TableCell className="p-6">
+                      <TableCell className="p-4 md:p-6">
                         <div className="flex flex-col">
                           <span className="font-black uppercase text-xs">{tx.profiles?.first_name} {tx.profiles?.last_name}</span>
                           <div className="flex items-center gap-2 group cursor-pointer" onClick={() => copyIban(tx.profiles?.bank_info)}>
@@ -214,8 +216,8 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="p-6 font-black text-amber-500 text-lg">{Number(tx.amount).toLocaleString()} Kz</TableCell>
-                      <TableCell className="p-6 text-right">
+                      <TableCell className="p-4 md:p-6 font-black text-amber-500 text-base md:text-lg">{Number(tx.amount).toLocaleString()} Kz</TableCell>
+                      <TableCell className="p-4 md:p-6 text-right">
                         <Button onClick={() => setConfirmConfig({ 
                           isOpen: true, 
                           tx, 
@@ -223,7 +225,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
                           title: 'CONFIRMAR PAGAMENTO', 
                           description: `Você confirma que enviou ${Number(tx.amount).toLocaleString()} Kz para ${tx.profiles?.first_name}?`,
                           variant: 'warning'
-                        })} className="h-9 bg-amber-600 hover:bg-amber-700 text-white font-black text-[10px] uppercase px-6 rounded-xl">Validar Pagamento</Button>
+                        })} className="h-9 bg-amber-600 hover:bg-amber-700 text-white font-black text-[9px] md:text-[10px] uppercase px-4 md:px-6 rounded-xl">Validar Pagamento</Button>
                       </TableCell>
                     </TableRow>
                   )) : (
@@ -236,7 +238,7 @@ const AdminFinance = ({ onUpdate }: AdminFinanceProps) => {
         </TabsContent>
 
         <TabsContent value="history">
-          <div className="glass-card rounded-3xl overflow-hidden border-white/5 opacity-60">
+          <div className="glass-card rounded-[1.5rem] md:rounded-[2rem] overflow-hidden border-white/5 opacity-80">
             <div className="overflow-x-auto">
               <Table className="min-w-[600px]">
                 <TableBody>

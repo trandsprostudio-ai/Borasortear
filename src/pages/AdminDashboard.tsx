@@ -38,7 +38,6 @@ const AdminDashboard = () => {
   const [confirmConfig, setConfirmConfig] = useState<any>({ isOpen: false, type: null });
 
   useEffect(() => {
-    // Verificação de Segurança de Sessão
     const session = localStorage.getItem('admin_session');
     if (session !== 'true') {
       navigate('/admin-login');
@@ -116,7 +115,6 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     setShowExitSplash(true);
-    // Limpeza Total da Sessão
     setTimeout(() => {
       localStorage.removeItem('admin_session');
       sessionStorage.clear();
@@ -142,97 +140,100 @@ const AdminDashboard = () => {
 
       {!showInitialSplash && (
         <main className="max-w-[1600px] mx-auto p-4 md:p-10">
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 premium-gradient rounded-2xl flex items-center justify-center shrink-0">
                 <Activity className="text-white" size={24} />
               </div>
               <div>
-                <h1 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Painel Admin</h1>
+                <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter uppercase leading-none">Painel Admin</h1>
                 <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-1">Gestão Central da Plataforma</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)} className="flex-1 md:flex-none border-white/10 bg-white/5 h-12 rounded-xl font-black text-[10px] uppercase tracking-widest">
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)} className="flex-1 md:flex-none border-white/10 bg-white/5 h-11 md:h-12 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest">
                 <RefreshCw size={14} className={`mr-2 ${loading ? 'animate-spin' : ''}`} /> Atualizar
               </Button>
-              <Button onClick={handleLogout} variant="ghost" className="flex-1 md:flex-none h-12 rounded-xl bg-red-500/10 text-red-400 font-black text-[10px] uppercase tracking-widest border border-red-500/20">
+              <Button onClick={handleLogout} variant="ghost" className="flex-1 md:flex-none h-11 md:h-12 rounded-xl bg-red-500/10 text-red-400 font-black text-[9px] md:text-[10px] uppercase tracking-widest border border-red-500/20">
                 <LogOut size={14} className="mr-2" /> Sair
               </Button>
             </div>
           </header>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mb-10">
-            <div className="glass-card p-8 rounded-[2.5rem] border-blue-500/20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 mb-10">
+            <div className="glass-card p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border-blue-500/20">
               <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-2">Total Jogadores</p>
-              <p className="text-4xl font-black italic tracking-tighter text-blue-400">
+              <p className="text-3xl md:text-4xl font-black italic tracking-tighter text-blue-400">
                 {totalUsers.toLocaleString()}
               </p>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 relative group">
+            <div className="glass-card p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border-purple-500/20 relative group">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Lucro Bruto (33.4%)</p>
-                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'profit', title: 'LIMPAR LUCROS', description: 'Deseja zerar o lucro acumulado da plataforma?' })} className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
+                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'profit', title: 'LIMPAR LUCROS', description: 'Deseja zerar o lucro acumulado da plataforma?' })} className="w-6 h-6 md:opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
                   <Trash2 size={12} />
                 </Button>
               </div>
-              <p className="text-3xl font-black italic tracking-tighter text-purple-400">
-                {stats.platformBalance.toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
+              <p className="text-2xl md:text-3xl font-black italic tracking-tighter text-purple-400">
+                {stats.platformBalance.toLocaleString()} <span className="text-[10px] md:text-xs not-italic opacity-30">Kz</span>
               </p>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-green-500/20 relative group">
+            <div className="glass-card p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border-green-500/20 relative group">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Total Depósitos</p>
-                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'deposit', title: 'LIMPAR DEPÓSITOS', description: 'Deseja apagar permanentemente o histórico de depósitos CONCLUÍDOS?' })} className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
+                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'deposit', title: 'LIMPAR DEPÓSITOS', description: 'Deseja apagar permanentemente o histórico de depósitos CONCLUÍDOS?' })} className="w-6 h-6 md:opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
                   <Trash2 size={12} />
                 </Button>
               </div>
-              <p className="text-3xl font-black italic tracking-tighter text-green-400">
-                {stats.totalDeposits.toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
+              <p className="text-2xl md:text-3xl font-black italic tracking-tighter text-green-400">
+                {stats.totalDeposits.toLocaleString()} <span className="text-[10px] md:text-xs not-italic opacity-30">Kz</span>
               </p>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-amber-500/20 relative group">
+            <div className="glass-card p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border-amber-500/20 relative group">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Total Saques</p>
-                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'withdrawal', title: 'LIMPAR SAQUES', description: 'Deseja apagar permanentemente o histórico de saques CONCLUÍDOS?' })} className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
+                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'withdrawal', title: 'LIMPAR SAQUES', description: 'Deseja apagar permanentemente o histórico de saques CONCLUÍDOS?' })} className="w-6 h-6 md:opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
                   <Trash2 size={12} />
                 </Button>
               </div>
-              <p className="text-3xl font-black italic tracking-tighter text-amber-500">
-                {stats.totalWithdrawals.toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
+              <p className="text-2xl md:text-3xl font-black italic tracking-tighter text-amber-500">
+                {stats.totalWithdrawals.toLocaleString()} <span className="text-[10px] md:text-xs not-italic opacity-30">Kz</span>
               </p>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-red-500/20 bg-red-500/5 relative group">
+            <div className="glass-card p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border-red-500/20 bg-red-500/5 relative group sm:col-span-2 xl:col-span-1">
               <div className="flex justify-between items-start mb-2">
                 <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Investimento Afiliados</p>
-                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'affiliates', title: 'LIMPAR AFILIADOS', description: 'Deseja zerar as estatísticas de afiliados (Contagem e Comissões)?' })} className="w-6 h-6 opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
+                <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'affiliates', title: 'LIMPAR AFILIADOS', description: 'Deseja zerar as estatísticas de afiliados (Contagem e Comissões)?' })} className="w-6 h-6 md:opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
                   <Trash2 size={12} />
                 </Button>
               </div>
-              <p className="text-3xl font-black italic tracking-tighter text-red-400">
-                -{(stats.affiliateBonusPaid + stats.affiliateCommissionsPaid).toLocaleString()} <span className="text-xs not-italic opacity-30">Kz</span>
+              <p className="text-2xl md:text-3xl font-black italic tracking-tighter text-red-400">
+                -{(stats.affiliateBonusPaid + stats.affiliateCommissionsPaid).toLocaleString()} <span className="text-[10px] md:text-xs not-italic opacity-30">Kz</span>
               </p>
             </div>
           </div>
 
-          <Tabs defaultValue="finance" className="space-y-8">
-            <TabsList className="bg-white/5 border border-white/10 p-1.5 rounded-2xl h-14">
-              <TabsTrigger value="finance" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">Financeiro</TabsTrigger>
-              <TabsTrigger value="users" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">Jogadores</TabsTrigger>
-              <TabsTrigger value="system" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">Sistema</TabsTrigger>
-              <TabsTrigger value="logs" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
-                <ScrollText size={14} className="mr-2" /> Auditoria
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="finance"><AdminFinance onUpdate={fetchGlobalStats} /></TabsContent>
-            <TabsContent value="users"><AdminUsers /></TabsContent>
-            <TabsContent value="system"><AdminSystem /></TabsContent>
-            <TabsContent value="logs"><AdminLogs /></TabsContent>
+          <Tabs defaultValue="finance" className="space-y-6">
+            <div className="w-full overflow-x-auto no-scrollbar">
+              <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl md:rounded-2xl h-auto md:h-14 flex w-max md:w-full min-w-full">
+                <TabsTrigger value="finance" className="flex-1 rounded-lg md:rounded-xl px-4 md:px-8 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 py-3">Financeiro</TabsTrigger>
+                <TabsTrigger value="users" className="flex-1 rounded-lg md:rounded-xl px-4 md:px-8 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 py-3">Jogadores</TabsTrigger>
+                <TabsTrigger value="system" className="flex-1 rounded-lg md:rounded-xl px-4 md:px-8 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 py-3">Sistema</TabsTrigger>
+                <TabsTrigger value="logs" className="flex-1 rounded-lg md:rounded-xl px-4 md:px-8 font-black text-[9px] md:text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 py-3">
+                  <ScrollText size={14} className="hidden md:inline mr-2" /> Auditoria
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            
+            <TabsContent value="finance" className="focus-visible:outline-none"><AdminFinance onUpdate={fetchGlobalStats} /></TabsContent>
+            <TabsContent value="users" className="focus-visible:outline-none"><AdminUsers /></TabsContent>
+            <TabsContent value="system" className="focus-visible:outline-none"><AdminSystem /></TabsContent>
+            <TabsContent value="logs" className="focus-visible:outline-none"><AdminLogs /></TabsContent>
           </Tabs>
         </main>
       )}
