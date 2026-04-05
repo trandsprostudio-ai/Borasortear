@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Activity, RefreshCw, LayoutGrid, Clock, Zap, Ghost, Loader2 } from 'lucide-react';
+import { Activity, RefreshCw, LayoutGrid, Clock, Zap, Ghost, Loader2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminSystem = () => {
@@ -70,42 +70,44 @@ const AdminSystem = () => {
     }
   };
 
-  const handleResetStuck = async () => {
-    const { error } = await supabase.rpc('reset_stuck_rooms');
-    if (error) toast.error("Erro ao resetar mesas");
-    else {
-      toast.success("Mesas 'travadas' foram reiniciadas.");
-      fetchSystemData();
-    }
-  };
-
   return (
     <div className="space-y-10">
+      {/* Resumo dos Módulos */}
       <section>
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-            <LayoutGrid className="text-purple-500" /> Gestão de Módulos
+            <LayoutGrid className="text-purple-500" /> Visão por Módulo
           </h3>
-          <div className="flex gap-2">
-            <Button onClick={handleResetStuck} variant="outline" className="border-amber-500/20 text-amber-500 hover:bg-amber-500/10 h-10 rounded-xl font-black text-[10px] uppercase">
-              <Zap size={14} className="mr-2" /> Resetar Travadas
-            </Button>
-            <Button onClick={handleCleanExpired} className="bg-purple-600 hover:bg-purple-700 h-10 rounded-xl font-black text-[10px] uppercase">
-              <Clock size={14} className="mr-2" /> Forçar Varredura (3h)
-            </Button>
-          </div>
+          <Button onClick={handleCleanExpired} className="bg-purple-600 hover:bg-purple-700 h-10 rounded-xl font-black text-[10px] uppercase">
+            <Clock size={14} className="mr-2" /> Varredura de Tempo
+          </Button>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {modules.map((mod) => {
-            const activeCount = rooms.filter(r => r.module_id === mod.id && (r.status === 'open' || r.status === 'processing')).length;
+            const activeRooms = rooms.filter(r => r.module_id === mod.id && (r.status === 'open' || r.status === 'processing'));
             return (
-              <div key={mod.id} className="glass-card p-4 rounded-2xl border-white/5 text-center group hover:border-purple-500/30 transition-all">
+              <div key={mod.id} className="glass-card p-5 rounded-[2rem] border-white/5 text-center relative group overflow-hidden">
+                <div className="absolute -right-2 -top-2 opacity-5">
+                   <LayoutGrid size={40} />
+                </div>
                 <p className="text-[9px] font-black text-white/20 uppercase mb-1">{mod.name}</p>
-                <p className="text-lg font-black italic mb-1">{mod.price.toLocaleString()} Kz</p>
-                <div className="flex items-center justify-center gap-1.5">
-                  <div className={`w-1.5 h-1.5 rounded-full ${activeCount > 0 ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`} />
-                  <p className="text-[8px] font-black uppercase text-white/40">{activeCount} Mesas</p>
+                <p className="text-xl font-black italic mb-2">{mod.price.toLocaleString()} Kz</p>
+                <div className="flex flex-col gap-2">
+                  {activeRooms.map(r => (
+                    <div key={r.id} className="flex items-center justify-between bg-white/5 px-2 py-1.5 rounded-lg border border-white/5">
+                      <span className="text-[8px] font-black text-white/40">{r.current_participants}/{r.max_participants}</span>
+                      {r.status === 'open' && (
+                        <button 
+                          onClick={() => handleInjectGhosts(r.id)}
+                          disabled={injectingId === r.id}
+                          className="text-purple-400 hover:text-white transition-colors"
+                        >
+                          {injectingId === r.id ? <Loader2 size={10} className="animate-spin" /> : <Ghost size={10} />}
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             );
@@ -113,66 +115,76 @@ const AdminSystem = () => {
         </div>
       </section>
 
+      {/* Tabela de Monitoramento */}
       <section>
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-            <Activity className="text-amber-500" /> Monitoramento em Tempo Real
-          </h3>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 border border-amber-500/20">
+              <Activity size={20} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black italic tracking-tighter uppercase">Monitoramento de Mesas</h3>
+              <p className="text-[10px] font-black text-white/20 uppercase">Ações rápidas para salas abertas</p>
+            </div>
+          </div>
           <Button variant="ghost" onClick={fetchSystemData} className="text-white/20 hover:text-white">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </Button>
         </div>
-        <div className="glass-card rounded-3xl overflow-hidden border-white/5">
+
+        <div className="glass-card rounded-[2.5rem] overflow-hidden border-white/5">
           <div className="overflow-x-auto">
             <Table className="min-w-[800px]">
               <TableHeader className="bg-white/5">
                 <TableRow className="border-white/5">
-                  <TableHead className="text-[10px] font-black uppercase p-6">Mesa</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6">ID da Mesa</TableHead>
                   <TableHead className="text-[10px] font-black uppercase p-6">Módulo</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase p-6">Ocupação</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6">Participantes</TableHead>
                   <TableHead className="text-[10px] font-black uppercase p-6">Status</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ações</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ação de Injeção</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rooms.filter(r => r.status !== 'finished').map((room) => {
-                  const isExpired = new Date(room.expires_at) <= new Date();
-                  return (
-                    <TableRow key={room.id} className="border-white/5 hover:bg-white/5">
-                      <TableCell className="p-6 font-black text-purple-400">#{room.id.slice(0, 8)}</TableCell>
-                      <TableCell className="p-6 font-bold">{room.modules?.name}</TableCell>
-                      <TableCell className="p-6">
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-lg">{room.current_participants}</span>
-                          <span className="text-[10px] text-white/20">/ {room.max_participants}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-6">
-                        <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${
-                          room.status === 'processing' ? 'bg-blue-500/20 text-blue-400 animate-pulse' : 'bg-green-500/20 text-green-400'
-                        }`}>
-                          {room.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="p-6 text-right">
-                        {room.status === 'open' && (
-                          <Button 
-                            onClick={() => handleInjectGhosts(room.id)}
-                            disabled={injectingId === room.id}
-                            className="h-9 px-4 rounded-xl bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white font-black text-[10px] uppercase tracking-widest transition-all"
-                          >
-                            {injectingId === room.id ? (
-                              <Loader2 size={14} className="animate-spin mr-2" />
-                            ) : (
-                              <Ghost size={14} className="mr-2" />
-                            )}
-                            Injetar
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {rooms.filter(r => r.status !== 'finished').map((room) => (
+                  <TableRow key={room.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                    <TableCell className="p-6 font-black text-purple-400">
+                      <span className="bg-purple-500/10 px-2 py-1 rounded">#{room.id.slice(0, 8)}</span>
+                    </TableCell>
+                    <TableCell className="p-6 font-bold">{room.modules?.name}</TableCell>
+                    <TableCell className="p-6">
+                      <div className="flex items-center gap-2">
+                        <Users size={14} className="text-white/20" />
+                        <span className="font-black text-lg">{room.current_participants}</span>
+                        <span className="text-[10px] text-white/20">/ {room.max_participants}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="p-6">
+                      <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${
+                        room.status === 'processing' ? 'bg-blue-500/20 text-blue-400 animate-pulse' : 'bg-green-500/20 text-green-400'
+                      }`}>
+                        {room.status === 'open' ? 'Aguardando' : 'Sorteando'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="p-6 text-right">
+                      {room.status === 'open' ? (
+                        <Button 
+                          onClick={() => handleInjectGhosts(room.id)}
+                          disabled={injectingId === room.id}
+                          className="h-10 px-6 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-purple-600/20"
+                        >
+                          {injectingId === room.id ? (
+                            <Loader2 size={14} className="animate-spin mr-2" />
+                          ) : (
+                            <Ghost size={14} className="mr-2" />
+                          )}
+                          Injetar Fantasmas
+                        </Button>
+                      ) : (
+                        <span className="text-[8px] font-black text-white/10 uppercase italic">Bloqueado em {room.status}</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
