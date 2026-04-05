@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Activity, RefreshCw, LayoutGrid, Clock, Zap, Ghost, Loader2, Users } from 'lucide-react';
+import { Activity, RefreshCw, LayoutGrid, Clock, Zap, Ghost, Loader2, Users, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminSystem = () => {
@@ -12,6 +12,7 @@ const AdminSystem = () => {
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [injectingId, setInjectingId] = useState<string | null>(null);
+  const [isGlobalInjecting, setIsGlobalInjecting] = useState(false);
 
   useEffect(() => {
     fetchSystemData();
@@ -47,17 +48,44 @@ const AdminSystem = () => {
 
       if (data.startsWith('SUCESSO')) {
         const count = data.split(':')[1];
-        toast.success(`${count} usuários fantasmas injectados!`);
+        toast.success(`${count} usuários fantasmas injetados!`);
         fetchSystemData();
       } else if (data === 'JA_INJECTADO') {
-        toast.error("Esta sala já possui fantasmas.");
+        toast.error("Esta sala já possui fantasmas injetados.");
+      } else if (data === 'SEM_ESPACO') {
+        toast.error("A sala já está quase lotada, não há espaço para injeção.");
+      } else if (data === 'STATUS_INVALIDO') {
+        toast.error("Apenas salas 'Abertas' podem receber injeção.");
       } else {
-        toast.error(`Erro: ${data}`);
+        toast.error(`Falha: ${data}`);
       }
     } catch (err: any) {
-      toast.error("Falha na operação de injeção.");
+      toast.error("Erro técnico na operação de injeção.");
     } finally {
       setInjectingId(null);
+    }
+  };
+
+  const handleGlobalInjection = async () => {
+    setIsGlobalInjecting(true);
+    try {
+      const { data, error } = await supabase.rpc('inject_ghosts_globally');
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const { rooms_affected, total_ghosts } = data[0];
+        if (rooms_affected > 0) {
+          toast.success(`Sucesso! ${total_ghosts} fantasmas distribuídos em ${rooms_affected} salas.`);
+        } else {
+          toast.info("Nenhuma sala precisava de injeção no momento.");
+        }
+        fetchSystemData();
+      }
+    } catch (err: any) {
+      toast.error("Erro ao processar injeção global.");
+    } finally {
+      setIsGlobalInjecting(false);
     }
   };
 
@@ -74,13 +102,23 @@ const AdminSystem = () => {
     <div className="space-y-10">
       {/* Resumo dos Módulos */}
       <section>
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
             <LayoutGrid className="text-purple-500" /> Visão por Módulo
           </h3>
-          <Button onClick={handleCleanExpired} className="bg-purple-600 hover:bg-purple-700 h-10 rounded-xl font-black text-[10px] uppercase">
-            <Clock size={14} className="mr-2" /> Varredura de Tempo
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              onClick={handleGlobalInjection} 
+              disabled={isGlobalInjecting}
+              className="bg-blue-600 hover:bg-blue-700 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20"
+            >
+              {isGlobalInjecting ? <Loader2 size={14} className="animate-spin mr-2" /> : <Globe size={14} className="mr-2" />}
+              Injeção Global
+            </Button>
+            <Button onClick={handleCleanExpired} variant="outline" className="border-purple-500/20 bg-purple-500/5 h-10 rounded-xl font-black text-[10px] uppercase">
+              <Clock size={14} className="mr-2 text-purple-400" /> Varredura de Tempo
+            </Button>
+          </div>
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -102,7 +140,7 @@ const AdminSystem = () => {
                           onClick={() => handleInjectGhosts(r.id)}
                           disabled={injectingId === r.id}
                           className="text-purple-400 hover:text-white transition-colors"
-                          title="Injetar Fantasmas Agora"
+                          title="Injetar Fantasmas"
                         >
                           {injectingId === r.id ? <Loader2 size={10} className="animate-spin" /> : <Ghost size={10} />}
                         </button>
@@ -142,7 +180,7 @@ const AdminSystem = () => {
                   <TableHead className="text-[10px] font-black uppercase p-6">Módulo</TableHead>
                   <TableHead className="text-[10px] font-black uppercase p-6">Participantes</TableHead>
                   <TableHead className="text-[10px] font-black uppercase p-6">Status</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ação de Injeção</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -178,10 +216,10 @@ const AdminSystem = () => {
                           ) : (
                             <Ghost size={14} className="mr-2" />
                           )}
-                          Injetar Fantasmas
+                          Injetar
                         </Button>
                       ) : (
-                        <span className="text-[8px] font-black text-white/10 uppercase italic">Bloqueado em {room.status}</span>
+                        <span className="text-[8px] font-black text-white/10 uppercase italic">Bloqueado</span>
                       )}
                     </TableCell>
                   </TableRow>
