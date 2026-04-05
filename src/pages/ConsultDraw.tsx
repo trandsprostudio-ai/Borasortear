@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Ticket, Trophy, Clock, AlertCircle, CheckCircle2, Loader2, Share2, TrendingUp, Hash, Users, XCircle } from 'lucide-react';
+import { Search, Ticket, Trophy, Clock, AlertCircle, CheckCircle2, Loader2, Share2, TrendingUp, Hash, Users, XCircle, ShieldCheck, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +26,7 @@ const ConsultDraw = () => {
     setResult(null);
 
     try {
+      // Busca a participação e os dados da sala
       const { data: participant, error: pError } = await supabase
         .from('participants')
         .select(`*, rooms (*, modules (*))`)
@@ -40,7 +41,12 @@ const ConsultDraw = () => {
         return;
       }
 
-      const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', participant.user_id).single();
+      // Busca o nome do jogador para confirmar que o bilhete é dele
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name')
+        .eq('id', participant.user_id)
+        .maybeSingle();
       
       let winnerInfo = null;
       if (participant.rooms.status === 'finished') {
@@ -130,7 +136,7 @@ const ConsultDraw = () => {
               animate={{ opacity: 1, y: 0 }}
               className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl text-red-400 text-xs font-bold text-center uppercase tracking-widest"
             >
-              <AlertCircle className="mx-auto mb-2" />
+              <AlertCircle className="mx-auto mb-2" size={24} />
               {error}
             </motion.div>
           )}
@@ -141,6 +147,12 @@ const ConsultDraw = () => {
               animate={{ opacity: 1, scale: 1 }} 
               className="space-y-6"
             >
+              {/* Confirmação de Entrada no Sistema */}
+              <div className="bg-green-500/10 border border-green-500/20 px-6 py-3 rounded-2xl flex items-center justify-center gap-3">
+                <ShieldCheck className="text-green-500" size={18} />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-green-500">Entrada Confirmada e Validada</span>
+              </div>
+
               <div className={`glass-card rounded-[2.5rem] border-white/5 p-8 text-center ${statusInfo.bg}`}>
                 <div className="mb-6 flex justify-center">{statusInfo.icon}</div>
                 <h2 className={`text-4xl font-black italic tracking-tighter uppercase mb-2 ${statusInfo.color}`}>
@@ -152,17 +164,26 @@ const ConsultDraw = () => {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="glass-card p-6 rounded-3xl border-white/5">
-                  <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Mesa</p>
-                  <p className="text-sm font-black uppercase italic">{result.rooms.modules.name}</p>
-                  <p className="text-[9px] font-bold text-white/20">ID: #{result.rooms.id.slice(0,8)}</p>
+                  <p className="text-[8px] font-black text-white/20 uppercase mb-1">Jogador</p>
+                  <div className="flex items-center gap-2">
+                    <User size={12} className="text-white/40" />
+                    <span className="text-[11px] font-black uppercase truncate">
+                      {result.profiles?.first_name || 'Usuário'}
+                    </span>
+                  </div>
                 </div>
                 <div className="glass-card p-6 rounded-3xl border-white/5">
-                  <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Participação</p>
+                  <p className="text-[8px] font-black text-white/20 uppercase mb-1">Mesa</p>
+                  <p className="text-[11px] font-black uppercase italic">{result.rooms.modules.name}</p>
+                  <p className="text-[8px] font-bold text-white/20">ID: #{result.rooms.id.slice(0,8)}</p>
+                </div>
+                <div className="glass-card p-6 rounded-3xl border-white/5">
+                  <p className="text-[8px] font-black text-white/20 uppercase mb-1">Participação</p>
                   <div className="flex items-center gap-2">
                     <Users size={12} className="text-purple-400" />
-                    <span className="text-sm font-black">{result.rooms.current_participants}/{result.rooms.max_participants}</span>
+                    <span className="text-[11px] font-black">{result.rooms.current_participants}/{result.rooms.max_participants}</span>
                   </div>
                 </div>
               </div>
@@ -170,7 +191,7 @@ const ConsultDraw = () => {
               <Button 
                 variant="ghost" 
                 onClick={() => {setResult(null); setCode('');}}
-                className="w-full text-[9px] font-black text-white/20 uppercase tracking-widest"
+                className="w-full text-[9px] font-black text-white/20 uppercase tracking-widest h-12"
               >
                 Nova Consulta
               </Button>
