@@ -43,7 +43,7 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
 
   return (
     <div className={`relative flex flex-col items-center ${className}`}>
-      {/* Balão de Fala */}
+      {/* Balão de Fala Responsivo */}
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -51,52 +51,59 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -5, scale: 0.9 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="absolute -top-16 mb-4 z-10"
+          className="absolute bottom-[105%] mb-2 z-50 flex justify-center w-max max-w-[200px]"
         >
-          <div className="bg-white text-[#0A0B12] px-4 py-2 rounded-2xl shadow-xl border border-white/20 relative min-w-[140px] max-w-[200px] text-center">
+          {/* O balão usa 'right-0' em mobile para não sair do ecrã se o pinguim estiver na borda direita */}
+          <div className="bg-white text-[#0A0B12] px-4 py-2.5 rounded-2xl shadow-2xl border border-white/20 relative w-full text-center sm:translate-x-0 translate-x-[-15%]">
             <p className="text-[10px] font-black uppercase tracking-tight leading-tight">
               {currentPhrases[index]}
             </p>
-            {/* Seta do Balão */}
-            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45" />
+            
+            {/* Seta do Balão alinhada com o centro do pinguim */}
+            <div className="absolute -bottom-1.5 left-1/2 translate-x-[150%] sm:translate-x-[-50%] w-3 h-3 bg-white rotate-45 shadow-sm" />
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Pinguim SVG com Braços */}
+      {/* Pinguim SVG com Braços Animados */}
       <motion.div
         animate={{ y: [0, -3, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="w-24 h-24 drop-shadow-2xl"
+        className="w-24 h-24 drop-shadow-2xl relative z-10"
       >
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Sombra no chão */}
+          <ellipse cx="50" cy="92" rx="25" ry="5" fill="black" opacity="0.2" />
+          
           {/* Corpo Principal */}
           <ellipse cx="50" cy="55" rx="35" ry="40" fill="#0A0B12" />
           
           {/* Barriga Branca */}
           <ellipse cx="50" cy="62" rx="22" ry="28" fill="white" />
           
-          {/* Braço Esquerdo */}
+          {/* Braço Esquerdo (Nadadeira) */}
           <motion.path 
             d="M20 50C15 50 5 55 5 65C5 75 15 70 20 65" 
             stroke="#0A0B12" 
             strokeWidth="8" 
             strokeLinecap="round"
-            animate={{ rotate: [-5, 5, -5] }}
-            transition={{ duration: 2, repeat: Infinity }}
+            animate={{ rotate: [-10, 10, -10] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            style={{ originX: "20px", originY: "50px" }}
           />
           
-          {/* Braço Direito */}
+          {/* Braço Direito (Nadadeira) */}
           <motion.path 
             d="M80 50C85 50 95 55 95 65C95 75 85 70 80 65" 
             stroke="#0A0B12" 
             strokeWidth="8" 
             strokeLinecap="round"
-            animate={{ rotate: [5, -5, 5] }}
-            transition={{ duration: 2, repeat: Infinity }}
+            animate={{ rotate: [10, -10, 10] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            style={{ originX: "80px", originY: "50px" }}
           />
           
-          {/* Olhos */}
+          {/* Olhos Profissionais */}
           <circle cx="40" cy="35" r="4" fill="white" />
           <circle cx="60" cy="35" r="4" fill="white" />
           <circle cx="40" cy="35" r="2" fill="black" />
@@ -105,7 +112,7 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
           {/* Bico */}
           <path d="M50 48L42 40H58L50 48Z" fill="#F97316" />
           
-          {/* Pés */}
+          {/* Pés Amarelos */}
           <ellipse cx="38" cy="88" rx="8" ry="4" fill="#FACC15" />
           <ellipse cx="62" cy="88" rx="8" ry="4" fill="#FACC15" />
         </svg>
