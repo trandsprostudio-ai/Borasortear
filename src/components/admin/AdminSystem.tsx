@@ -69,16 +69,20 @@ const AdminSystem = () => {
   const handleGlobalInjection = async () => {
     setIsGlobalInjecting(true);
     try {
+      // Nota: inject_ghosts_globally retorna uma tabela/array
       const { data, error } = await supabase.rpc('inject_ghosts_globally');
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const { rooms_affected, total_ghosts } = data[0];
-        if (rooms_affected > 0) {
-          toast.success(`Sucesso! ${total_ghosts} fantasmas distribuídos em ${rooms_affected} salas.`);
+        const result = data[0];
+        const roomsAffected = result.rooms_affected || 0;
+        const totalGhosts = result.total_ghosts || 0;
+
+        if (roomsAffected > 0) {
+          toast.success(`Sucesso! ${totalGhosts} fantasmas injetados em ${roomsAffected} salas.`);
         } else {
-          toast.info("Nenhuma sala precisava de injeção no momento.");
+          toast.info("Nenhuma sala disponível para injeção no momento.");
         }
         fetchSystemData();
       }
@@ -100,7 +104,6 @@ const AdminSystem = () => {
 
   return (
     <div className="space-y-10">
-      {/* Resumo dos Módulos */}
       <section>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
@@ -154,7 +157,6 @@ const AdminSystem = () => {
         </div>
       </section>
 
-      {/* Tabela de Monitoramento */}
       <section>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
