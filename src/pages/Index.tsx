@@ -203,7 +203,7 @@ const Index = () => {
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
-              className="fixed bottom-24 right-6 md:right-12 z-[100] pointer-events-none"
+              className="fixed bottom-24 right-24 md:right-32 z-[100] pointer-events-none"
             >
               <PenguinMascot page="home" className="pointer-events-auto" />
             </motion.div>

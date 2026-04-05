@@ -43,26 +43,26 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
 
   return (
     <div className={`relative flex flex-col items-center ${className}`}>
-      {/* Balão de Fala - Centralizado */}
+      {/* Balão de Fala - Centralizado e mais próximo (mb-2) */}
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
           initial={{ opacity: 0, y: 10, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -5, scale: 0.95 }}
-          className="absolute bottom-full mb-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+          className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
         >
-          <div className="bg-white text-[#0A0B12] px-5 py-3 rounded-2xl shadow-2xl border-2 border-purple-500/20 relative w-[180px] text-center">
+          <div className="bg-white text-[#0A0B12] px-4 py-2.5 rounded-2xl shadow-2xl border-2 border-purple-500/10 relative w-[160px] text-center">
             <p className="text-[10px] font-black uppercase tracking-tight leading-tight">
               {currentPhrases[index]}
             </p>
-            {/* Cauda do Balão Centralizada */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-r-2 border-b-2 border-purple-500/10" />
+            {/* Cauda do Balão */}
+            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45 border-r-2 border-b-2 border-purple-500/5" />
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Pinguim com Anatomia Ajustada */}
+      {/* Pinguim */}
       <motion.div
         animate={{ y: [0, -3, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -75,17 +75,11 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
               <stop offset="100%" stopColor="#3B82F6" />
             </linearGradient>
           </defs>
-
-          {/* Sombra suave */}
           <ellipse cx="50" cy="94" rx="22" ry="4" fill="black" opacity="0.1" />
-          
-          {/* Pés (Patas) - Ajustadas e Integradas ao Corpo */}
           <rect x="34" y="84" width="14" height="8" rx="4" fill="#F97316" />
           <rect x="52" y="84" width="14" height="8" rx="4" fill="#F97316" />
           <rect x="36" y="82" width="10" height="6" rx="3" fill="#FACC15" />
           <rect x="54" y="82" width="10" height="6" rx="3" fill="#FACC15" />
-
-          {/* Nadadeiras (Braços) - Proporcionais e Integradas nas laterais */}
           <motion.path 
             d="M20 50C12 50 12 65 20 65" 
             stroke="#3B82F6" strokeWidth="10" strokeLinecap="round"
@@ -100,26 +94,13 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             style={{ originX: "80px", originY: "50px" }}
           />
-
-          {/* Tronco Central */}
           <ellipse cx="50" cy="50" rx="34" ry="42" fill="url(#bodyGradient)" />
-          
-          {/* Barriga Branca */}
           <ellipse cx="50" cy="58" rx="22" ry="28" fill="white" />
-          
-          {/* Olhos e Rosto */}
           <circle cx="40" cy="35" r="5" fill="white" />
           <circle cx="60" cy="35" r="5" fill="white" />
           <circle cx="40" cy="35" r="2.5" fill="black" />
           <circle cx="60" cy="35" r="2.5" fill="black" />
-          <circle cx="41.5" cy="33.5" r="1" fill="white" />
-          <circle cx="61.5" cy="33.5" r="1" fill="white" />
-          
-          {/* Bico */}
           <path d="M50 48L42 39H58L50 48Z" fill="#F97316" />
-          <path d="M50 48L46 44H54L50 48Z" fill="#EA580C" />
-
-          {/* Laço (Gravata) - Posição Ajustada ao peito */}
           <path d="M44 52L50 56L56 52V60L50 56L44 60V52Z" fill="#7C3AED" />
           <circle cx="50" cy="56" r="2" fill="#C084FC" />
         </svg>
