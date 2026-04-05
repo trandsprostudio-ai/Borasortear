@@ -50,17 +50,16 @@ const AdminSystem = () => {
         const count = data.split(':')[1];
         toast.success(`${count} usuários fantasmas injetados!`);
         fetchSystemData();
-      } else if (data === 'JA_INJECTADO') {
+      } else if (data.startsWith('ERRO:JA_INJECTADO')) {
         toast.error("Esta sala já possui fantasmas injetados.");
-      } else if (data === 'SEM_ESPACO') {
-        toast.error("A sala já está quase lotada, não há espaço para injeção.");
-      } else if (data === 'STATUS_INVALIDO') {
-        toast.error("Apenas salas 'Abertas' podem receber injeção.");
+      } else if (data.startsWith('ERRO:SEM_ESPACO')) {
+        toast.error("Não há espaço suficiente na sala.");
       } else {
-        toast.error(`Falha: ${data}`);
+        toast.error(`Falha na injeção: ${data}`);
       }
     } catch (err: any) {
-      toast.error("Erro técnico na operação de injeção.");
+      console.error("[AdminSystem] Erro na injeção:", err);
+      toast.error(`Erro técnico: ${err.message || "Erro desconhecido"}`);
     } finally {
       setInjectingId(null);
     }
@@ -69,7 +68,6 @@ const AdminSystem = () => {
   const handleGlobalInjection = async () => {
     setIsGlobalInjecting(true);
     try {
-      // Nota: inject_ghosts_globally retorna uma tabela/array
       const { data, error } = await supabase.rpc('inject_ghosts_globally');
 
       if (error) throw error;
@@ -80,14 +78,15 @@ const AdminSystem = () => {
         const totalGhosts = result.total_ghosts || 0;
 
         if (roomsAffected > 0) {
-          toast.success(`Sucesso! ${totalGhosts} fantasmas injetados em ${roomsAffected} salas.`);
+          toast.success(`Sucesso! ${totalGhosts} fantasmas em ${roomsAffected} salas.`);
         } else {
           toast.info("Nenhuma sala disponível para injeção no momento.");
         }
         fetchSystemData();
       }
     } catch (err: any) {
-      toast.error("Erro ao processar injeção global.");
+      console.error("[AdminSystem] Erro injeção global:", err);
+      toast.error(`Erro global: ${err.message || "Erro desconhecido"}`);
     } finally {
       setIsGlobalInjecting(false);
     }
