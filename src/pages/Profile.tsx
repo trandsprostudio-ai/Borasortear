@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { User, Smartphone, ShieldCheck, Loader2, Trophy, Zap, Share2, Copy, Users, CheckCircle2, Star, Award, Medal, RefreshCw, DollarSign, Trash2, AlertTriangle } from 'lucide-react';
+import { User, ShieldCheck, Loader2, Trophy, Zap, Share2, Copy, Users, CheckCircle2, Award, Medal, RefreshCw, DollarSign, Trash2, AlertTriangle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -167,7 +167,7 @@ const Profile = () => {
   const rank = referrals.length >= 10 ? { label: 'DIAMANTE', color: 'text-cyan-400', icon: Award } :
                referrals.length >= 5 ? { label: 'OURO', color: 'text-amber-500', icon: Trophy } :
                referrals.length >= 2 ? { label: 'PRATA', color: 'text-slate-300', icon: Medal } :
-               { label: 'BRONZE', color: 'text-orange-600', icon: Star };
+               { label: 'BRONZE', color: 'text-orange-600', icon: Award };
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32">

@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LayoutGrid, Loader2, Sparkles, HelpCircle, Gift, ArrowRight, ShieldCheck, UserPlus } from 'lucide-react';
+import { LayoutGrid, Loader2, HelpCircle, Gift, ArrowRight, ShieldCheck, UserPlus } from 'lucide-react';
 import ModuleCard from '@/components/raffle/ModuleCard';
 import RoomItem from '@/components/raffle/RoomItem';
 import NewsTicker from '@/components/layout/NewsTicker';
@@ -138,13 +138,6 @@ const Index = () => {
           
           <div className="flex-1 space-y-12">
             <header className="space-y-6 relative">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex items-center gap-2 bg-purple-500/10 px-3 py-1.5 rounded-full border border-purple-500/20">
-                  <Sparkles size={12} className="text-purple-400" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">Elite Gaming</span>
-                </div>
-              </div>
-              
               <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-[0.85]">
                 A TUA SORTE <br /> <span className="text-purple-500">NAS TUAS MÃOS</span>
               </h1>
@@ -204,7 +197,6 @@ const Index = () => {
           </aside>
         </div>
 
-        {/* Mascote Fixa na Home - Posição ajustada para segurança do balão */}
         <AnimatePresence>
           {!isAnyModalOpen && (
             <motion.div 

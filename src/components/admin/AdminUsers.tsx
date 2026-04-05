@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Edit2, User, Loader2, ShieldAlert, ShieldCheck, Trash2, Wallet, Gift, Zap, Sparkles, RefreshCw, Dice5 } from 'lucide-react';
+import { Search, ShieldAlert, ShieldCheck, Trash2, Wallet, Gift, Zap, RefreshCw, Dice5, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
@@ -170,7 +170,6 @@ const AdminUsers = () => {
               <p className="text-[8px] md:text-[10px] font-black text-purple-400 uppercase tracking-widest">Sorteio Aleatório</p>
             </div>
           </div>
-          <Sparkles className="text-purple-500/40 animate-pulse hidden md:block" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">

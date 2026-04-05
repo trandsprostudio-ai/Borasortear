@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Trophy, Star, TrendingUp } from 'lucide-react';
+import { Trophy, Award, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const HallOfFame = () => {
@@ -44,7 +44,7 @@ const HallOfFame = () => {
             className="p-8 text-center"
           >
             <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-purple-500/30">
-              <Star size={32} className="text-white fill-white/20" />
+              <Award size={32} className="text-white" />
             </div>
             
             <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em] mb-2">{winners[index].module}</p>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Trophy, Zap, Star, Target, Crown, Gem } from 'lucide-react';
+import { Trophy, Zap, Award, Target, Crown, Gem } from 'lucide-react';
 
 interface ModuleCardProps {
   module: any;
@@ -13,7 +13,7 @@ interface ModuleCardProps {
 const getIcon = (name: string) => {
   if (name.includes('100')) return <Zap size={14} />;
   if (name.includes('200')) return <Target size={14} />;
-  if (name.includes('500')) return <Star size={14} />;
+  if (name.includes('500')) return <Award size={14} />;
   if (name.includes('1000')) return <Trophy size={14} />;
   if (name.includes('2000')) return <Crown size={14} />;
   return <Gem size={14} />;
