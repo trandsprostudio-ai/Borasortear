@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, LayoutGrid, Clock, Users, CheckCircle2, XCircle, Loader2, Zap } from 'lucide-react';
+import { RefreshCw, LayoutGrid, Clock, Users, CheckCircle2, XCircle, Loader2, Zap, Ghost } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Module {
@@ -38,6 +38,7 @@ const ModulesRoomsTable = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [injectingId, setInjectingId] = useState<string | null>(null);
 
   const fetchData = async () => {
     try {
@@ -68,6 +69,33 @@ const ModulesRoomsTable = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const handleInjectGhosts = async (roomId: string) => {
+    setInjectingId(roomId);
+    try {
+      const { data, error } = await supabase.rpc('inject_ghosts_secure', {
+        p_room_id: roomId
+      });
+
+      if (error) throw error;
+
+      if (data.startsWith('SUCESSO')) {
+        const count = data.split(':')[1];
+        toast.success(`${count} usuários fantasmas injectados com sucesso!`);
+        fetchData();
+      } else if (data === 'JA_INJECTADO') {
+        toast.error("Esta sala já recebeu uma injeção de fantasmas.");
+      } else if (data === 'STATUS_INVALIDO') {
+        toast.error("A sala deve estar aberta para receber injeção.");
+      } else {
+        toast.error("Não foi possível injectar fantasmas: " + data);
+      }
+    } catch (err: any) {
+      toast.error("Erro na operação: " + err.message);
+    } finally {
+      setInjectingId(null);
     }
   };
 
@@ -217,11 +245,23 @@ const ModulesRoomsTable = () => {
                             Mesa {idx + 1}
                           </span>
                           <span className="text-[9px] text-white/20">
-                            {room.current_participants}/{room.max_participants} jogadores
+                            {room.current_participants}/{room.max_participants}
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        {room.status === 'open' && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            disabled={injectingId === room.id}
+                            onClick={() => handleInjectGhosts(room.id)}
+                            className="h-8 w-8 text-white/20 hover:text-purple-400 hover:bg-purple-500/10"
+                            title="Injectar Fantasmas"
+                          >
+                            {injectingId === room.id ? <Loader2 size={14} className="animate-spin" /> : <Ghost size={14} />}
+                          </Button>
+                        )}
                         {getStatusBadge(room.status)}
                       </div>
                     </div>
@@ -234,11 +274,13 @@ const ModulesRoomsTable = () => {
       </div>
 
       <div className="glass-card rounded-[2.5rem] border-white/5 overflow-hidden">
-        <div className="p-6 border-b border-white/5 bg-white/5">
-          <h3 className="text-lg font-black italic tracking-tighter uppercase">Lista Completa de Salas</h3>
-          <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-1">
-            Todas as salas ativas e seu status atual (Monitoramento em Tempo Real)
-          </p>
+        <div className="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-black italic tracking-tighter uppercase">Lista Completa de Salas</h3>
+            <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest mt-1">
+              Monitoramento em Tempo Real com Gestão de Fluxo
+            </p>
+          </div>
         </div>
         
         <div className="overflow-x-auto">
@@ -250,7 +292,7 @@ const ModulesRoomsTable = () => {
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Status</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Participantes</TableHead>
                 <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Progresso</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-white/40 p-4">Expira em</TableHead>
+                <TableHead className="text-[10px] font-black uppercase text-white/40 p-4 text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -293,12 +335,17 @@ const ModulesRoomsTable = () => {
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className="p-4">
-                    <span className={`text-[10px] font-black uppercase ${
-                      new Date(room.expires_at) <= new Date() ? 'text-red-500' : 'text-white/40'
-                    }`}>
-                      {formatTimeRemaining(room.expires_at)}
-                    </span>
+                  <TableCell className="p-4 text-right">
+                    {room.status === 'open' && (
+                      <Button
+                        disabled={injectingId === room.id}
+                        onClick={() => handleInjectGhosts(room.id)}
+                        className="h-9 px-4 rounded-xl bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white font-black text-[10px] uppercase tracking-widest transition-all"
+                      >
+                        {injectingId === room.id ? <Loader2 size={14} className="animate-spin mr-2" /> : <Ghost size={14} className="mr-2" />}
+                        Injectar Fantasmas
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
