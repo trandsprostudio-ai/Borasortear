@@ -13,7 +13,10 @@ interface RoomItemProps {
 }
 
 const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
+  // O contador 'current_participants' já inclui fantasmas após a injeção via DB
   const percentage = Math.round((room.current_participants / room.max_participants) * 100);
+  
+  // Prémio estimado baseado na capacidade total (visual para o utilizador)
   const estimatedPrize = Math.floor((room.modules.price * room.max_participants) * 0.333);
 
   return (
