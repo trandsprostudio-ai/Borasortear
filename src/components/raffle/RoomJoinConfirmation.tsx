@@ -49,8 +49,8 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-md p-0 overflow-hidden flex flex-col max-h-[95vh]">
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
-          <div className="flex justify-center mb-4">
+        <div className="flex-1 overflow-y-auto p-6 md:p-8 pt-12 custom-scrollbar">
+          <div className="flex justify-center mb-4 mt-12">
             <PenguinMascot page="raffle" className="scale-75" />
           </div>
 
