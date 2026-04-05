@@ -62,7 +62,7 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Pinguim - Posição mantida conforme solicitado */}
+      {/* Pinguim */}
       <motion.div
         animate={{ y: [0, -3, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -110,3 +110,6 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
       </motion.div>
     </div>
   );
+};
+
+export default PenguinMascot;
