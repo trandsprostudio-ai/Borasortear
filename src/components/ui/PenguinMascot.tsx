@@ -43,26 +43,26 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
 
   return (
     <div className={`relative flex flex-col items-center ${className}`}>
-      {/* Balão de Fala - Posicionamento Inteligente */}
+      {/* Balão de Fala - Deslocado para a esquerda para não sair da tela */}
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
           initial={{ opacity: 0, y: 10, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -5, scale: 0.95 }}
-          className="absolute bottom-full mb-4 left-1/2 -translate-x-[85%] sm:-translate-x-1/2 z-50 pointer-events-none"
+          className="absolute bottom-full mb-4 left-1/2 -translate-x-[92%] sm:-translate-x-1/2 z-50 pointer-events-none"
         >
-          <div className="bg-white text-[#0A0B12] px-4 py-3 rounded-2xl shadow-2xl border border-purple-500/20 w-[150px] sm:w-[160px] text-center">
+          <div className="bg-white text-[#0A0B12] px-4 py-3 rounded-2xl shadow-2xl border border-purple-500/20 w-[160px] sm:w-[180px] text-center relative">
             <p className="text-[10px] font-black uppercase tracking-tight leading-tight">
               {currentPhrases[index]}
             </p>
-            {/* Seta do Balão - Ajustada para o centro da mascote */}
-            <div className="absolute -bottom-1.5 left-[85%] sm:left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45 border-r border-b border-purple-500/20" />
+            {/* Seta do Balão - Ajustada para a nova posição (92%) no mobile */}
+            <div className="absolute -bottom-1.5 left-[92%] sm:left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45 border-r border-b border-purple-500/20" />
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Pinguim - Tamanho Ajustado para Mobile */}
+      {/* Pinguim - Posição mantida conforme solicitado */}
       <motion.div
         animate={{ y: [0, -3, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -110,6 +110,3 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
       </motion.div>
     </div>
   );
-};
-
-export default PenguinMascot;
