@@ -43,7 +43,7 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
 
   return (
     <div className={`relative flex flex-col items-center ${className}`}>
-      {/* Balão de Fala Inteligente - Alinhado à direita para crescer para a esquerda */}
+      {/* Balão de Fala Inteligente - Mantido seguro dentro da tela */}
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -56,15 +56,15 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
             <p className="text-[10px] font-black uppercase tracking-tight leading-tight">
               {currentPhrases[index]}
             </p>
-            {/* Seta do Balão alinhada com o corpo do pinguim */}
+            {/* Seta do Balão */}
             <div className="absolute -bottom-2 right-8 w-4 h-4 bg-white rotate-45 border-r-2 border-b-2 border-purple-500/10" />
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {/* Pinguim Premium SVG */}
+      {/* Pinguim Premium SVG com braços menores e movimento simples */}
       <motion.div
-        animate={{ y: [0, -4, 0] }}
+        animate={{ y: [0, -3, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         className="w-24 h-24 relative"
       >
@@ -76,36 +76,36 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
             </linearGradient>
           </defs>
 
-          {/* Sombra Dinâmica */}
-          <ellipse cx="50" cy="94" rx="20" ry="4" fill="black" opacity="0.15" />
+          {/* Sombra no chão */}
+          <ellipse cx="50" cy="94" rx="18" ry="3" fill="black" opacity="0.1" />
           
-          {/* Nadadeira Esquerda */}
+          {/* Nadadeira Esquerda - Menor e movimento simples */}
           <motion.path 
-            d="M25 55C15 55 8 60 8 70C8 80 18 75 25 70" 
-            stroke="#0A0B12" strokeWidth="9" strokeLinecap="round"
-            animate={{ rotate: [-15, 15, -15] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            style={{ originX: "25px", originY: "55px" }}
+            d="M28 58C22 58 18 61 18 66C18 71 24 70 28 66" 
+            stroke="#0A0B12" strokeWidth="7" strokeLinecap="round"
+            animate={{ rotate: [-5, 5, -5] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            style={{ originX: "28px", originY: "58px" }}
           />
           
-          {/* Nadadeira Direita */}
+          {/* Nadadeira Direita - Menor e movimento simples */}
           <motion.path 
-            d="M75 55C85 55 92 60 92 70C92 80 82 75 75 70" 
-            stroke="#0A0B12" strokeWidth="9" strokeLinecap="round"
-            animate={{ rotate: [15, -15, 15] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            style={{ originX: "75px", originY: "55px" }}
+            d="M72 58C78 58 82 61 82 66C82 71 76 70 72 66" 
+            stroke="#0A0B12" strokeWidth="7" strokeLinecap="round"
+            animate={{ rotate: [5, -5, 5] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            style={{ originX: "72px", originY: "58px" }}
           />
 
-          {/* Corpo */}
+          {/* Corpo Premium */}
           <ellipse cx="50" cy="55" rx="36" ry="42" fill="url(#bodyGradient)" />
           
           {/* Peito Branco */}
           <ellipse cx="50" cy="62" rx="24" ry="30" fill="white" />
           
-          {/* Bochechas Rosadas */}
-          <circle cx="35" cy="45" r="5" fill="#FFB6C1" opacity="0.4" />
-          <circle cx="65" cy="45" r="5" fill="#FFB6C1" opacity="0.4" />
+          {/* Bochechas Rosadas subtis */}
+          <circle cx="35" cy="45" r="4" fill="#FFB6C1" opacity="0.3" />
+          <circle cx="65" cy="45" r="4" fill="#FFB6C1" opacity="0.3" />
 
           {/* Olhos Expressivos */}
           <circle cx="40" cy="38" r="5" fill="white" />
@@ -115,17 +115,17 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
           <circle cx="41.5" cy="36.5" r="1" fill="white" />
           <circle cx="61.5" cy="36.5" r="1" fill="white" />
           
-          {/* Bico Estilizado */}
-          <path d="M50 52L40 42H60L50 52Z" fill="#F97316" />
-          <path d="M50 52L45 47H55L50 52Z" fill="#EA580C" />
+          {/* Bico */}
+          <path d="M50 52L42 43H58L50 52Z" fill="#F97316" />
+          <path d="M50 52L46 48H54L50 52Z" fill="#EA580C" />
 
-          {/* Laço de Cavalheiro (Bowtie) */}
-          <path d="M42 56L50 60L58 56L58 64L50 60L42 64V56Z" fill="#7C3AED" />
-          <circle cx="50" cy="60" r="2.5" fill="#C084FC" />
+          {/* Laço de Cavalheiro */}
+          <path d="M44 56L50 60L56 56V64L50 60L44 64V56Z" fill="#7C3AED" />
+          <circle cx="50" cy="60" r="2" fill="#C084FC" />
           
           {/* Pés */}
-          <rect x="35" y="86" width="12" height="6" rx="3" fill="#FACC15" />
-          <rect x="53" y="86" width="12" height="6" rx="3" fill="#FACC15" />
+          <rect x="36" y="86" width="10" height="5" rx="2.5" fill="#FACC15" />
+          <rect x="54" y="86" width="10" height="5" rx="2.5" fill="#FACC15" />
         </svg>
       </motion.div>
     </div>
