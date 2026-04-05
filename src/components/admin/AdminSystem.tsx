@@ -47,7 +47,7 @@ const AdminSystem = () => {
 
       if (data.startsWith('SUCESSO')) {
         const count = data.split(':')[1];
-        toast.success(`${count} usuários fantasmas injetados!`);
+        toast.success(`${count} usuários fantasmas injectados!`);
         fetchSystemData();
       } else if (data === 'JA_INJECTADO') {
         toast.error("Esta sala já possui fantasmas.");
@@ -102,6 +102,7 @@ const AdminSystem = () => {
                           onClick={() => handleInjectGhosts(r.id)}
                           disabled={injectingId === r.id}
                           className="text-purple-400 hover:text-white transition-colors"
+                          title="Injetar Fantasmas Agora"
                         >
                           {injectingId === r.id ? <Loader2 size={10} className="animate-spin" /> : <Ghost size={10} />}
                         </button>
