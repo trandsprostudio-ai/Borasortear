@@ -51,7 +51,7 @@ const CentralDeAjuda = () => {
     faq.a.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const WHATSAPP_LINK = "https://wa.me/244933271690";
+  const WHATSAPP_LINK = "https://wa.me/244939331003";
 
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-24">

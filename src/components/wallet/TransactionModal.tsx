@@ -67,8 +67,8 @@ const TransactionModal = ({ isOpen, onClose, type, user, currentBalance }: Trans
     { 
       group: "🌍 ÁFRICA",
       methods: [
-        { id: 'express', name: 'Multicaixa Express', icon: Smartphone, color: 'text-blue-400', available: true, details: { label: 'Número Express', value: '942 259 240', owner: 'BORA SORTEIAR' } },
-        { id: 'unitel', name: 'Unitel Money', icon: Smartphone, color: 'text-orange-400', available: true, details: { label: 'Pagamento de Serviços', entity: '00930', reference: '942259240', owner: 'BORA SORTEIAR' } },
+        { id: 'express', name: 'Multicaixa Express', icon: Smartphone, color: 'text-blue-400', available: true, details: { label: 'Número Express', value: '945 319 069', owner: 'BORA SORTEIAR' } },
+        { id: 'unitel', name: 'Unitel Money', icon: Smartphone, color: 'text-orange-400', available: true, details: { label: 'Pagamento de Serviços', entity: '00930', reference: '945319069', owner: 'BORA SORTEIAR' } },
       ]
     },
     { 
