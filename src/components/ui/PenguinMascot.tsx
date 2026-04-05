@@ -43,7 +43,7 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
 
   return (
     <div className={`relative flex flex-col items-center ${className}`}>
-      {/* Balão de Fala Inteligente */}
+      {/* Balão de Fala - Alinhado para segurança de tela */}
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -61,7 +61,7 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
         </motion.div>
       </AnimatePresence>
 
-      {/* Pinguim em Azul Claro Vibrante */}
+      {/* Pinguim com Anatomia Ajustada */}
       <motion.div
         animate={{ y: [0, -3, 0] }}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
@@ -75,56 +75,52 @@ const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
             </linearGradient>
           </defs>
 
-          {/* Sombra no chão */}
-          <ellipse cx="50" cy="94" rx="18" ry="3" fill="black" opacity="0.1" />
+          {/* Sombra suave */}
+          <ellipse cx="50" cy="94" rx="22" ry="4" fill="black" opacity="0.1" />
           
-          {/* Nadadeira Esquerda - Azul Claro */}
+          {/* Pés (Patas) - Ajustadas e Integradas ao Corpo */}
+          <rect x="34" y="84" width="14" height="8" rx="4" fill="#F97316" />
+          <rect x="52" y="84" width="14" height="8" rx="4" fill="#F97316" />
+          <rect x="36" y="82" width="10" height="6" rx="3" fill="#FACC15" />
+          <rect x="54" y="82" width="10" height="6" rx="3" fill="#FACC15" />
+
+          {/* Nadadeiras (Braços) - Proporcionais e Integradas nas laterais */}
           <motion.path 
-            d="M28 58C22 58 18 61 18 66C18 71 24 70 28 66" 
-            stroke="#3B82F6" strokeWidth="7" strokeLinecap="round"
-            animate={{ rotate: [-5, 5, -5] }}
+            d="M20 50C12 50 12 65 20 65" 
+            stroke="#3B82F6" strokeWidth="10" strokeLinecap="round"
+            animate={{ rotate: [-8, 8, -8] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            style={{ originX: "28px", originY: "58px" }}
+            style={{ originX: "20px", originY: "50px" }}
           />
-          
-          {/* Nadadeira Direita - Azul Claro */}
           <motion.path 
-            d="M72 58C78 58 82 61 82 66C82 71 76 70 72 66" 
-            stroke="#3B82F6" strokeWidth="7" strokeLinecap="round"
-            animate={{ rotate: [5, -5, 5] }}
+            d="M80 50C88 50 88 65 80 65" 
+            stroke="#3B82F6" strokeWidth="10" strokeLinecap="round"
+            animate={{ rotate: [8, -8, 8] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            style={{ originX: "72px", originY: "58px" }}
+            style={{ originX: "80px", originY: "50px" }}
           />
 
-          {/* Corpo Azul Claro */}
-          <ellipse cx="50" cy="55" rx="36" ry="42" fill="url(#bodyGradient)" />
+          {/* Tronco Central */}
+          <ellipse cx="50" cy="50" rx="34" ry="42" fill="url(#bodyGradient)" />
           
-          {/* Peito Branco */}
-          <ellipse cx="50" cy="62" rx="24" ry="30" fill="white" />
+          {/* Barriga Branca */}
+          <ellipse cx="50" cy="58" rx="22" ry="28" fill="white" />
           
-          {/* Bochechas Rosadas */}
-          <circle cx="35" cy="45" r="4" fill="#FFB6C1" opacity="0.3" />
-          <circle cx="65" cy="45" r="4" fill="#FFB6C1" opacity="0.3" />
-
-          {/* Olhos Expressivos */}
-          <circle cx="40" cy="38" r="5" fill="white" />
-          <circle cx="60" cy="38" r="5" fill="white" />
-          <circle cx="40" cy="38" r="2.5" fill="black" />
-          <circle cx="60" cy="38" r="2.5" fill="black" />
-          <circle cx="41.5" cy="36.5" r="1" fill="white" />
-          <circle cx="61.5" cy="36.5" r="1" fill="white" />
+          {/* Olhos e Rosto */}
+          <circle cx="40" cy="35" r="5" fill="white" />
+          <circle cx="60" cy="35" r="5" fill="white" />
+          <circle cx="40" cy="35" r="2.5" fill="black" />
+          <circle cx="60" cy="35" r="2.5" fill="black" />
+          <circle cx="41.5" cy="33.5" r="1" fill="white" />
+          <circle cx="61.5" cy="33.5" r="1" fill="white" />
           
           {/* Bico */}
-          <path d="M50 52L42 43H58L50 52Z" fill="#F97316" />
-          <path d="M50 52L46 48H54L50 52Z" fill="#EA580C" />
+          <path d="M50 48L42 39H58L50 48Z" fill="#F97316" />
+          <path d="M50 48L46 44H54L50 48Z" fill="#EA580C" />
 
-          {/* Laço de Cavalheiro */}
-          <path d="M44 56L50 60L56 56V64L50 60L44 64V56Z" fill="#7C3AED" />
-          <circle cx="50" cy="60" r="2" fill="#C084FC" />
-          
-          {/* Pés */}
-          <rect x="36" y="86" width="10" height="5" rx="2.5" fill="#FACC15" />
-          <rect x="54" y="86" width="10" height="5" rx="2.5" fill="#FACC15" />
+          {/* Laço (Gravata) - Posição Ajustada ao peito */}
+          <path d="M44 52L50 56L56 52V60L50 56L44 60V52Z" fill="#7C3AED" />
+          <circle cx="50" cy="56" r="2" fill="#C084FC" />
         </svg>
       </motion.div>
     </div>
