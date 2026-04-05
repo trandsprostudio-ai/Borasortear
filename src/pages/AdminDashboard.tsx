@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { 
   LayoutDashboard, Users, Settings, LogOut, RefreshCw, 
   DollarSign, Wallet, ArrowDownLeft, ArrowUpRight,
-  ShieldAlert, Activity, Trash2, Gift, TrendingUp
+  ShieldAlert, Activity, Trash2, Gift, TrendingUp, ScrollText
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminUsers from '@/components/admin/AdminUsers';
 import AdminSystem from '@/components/admin/AdminSystem';
 import AdminFinance from '@/components/admin/AdminFinance';
+import AdminLogs from '@/components/admin/AdminLogs';
 import { AnimatePresence } from 'framer-motion';
 import SplashScreen from '@/components/ui/SplashScreen';
 import { toast } from 'sonner';
@@ -224,10 +225,14 @@ const AdminDashboard = () => {
               <TabsTrigger value="finance" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">Financeiro</TabsTrigger>
               <TabsTrigger value="users" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">Jogadores</TabsTrigger>
               <TabsTrigger value="system" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">Sistema</TabsTrigger>
+              <TabsTrigger value="logs" className="rounded-xl px-8 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-purple-600 h-full">
+                <ScrollText size={14} className="mr-2" /> Auditoria
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="finance"><AdminFinance onUpdate={fetchGlobalStats} /></TabsContent>
             <TabsContent value="users"><AdminUsers /></TabsContent>
             <TabsContent value="system"><AdminSystem /></TabsContent>
+            <TabsContent value="logs"><AdminLogs /></TabsContent>
           </Tabs>
         </main>
       )}
