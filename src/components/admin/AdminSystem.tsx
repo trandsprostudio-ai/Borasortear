@@ -4,13 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Activity, RefreshCw, LayoutGrid, Beaker, Clock, Zap, ShieldAlert } from 'lucide-react';
+import { Activity, RefreshCw, LayoutGrid, Clock, Zap, Ghost, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminSystem = () => {
   const [modules, setModules] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [injectingId, setInjectingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSystemData();
@@ -22,12 +23,42 @@ const AdminSystem = () => {
 
   const fetchSystemData = async () => {
     setLoading(true);
-    const { data: modData } = await supabase.from('modules').select('*').order('price', { ascending: true });
-    const { data: roomData } = await supabase.from('rooms').select('*, modules(*)').order('created_at', { ascending: false });
-    
-    if (modData) setModules(modData);
-    if (roomData) setRooms(roomData);
-    setLoading(false);
+    try {
+      const { data: modData } = await supabase.from('modules').select('*').order('price', { ascending: true });
+      const { data: roomData } = await supabase.from('rooms').select('*, modules(*)').order('created_at', { ascending: false });
+      
+      if (modData) setModules(modData);
+      if (roomData) setRooms(roomData);
+    } catch (error) {
+      toast.error("Erro ao sincronizar dados do sistema.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInjectGhosts = async (roomId: string) => {
+    setInjectingId(roomId);
+    try {
+      const { data, error } = await supabase.rpc('inject_ghosts_secure', {
+        p_room_id: roomId
+      });
+
+      if (error) throw error;
+
+      if (data.startsWith('SUCESSO')) {
+        const count = data.split(':')[1];
+        toast.success(`${count} usuários fantasmas injetados!`);
+        fetchSystemData();
+      } else if (data === 'JA_INJECTADO') {
+        toast.error("Esta sala já possui fantasmas.");
+      } else {
+        toast.error(`Erro: ${data}`);
+      }
+    } catch (err: any) {
+      toast.error("Falha na operação de injeção.");
+    } finally {
+      setInjectingId(null);
+    }
   };
 
   const handleCleanExpired = async () => {
@@ -99,8 +130,8 @@ const AdminSystem = () => {
                   <TableHead className="text-[10px] font-black uppercase p-6">Mesa</TableHead>
                   <TableHead className="text-[10px] font-black uppercase p-6">Módulo</TableHead>
                   <TableHead className="text-[10px] font-black uppercase p-6">Ocupação</TableHead>
-                  <TableHead className="text-[10px] font-black uppercase p-6">Expiração</TableHead>
                   <TableHead className="text-[10px] font-black uppercase p-6">Status</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase p-6 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -117,19 +148,27 @@ const AdminSystem = () => {
                         </div>
                       </TableCell>
                       <TableCell className="p-6">
-                        <div className="flex items-center gap-2">
-                          <Clock size={12} className={isExpired ? 'text-red-500' : 'text-white/20'} />
-                          <span className={`text-[10px] font-black uppercase ${isExpired ? 'text-red-500' : 'text-white/40'}`}>
-                            {isExpired ? 'EXPIRADA' : new Date(room.expires_at).toLocaleTimeString()}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="p-6">
                         <span className={`text-[9px] font-black uppercase px-2 py-1 rounded ${
                           room.status === 'processing' ? 'bg-blue-500/20 text-blue-400 animate-pulse' : 'bg-green-500/20 text-green-400'
                         }`}>
                           {room.status}
                         </span>
+                      </TableCell>
+                      <TableCell className="p-6 text-right">
+                        {room.status === 'open' && (
+                          <Button 
+                            onClick={() => handleInjectGhosts(room.id)}
+                            disabled={injectingId === room.id}
+                            className="h-9 px-4 rounded-xl bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white font-black text-[10px] uppercase tracking-widest transition-all"
+                          >
+                            {injectingId === room.id ? (
+                              <Loader2 size={14} className="animate-spin mr-2" />
+                            ) : (
+                              <Ghost size={14} className="mr-2" />
+                            )}
+                            Injetar
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
