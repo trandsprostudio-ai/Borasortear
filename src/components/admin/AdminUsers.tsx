@@ -38,10 +38,13 @@ const AdminUsers = () => {
         .select('*')
         .order('updated_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Database error:", error);
+        throw error;
+      }
       setUsers(data || []);
-    } catch (err) {
-      toast.error("Erro ao carregar jogadores");
+    } catch (err: any) {
+      toast.error("Erro ao carregar jogadores. Tente recarregar a página.");
     } finally {
       setLoading(false);
     }
@@ -67,13 +70,13 @@ const AdminUsers = () => {
 
       if (error) throw error;
 
-      toast.success(`Lucky Drop realizado! ${count} jogadores receberam bónus aleatórios.`);
+      toast.success(`Lucky Drop realizado! ${count} jogadores premiados.`);
       setMinAmount('');
       setMaxAmount('');
       setUserCount('');
       fetchUsers();
     } catch (error: any) {
-      toast.error("Erro no sorteio: " + error.message);
+      toast.error("Erro no sorteio surpresa.");
     } finally {
       setIsDistributing(false);
     }
@@ -137,7 +140,7 @@ const AdminUsers = () => {
       setConfirmConfig({ isOpen: false });
       fetchUsers();
     } catch (err: any) {
-      toast.error("Erro: " + err.message);
+      toast.error("Erro ao eliminar utilizador.");
     } finally {
       setActionLoading(false);
     }
@@ -160,7 +163,6 @@ const AdminUsers = () => {
         loading={actionLoading}
       />
 
-      {/* Lucky Drop Section */}
       <div className="glass-card p-8 rounded-[2.5rem] border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-transparent">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -178,39 +180,17 @@ const AdminUsers = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase text-white/40 ml-1">Mínimo (Kz)</label>
-            <Input 
-              type="number" 
-              placeholder="Ex: 100" 
-              value={minAmount}
-              onChange={(e) => setMinAmount(e.target.value)}
-              className="bg-white/5 border-white/10 h-12 rounded-xl font-black"
-            />
+            <Input type="number" placeholder="Ex: 100" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} className="bg-white/5 border-white/10 h-12 rounded-xl font-black" />
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase text-white/40 ml-1">Máximo (Kz)</label>
-            <Input 
-              type="number" 
-              placeholder="Ex: 1000" 
-              value={maxAmount}
-              onChange={(e) => setMaxAmount(e.target.value)}
-              className="bg-white/5 border-white/10 h-12 rounded-xl font-black"
-            />
+            <Input type="number" placeholder="Ex: 1000" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} className="bg-white/5 border-white/10 h-12 rounded-xl font-black" />
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase text-white/40 ml-1">Nº Jogadores</label>
-            <Input 
-              type="number" 
-              placeholder="Ex: 5" 
-              value={userCount}
-              onChange={(e) => setUserCount(e.target.value)}
-              className="bg-white/5 border-white/10 h-12 rounded-xl font-black"
-            />
+            <Input type="number" placeholder="Ex: 5" value={userCount} onChange={(e) => setUserCount(e.target.value)} className="bg-white/5 border-white/10 h-12 rounded-xl font-black" />
           </div>
-          <Button 
-            onClick={handleLuckyDrop} 
-            disabled={isDistributing}
-            className="h-12 premium-gradient rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-purple-600/20"
-          >
+          <Button onClick={handleLuckyDrop} disabled={isDistributing} className="h-12 premium-gradient rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-purple-600/20">
             {isDistributing ? <Loader2 className="animate-spin" /> : <><Zap size={14} className="mr-2" /> DISPARAR SORTE</>}
           </Button>
         </div>
@@ -219,12 +199,7 @@ const AdminUsers = () => {
       <div className="flex items-center justify-between">
         <div className="relative max-w-md flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-          <Input 
-            placeholder="Buscar por nome ou ID..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-white/5 border-white/10 h-12 pl-12 rounded-xl"
-          />
+          <Input placeholder="Buscar por nome ou ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-white/5 border-white/10 h-12 pl-12 rounded-xl" />
         </div>
         <Button variant="ghost" onClick={fetchUsers} className="text-white/20 hover:text-white">
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -242,7 +217,7 @@ const AdminUsers = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((u) => (
+              {filteredUsers.length > 0 ? filteredUsers.map((u) => (
                 <TableRow key={u.id} className={`border-white/5 hover:bg-white/5 transition-colors ${u.is_banned ? 'bg-red-500/5' : ''}`}>
                   <TableCell className="p-6">
                     <div className="flex items-center gap-3">
@@ -275,25 +250,13 @@ const AdminUsers = () => {
                           <Gift size={12} className="text-purple-500/40" />
                           <span className="font-black text-purple-400">{Number(u.bonus_balance || 0).toLocaleString()} Kz</span>
                         </div>
-                        <button onClick={() => { setEditingId(u.id); setEditBalance(u.balance.toString()); setEditBonusBalance((u.bonus_balance || 0).toString()); }} className="text-[9px] font-black text-white/20 hover:text-white uppercase mt-1 text-left">Editar</button>
+                        <button onClick={() => { setEditingId(u.id); setEditBalance(u.balance.toString()); setEditBonusBalance((u.bonus_balance || 0).toString()); }} className="text-[9px] font-black text-white/20 hover:text-white uppercase mt-1 text-left underline decoration-dotted">Editar</button>
                       </div>
                     )}
                   </TableCell>
                   <TableCell className="p-6 text-right">
                     <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setConfirmConfig({ 
-                          isOpen: true, 
-                          userId: u.id, 
-                          currentStatus: u.is_banned, 
-                          action: 'ban', 
-                          title: u.is_banned ? 'DESBANIR' : 'BANIR', 
-                          variant: u.is_banned ? 'success' : 'danger' 
-                        })} 
-                        className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase ${u.is_banned ? 'text-green-400' : 'text-red-400'}`}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => setConfirmConfig({ isOpen: true, userId: u.id, currentStatus: u.is_banned, action: 'ban', title: u.is_banned ? 'DESBANIR' : 'BANIR', variant: u.is_banned ? 'success' : 'danger' })} className={`h-9 px-4 rounded-xl font-black text-[10px] uppercase ${u.is_banned ? 'text-green-400' : 'text-red-400'}`}>
                         {u.is_banned ? <ShieldCheck size={14} className="mr-2" /> : <ShieldAlert size={14} className="mr-2" />}
                         {u.is_banned ? 'Ativar' : 'Banir'}
                       </Button>
@@ -301,7 +264,13 @@ const AdminUsers = () => {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="p-20 text-center text-white/10 font-black uppercase text-[10px]">
+                    {loading ? "A carregar dados..." : "Nenhum jogador encontrado."}
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
