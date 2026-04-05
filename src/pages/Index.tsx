@@ -204,14 +204,14 @@ const Index = () => {
           </aside>
         </div>
 
-        {/* Mascote Fixa na Home - Ajustada para Mobile (right-2) */}
+        {/* Mascote Fixa na Home - Posição ajustada para segurança do balão */}
         <AnimatePresence>
           {!isAnyModalOpen && (
             <motion.div 
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 50 }}
-              className="fixed bottom-24 right-2 md:right-8 z-[100] pointer-events-none"
+              className="fixed bottom-24 right-6 md:right-12 z-[100] pointer-events-none"
             >
               <PenguinMascot page="home" className="pointer-events-auto" />
             </motion.div>
