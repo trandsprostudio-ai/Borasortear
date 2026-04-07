@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Trophy, Users, Info, Zap, Wallet, ArrowRight, Star, Gift, Shield, CheckCircle2, Share2, Clock } from 'lucide-react';
+import { Trophy, Users, Info, Zap, Wallet, ArrowRight, Star, Gift, Shield, CheckCircle2, Share2, Clock, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -88,7 +88,6 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
 
             {!isBossRoom ? (
               <div className="space-y-6 mb-8">
-                {/* 3 Vencedores e Prémio Individual */}
                 <div className="bg-gradient-to-br from-green-500/20 to-transparent p-6 rounded-[2rem] border border-green-500/20 text-center relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-4 opacity-5">
                     <Trophy size={40} />
@@ -97,7 +96,6 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
                   <p className="text-3xl font-black italic text-white leading-tight">{individualPrize.toLocaleString()} <span className="text-sm not-italic opacity-40">Kz por Ganhandor</span></p>
                 </div>
 
-                {/* Incentivo de Afiliado */}
                 <div 
                   onClick={() => navigate('/affiliates')}
                   className="bg-purple-500/10 border border-purple-500/20 p-5 rounded-[1.8rem] flex items-center gap-4 cursor-pointer hover:bg-purple-500/20 transition-colors group"
@@ -111,7 +109,6 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
                   </div>
                 </div>
 
-                {/* Info Relevante da Plataforma */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
                     <CheckCircle2 size={16} className="text-blue-400 shrink-0" />
@@ -150,7 +147,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
             </div>
 
             {!isBossRoom && (
-              <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between mb-6">
+              <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between mb-2">
                 <div className="flex flex-col">
                   <Label htmlFor="use-bonus" className="text-xs font-black uppercase tracking-widest cursor-pointer text-white">Usar Saldo Bónus</Label>
                   <p className="text-[8px] font-bold text-white/20 uppercase">Participar com créditos ganhos</p>
@@ -164,6 +161,20 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
                 />
               </div>
             )}
+
+            {/* Aviso de Saldo Insuficiente em Red */}
+            <div className="min-h-[40px] flex items-center justify-center">
+              {useBonus && !canUseBonus && (
+                <p className="text-[10px] font-black text-red-500 uppercase tracking-widest text-center leading-relaxed flex items-center gap-2">
+                  <AlertCircle size={12} /> Sem bónus suficiente não podes sortear, mesmo que tenhas saldo real disponível.
+                </p>
+              )}
+              {!useBonus && !canUseReal && (
+                <p className="text-[10px] font-black text-red-500 uppercase tracking-widest text-center leading-relaxed flex items-center gap-2">
+                  <AlertCircle size={12} /> Saldo real insuficiente para realizar este sorteio.
+                </p>
+              )}
+            </div>
           </div>
         </ScrollArea>
 
