@@ -16,7 +16,7 @@ const TermosDeUso = () => {
             <FileText size={40} />
           </div>
           <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase mb-4">Termos de Uso</h1>
-          <p className="text-white/40 font-bold text-xs uppercase tracking-widest">Atualizado em: Outubro de 2024</p>
+          <p className="text-white/40 font-bold text-xs uppercase tracking-widest">Atualizado em: Janeiro de 2025</p>
         </div>
 
         <div className="glass-card rounded-[2.5rem] p-8 md:p-12 border-white/5 space-y-12">
@@ -77,7 +77,7 @@ const TermosDeUso = () => {
           <section className="space-y-4">
             <h2 className="text-2xl font-black italic tracking-tighter uppercase text-purple-500">6. Distribuição de Prêmios</h2>
             <p className="text-sm text-white/40 font-bold leading-relaxed">
-              Os prêmios são creditados automaticamente na carteira dos vencedores. A plataforma retém uma taxa de intermediação (33.4%) destinada à manutenção do sistema, suporte e financiamento do programa de afiliados. A BORA SORTEIAR não participa nem concorre em qualquer sorteio realizado na plataforma.
+              Os prêmios são creditados automaticamente na carteira dos vencedores. A plataforma retém uma taxa de intermediação (1%) destinada à manutenção do sistema, suporte e financiamento do programa de afiliados. A BORA SORTEIAR não participa nem concorre em qualquer sorteio realizado na plataforma.
             </p>
           </section>
 

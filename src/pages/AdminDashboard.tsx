@@ -21,7 +21,7 @@ import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalUsers, setTotalUsers] = { useState(0) };
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showExitSplash, setShowExitSplash] = useState(false);
@@ -171,7 +171,7 @@ const AdminDashboard = () => {
 
             <div className="glass-card p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border-purple-500/20 relative group">
               <div className="flex justify-between items-start mb-2">
-                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Lucro Bruto (33.4%)</p>
+                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest">Lucro Bruto (1%)</p>
                 <Button size="icon" variant="ghost" onClick={() => setConfirmConfig({ isOpen: true, type: 'profit', title: 'LIMPAR LUCROS', description: 'Deseja zerar o lucro acumulado da plataforma?' })} className="w-6 h-6 md:opacity-0 group-hover:opacity-100 text-red-500/40 hover:text-red-500">
                   <Trash2 size={12} />
                 </Button>
