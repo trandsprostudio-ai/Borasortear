@@ -24,7 +24,6 @@ const Footer = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Ocultar Footer se estiver em páginas administrativas ou na página de autenticação
   const isAdminPath = location.pathname.toLowerCase().includes('admin');
   const isAuthPath = location.pathname === '/auth';
   
@@ -33,14 +32,18 @@ const Footer = () => {
   }
 
   return (
-    <footer className="py-12 border-t border-white/5 mt-20 bg-[#0A0B12] relative z-10 pb-28 sm:pb-12">
+    <footer className="py-12 border-t border-white/5 mt-auto bg-[#0A0B12] relative z-10 w-full">
       <div className="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
         <div className="flex flex-col items-center md:items-start gap-4">
-          <Logo className="scale-90 origin-left" />
+          <div className="flex items-center gap-2">
+             <Logo className="scale-90 origin-left" />
+             {/* Texto do logo no footer em branco para destaque conforme pedido */}
+             <span className="text-white font-black italic text-xl hidden md:block">BORA SORTEAR</span>
+          </div>
           <div className="flex flex-col items-center md:items-start gap-1">
             <div className="flex items-center gap-2">
-              <p className="text-white/20 text-[10px] font-black uppercase tracking-widest">
-                © 2026 BORA SORTEIR • PLATAFORMA PREMIUM
+              <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">
+                © 2026 BORA SORTEAR • PLATAFORMA PREMIUM
               </p>
               <Link 
                 to="/admin-login" 
@@ -51,16 +54,16 @@ const Footer = () => {
                 <span className="text-[10px]">•</span>
               </Link>
             </div>
-            <p className="text-[9px] text-white/10 font-bold uppercase tracking-tighter">
+            <p className="text-[9px] text-white/30 font-bold uppercase tracking-tighter">
               Jogue com responsabilidade. Apenas para maiores de 18 anos.
             </p>
           </div>
         </div>
         
         <div className="flex flex-wrap justify-center gap-6 text-white/40 text-[10px] font-black uppercase tracking-widest">
-          <Link to="/termos-de-uso" className="hover:text-purple-400 transition-colors">Termos de Uso</Link>
-          <Link to="/privacidade" className="hover:text-purple-400 transition-colors">Privacidade</Link>
-          <Link to="/central-de-ajuda" className="hover:text-purple-400 transition-colors">Central de Ajuda</Link>
+          <Link to="/termos-de-uso" className="hover:text-white transition-colors">Termos de Uso</Link>
+          <Link to="/privacidade" className="hover:text-white transition-colors">Privacidade</Link>
+          <Link to="/central-de-ajuda" className="hover:text-white transition-colors">Central de Ajuda</Link>
         </div>
       </div>
     </footer>

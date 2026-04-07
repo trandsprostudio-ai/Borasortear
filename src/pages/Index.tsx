@@ -83,12 +83,12 @@ const Index = () => {
   if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="animate-spin text-black" size={40} /></div>;
 
   return (
-    <div className="min-h-screen bg-white text-[#111111] pb-32">
+    <div className="min-h-screen flex flex-col bg-white text-[#111111]">
       <Navbar />
       <NewsTicker />
       
-      <main className="max-w-[1600px] mx-auto px-4 pt-16">
-        <div className="flex flex-col lg:flex-row gap-12">
+      <main className="max-w-[1600px] w-full mx-auto px-4 pt-16 flex-1">
+        <div className="flex flex-col lg:flex-row gap-12 mb-16">
           
           <div className="flex-1 space-y-12">
             <header className="space-y-6">
@@ -111,7 +111,6 @@ const Index = () => {
               </div>
             </header>
 
-            {/* Secção de Módulos com Fundo Diferenciado */}
             <section className="bg-[#F9FAFB] p-6 rounded-[2.5rem] border border-[#E5E7EB]">
               <div className="flex overflow-x-auto no-scrollbar gap-4 py-2">
                 {modules.map((mod) => (

@@ -11,7 +11,7 @@ const Logo = ({ className = "" }: { className?: string }) => {
       <BoraIcon className="w-7 h-7" />
 
       <span className="text-[#111111] text-2xl">RA</span>
-      <span className="text-blue-600 text-2xl ml-0.5">SORTEIAR</span>
+      <span className="text-blue-600 text-2xl ml-0.5">SORTEAR</span>
     </div>
   );
 };
