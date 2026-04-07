@@ -35,17 +35,22 @@ const Index = () => {
 
   const fetchRooms = useCallback(async (moduleId: string) => {
     if (moduleId === 'BOSS') {
-      const { data } = await supabase.from('boss_rooms').select('*').eq('status', 'ativo');
-      if (data) setBossRooms(data);
-      
-      // Buscar contagem de participantes por sala BOSS
-      const { data: counts } = await supabase.from('boss_participants').select('room_id');
-      if (counts) {
-        const countsMap = counts.reduce((acc: any, curr: any) => {
-          acc[curr.room_id] = (acc[curr.room_id] || 0) + 1;
-          return acc;
-        }, {});
-        setBossCounts(countsMap);
+      try {
+        const { data, error } = await supabase.from('boss_rooms').select('*').eq('status', 'ativo');
+        if (error) throw error;
+        setBossRooms(data || []);
+        
+        // Buscar contagem de participantes por sala BOSS
+        const { data: counts } = await supabase.from('boss_participants').select('room_id');
+        if (counts) {
+          const countsMap = counts.reduce((acc: any, curr: any) => {
+            acc[curr.room_id] = (acc[curr.room_id] || 0) + 1;
+            return acc;
+          }, {});
+          setBossCounts(countsMap);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar mesas BOSS:", err);
       }
       return;
     }
@@ -96,7 +101,6 @@ const Index = () => {
     
     setActionLoading(confirmingRoom.id);
     try {
-      // Lógica Separada para o BOSS
       if (selectedModule.id === 'BOSS') {
         const { data, error } = await supabase.rpc('join_boss_room', { 
           p_user_id: session.user.id, 
@@ -116,7 +120,6 @@ const Index = () => {
         return;
       }
 
-      // Lógica Original para mesas normais (Intacta)
       const { data, error } = await supabase.rpc('join_room_secure', { 
         p_user_id: session.user.id, 
         p_room_id: confirmingRoom.id, 
@@ -211,16 +214,22 @@ const Index = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <AnimatePresence mode="popLayout">
                   {isBossMode ? (
-                    bossRooms.map((room) => (
-                      <motion.div key={room.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                        <BossRoomItem 
-                          room={room} 
-                          participantCount={bossCounts[room.id] || 0}
-                          onJoin={() => handleOpenConfirm(room)} 
-                          loading={actionLoading === room.id} 
-                        />
-                      </motion.div>
-                    ))
+                    bossRooms.length > 0 ? (
+                      bossRooms.map((room) => (
+                        <motion.div key={room.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                          <BossRoomItem 
+                            room={room} 
+                            participantCount={bossCounts[room.id] || 0}
+                            onJoin={() => handleOpenConfirm(room)} 
+                            loading={actionLoading === room.id} 
+                          />
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="col-span-full py-10 text-center text-white/20 font-black uppercase text-[10px] tracking-widest">
+                        A carregar mesas premium...
+                      </div>
+                    )
                   ) : (
                     rooms.map((room) => (
                       <motion.div key={room.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
