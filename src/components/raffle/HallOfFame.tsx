@@ -1,24 +1,70 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Trophy, Award, TrendingUp } from 'lucide-react';
+import { Trophy, Award, TrendingUp, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 const HallOfFame = () => {
   const [index, setIndex] = useState(0);
-  
-  const winners = Array.from({ length: 50 }, (_, i) => ({
-    id: `USER_${Math.floor(Math.random() * 9000) + 1000}${String.fromCharCode(65 + (i % 26))}`,
-    amount: [300, 600, 1500, 3000, 6000, 15000][Math.floor(Math.random() * 6)],
-    module: ["M100", "M200", "M500", "M1000", "M2000", "M5000"][Math.floor(Math.random() * 6)]
-  }));
+  const [winners, setWinners] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchWinners = async () => {
+      // Buscar os 10 últimos vencedores reais (não fantasma)
+      const { data, error } = await supabase
+        .from('winners')
+        .select(`
+          id,
+          prize_amount,
+          draw_id,
+          profiles:user_id (
+            first_name
+          ),
+          rooms:draw_id (
+            modules (
+              name
+            )
+          )
+        `)
+        .not('user_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (data && data.length > 0) {
+        setWinners(data.map(w => ({
+          id: w.profiles?.first_name || 'Anónimo',
+          amount: w.prize_amount,
+          module: w.rooms?.modules?.name || 'Mesa'
+        })));
+      } else {
+        // Fallback se não houver vencedores reais ainda
+        setWinners([
+          { id: 'Sorteio em Curso', amount: 0, module: 'Bora Sortear' }
+        ]);
+      }
+      setLoading(false);
+    };
+
+    fetchWinners();
+  }, []);
+
+  useEffect(() => {
+    if (winners.length <= 1) return;
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % winners.length);
-    }, 3000);
+    }, 4000);
     return () => clearInterval(timer);
   }, [winners.length]);
+
+  if (loading) {
+    return (
+      <div className="platinum-gradient rounded-[3rem] h-[450px] flex items-center justify-center border-2 border-[#E5E7EB]">
+        <Loader2 className="animate-spin text-blue-600" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="platinum-gradient rounded-[3rem] overflow-hidden h-[450px] flex flex-col relative border-2 border-[#E5E7EB] shadow-2xl">
@@ -31,7 +77,7 @@ const HallOfFame = () => {
         </div>
         <div className="flex items-center gap-2 bg-blue-600 px-3 py-1 rounded-full border border-blue-400">
            <div className="w-1.5 h-1.5 bg-white rounded-full animate-ping" />
-           <span className="text-[8px] font-black text-white uppercase tracking-widest">LIVE</span>
+           <span className="text-[8px] font-black text-white uppercase tracking-widest">AO VIVO</span>
         </div>
       </div>
       
@@ -52,18 +98,22 @@ const HallOfFame = () => {
             </div>
             
             <p className="text-[10px] font-black text-[#0066FF] uppercase tracking-[0.4em] mb-3 bg-blue-50 inline-block px-4 py-1 rounded-full border border-blue-100">{winners[index].module}</p>
-            <h4 className="text-3xl font-black italic tracking-tighter uppercase mb-6 text-[#0A0B12]">@{winners[index].id}</h4>
+            <h4 className="text-3xl font-black italic tracking-tighter uppercase mb-6 text-[#0A0B12]">
+              {winners[index].id.startsWith('Sorteio') ? winners[index].id : `@${winners[index].id}`}
+            </h4>
             
-            <div className="inline-flex items-center gap-3 gold-gradient px-6 py-3 rounded-[1.5rem] border border-white/30 shadow-xl shadow-yellow-500/20">
-              <TrendingUp size={18} className="text-black" />
-              <span className="text-2xl font-black text-black italic tracking-tighter">+{winners[index].amount.toLocaleString()} Kz</span>
-            </div>
+            {winners[index].amount > 0 && (
+              <div className="inline-flex items-center gap-3 gold-gradient px-6 py-3 rounded-[1.5rem] border border-white/30 shadow-xl shadow-yellow-500/20">
+                <TrendingUp size={18} className="text-black" />
+                <span className="text-2xl font-black text-black italic tracking-tighter">+{winners[index].amount.toLocaleString()} Kz</span>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
 
       <div className="p-6 bg-white/40 backdrop-blur-sm border-t border-[#D1D5DB] flex gap-2 justify-center">
-        {[...Array(5)].map((_, i) => (
+        {winners.length > 1 && [...Array(Math.min(5, winners.length))].map((_, i) => (
           <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${index % 5 === i ? 'w-8 bg-[#0066FF] shadow-[0_0_8px_#0066FF]' : 'w-2 bg-[#D1D5DB]'}`} />
         ))}
       </div>

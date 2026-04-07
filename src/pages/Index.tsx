@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +30,17 @@ const Index = () => {
 
   const navigate = useNavigate();
 
+  const fetchRooms = useCallback(async (moduleId: string) => {
+    const { data } = await supabase
+      .from('rooms')
+      .select('*, modules(*)')
+      .eq('module_id', moduleId)
+      .eq('status', 'open')
+      .order('created_at', { ascending: true })
+      .limit(3);
+    if (data) setRooms(data);
+  }, []);
+
   useEffect(() => {
     const fetchModules = async () => {
       const { data: modData } = await supabase.from('modules').select('*').order('price', { ascending: true });
@@ -44,12 +55,24 @@ const Index = () => {
 
   useEffect(() => {
     if (!selectedModule) return;
-    const fetchRooms = async (moduleId: string) => {
-      const { data } = await supabase.from('rooms').select('*, modules(*)').eq('module_id', moduleId).eq('status', 'open').order('created_at', { ascending: true }).limit(3);
-      if (data) setRooms(data);
-    };
     fetchRooms(selectedModule.id);
-  }, [selectedModule]);
+
+    // Subscrição em Tempo Real para as salas
+    const channel = supabase.channel('public:rooms')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'rooms',
+        filter: `module_id=eq.${selectedModule.id}` 
+      }, () => {
+        fetchRooms(selectedModule.id);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedModule, fetchRooms]);
 
   const handleOpenConfirm = (room: any) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -86,9 +109,7 @@ const Index = () => {
       } else if (data) {
         setTicketModal({ open: true, code: data });
         setConfirmingRoom(null);
-        // Refresh rooms
-        const { data: updatedRooms } = await supabase.from('rooms').select('*, modules(*)').eq('module_id', selectedModule.id).eq('status', 'open').order('created_at', { ascending: true }).limit(3);
-        if (updatedRooms) setRooms(updatedRooms);
+        fetchRooms(selectedModule.id);
       }
     } catch (err: any) {
       toast.error("Erro ao entrar.");
