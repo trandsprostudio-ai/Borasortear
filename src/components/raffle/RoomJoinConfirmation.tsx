@@ -3,13 +3,36 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Trophy, Users, Info, Zap, Star, Wallet, ArrowRight } from 'lucide-react';
+import { Trophy, Users, Info, Zap, Star, Wallet, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import PenguinMascot from '@/components/ui/PenguinMascot';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { toast{
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+
+interface RoomJoinConfirmationProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  room: any;
+  loading: boolean;
+}
+
+const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: RoomJoinConfirmationProps) => {
+  const [userBalance, setUserBalance] = useState<number>(0);
+  const [bonusBalance, setBonusBalance] = useState<number>(0);
+  const [useBonus, setUseBonus] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchBalances = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data } = await supabase.from('profiles').select('balance, bonus_balance').eq('id', session.user.id).single();
+        if (data) {
+          setUserBalance(Number(data.balance));
           setBonusBalance(Number(data.bonus_balance || 0));
         }
       }
@@ -48,7 +71,7 @@ import { toast{
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-md p-0 overflow-hidden flex flex-col h-full max-h-[85vh] md:max-h-[80vh]">
         <div className="flex-1 overflow-hidden flex flex-col relative">
-          {/* Penguin Mascot Ajustado: Baixado e Redimensionado */}
+          {/* Penguin Mascot: Baixado e Redimensionado para não obstruir */}
           <div className="absolute top-4 right-4 z-20 pointer-events-none">
             <PenguinMascot 
               page="raffle" 
@@ -111,7 +134,7 @@ import { toast{
                   </div>
                 </div>
 
-                {!isBonusRestricted && bonusBalance >= entryFee && (
+                {!isBonusRestricted && (bonusBalance >= entryFee) && (
                   <div className="bg-purple-600/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
                     <div className="flex flex-col">
                       <Label htmlFor="use-bonus" className="text-xs font-black uppercase tracking-widest cursor-pointer text-white">Usar Saldo Bónus</Label>
