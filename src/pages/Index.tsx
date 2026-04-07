@@ -124,10 +124,10 @@ const Index = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0A0B12] flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
+  if (loading) return <div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
 
   return (
-    <div className="min-h-screen bg-[#0A0B12] text-white pb-32 selection:bg-purple-500/30">
+    <div className="min-h-screen bg-white text-[#111111] pb-32">
       <Navbar />
       <NewsTicker />
       
@@ -136,20 +136,20 @@ const Index = () => {
           
           <div className="flex-1 space-y-12">
             <header className="space-y-6 relative">
-              <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-[0.85]">
-                A TUA SORTE <br /> <span className="text-purple-500">NAS TUAS MÃOS</span>
+              <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter uppercase leading-[0.85] text-[#111111]">
+                A TUA SORTE <br /> <span className="text-blue-600">NAS TUAS MÃOS</span>
               </h1>
               
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                <p className="text-white/30 font-bold text-[10px] uppercase tracking-widest max-w-xs leading-relaxed">
+                <p className="text-[#555555] font-bold text-[10px] uppercase tracking-widest max-w-xs leading-relaxed">
                   Entra numa mesa, aguarda o sorteio e triplica o teu saldo em segundos.
                 </p>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/central-de-ajuda')}
-                  className="border-white/10 bg-white/5 hover:bg-white/10 h-12 rounded-xl font-black text-[10px] uppercase tracking-widest"
+                  className="border-[#e0e0e0] bg-[#f5f5f5] hover:bg-[#ebebeb] h-12 rounded-xl font-black text-[10px] uppercase tracking-widest text-[#111111]"
                 >
-                  <HelpCircle size={14} className="mr-2 text-purple-400" /> COMO FUNCIONA
+                  <HelpCircle size={14} className="mr-2 text-blue-600" /> COMO FUNCIONA
                 </Button>
               </div>
             </header>

@@ -64,7 +64,6 @@ const Auth = () => {
 
         const finalRefCode = manualRefCode.trim().toUpperCase();
 
-        // VALIDAÇÃO CRÍTICA: Verificar se o código de convite existe no sistema
         if (finalRefCode) {
           const { data: refOwner, error: refError } = await supabase
             .from('profiles')
@@ -114,12 +113,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0A0B12] flex flex-col items-center justify-start overflow-y-auto pt-20 pb-10 px-4">
+    <div className="min-h-screen w-full bg-[#f8fbff] flex flex-col items-center justify-start overflow-y-auto pt-20 pb-10 px-4">
       <AnimatePresence>
         {showSplash && <SplashScreen message={isLogin ? "A entrar..." : "A criar conta..."} />}
       </AnimatePresence>
 
-      <Link to="/" className="fixed top-8 left-8 flex items-center gap-2 text-white/40 hover:text-white transition-colors z-50 font-bold text-xs uppercase tracking-widest bg-[#0A0B12]/80 backdrop-blur-md px-4 py-2 rounded-full">
+      <Link to="/" className="fixed top-8 left-8 flex items-center gap-2 text-[#555555] hover:text-[#111111] transition-colors z-50 font-bold text-xs uppercase tracking-widest bg-white/80 backdrop-blur-md px-4 py-2 rounded-full border border-[#e0e0e0] shadow-sm">
         <ArrowLeft size={16} />
         <span>Início</span>
       </Link>
@@ -127,13 +126,13 @@ const Auth = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card w-full max-w-lg p-6 md:p-10 rounded-[2.5rem] border-white/5"
+        className="glass-card w-full max-w-lg p-6 md:p-10 rounded-[2.5rem]"
       >
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
             <Logo className="scale-110" />
           </div>
-          <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
+          <h1 className="text-2xl font-black italic tracking-tighter text-[#111111] uppercase">
             {isLogin ? 'Entrar' : 'Criar Conta'}
           </h1>
         </div>
@@ -142,100 +141,100 @@ const Auth = () => {
           {!isLogin ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nome Completo</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Nome Completo</Label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Teu nome completo" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Teu nome completo" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Idade</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Idade</Label>
                 <div className="relative">
-                  <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="18+" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
+                  <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="18+" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Teu Telefone</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Teu Telefone</Label>
                 <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
+                  <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
                 </div>
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Nº Multicaixa Express (Para Saques)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Nº Multicaixa Express (Para Saques)</Label>
                 <div className="relative">
-                  <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número para receber prémios" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
+                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número para receber prémios" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
                 </div>
               </div>
 
               <div className="space-y-2 md:col-span-2">
                 <div className="flex justify-between items-center ml-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-white/40">Código de Convite (Opcional)</Label>
-                  <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">Bónus de 200 Kz</span>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40">Código de Convite (Opcional)</Label>
+                  <span className="text-[8px] font-black text-green-600 uppercase tracking-widest">Bónus de 200 Kz</span>
                 </div>
                 <div className="relative">
-                  <Gift className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Gift className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
                   <Input 
                     value={manualRefCode} 
                     onChange={(e) => setManualRefCode(e.target.value.toUpperCase())} 
                     placeholder="EX: ABC123D" 
-                    className="bg-white/5 border-white/10 h-12 pl-12 uppercase font-black"
+                    className="bg-[#f5f5f5] border-[#e0e0e0] h-12 pl-12 uppercase font-black text-[#111111]"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Senha</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Senha</Label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Confirmar Senha</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Confirmar Senha</Label>
                 <div className="relative">
-                  <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-12 pl-12" required />
+                  <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
                 </div>
               </div>
 
               <div className="md:col-span-2 flex items-center space-x-2 pt-2">
-                <Checkbox id="terms" checked={acceptTerms} onCheckedChange={(c) => setAcceptTerms(c as boolean)} className="border-white/20" />
-                <label htmlFor="terms" className="text-[10px] font-bold text-white/40 cursor-pointer">Aceito os termos de uso do Bora Sortear</label>
+                <Checkbox id="terms" checked={acceptTerms} onCheckedChange={(c) => setAcceptTerms(c as boolean)} className="border-[#e0e0e0]" />
+                <label htmlFor="terms" className="text-[10px] font-bold text-[#555555] cursor-pointer">Aceito os termos de uso do Bora Sortear</label>
               </div>
             </div>
           ) : (
             <>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Teu Telefone</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Teu Telefone</Label>
                 <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" required />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
+                  <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-14 pl-12 text-[#111111]" required />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Tua Senha</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Tua Senha</Label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12" required />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-14 pl-12 text-[#111111]" required />
                 </div>
               </div>
             </>
           )}
 
-          <Button type="submit" disabled={loading} className="w-full premium-gradient h-14 rounded-2xl font-black text-lg mt-4">
+          <Button type="submit" disabled={loading} className="w-full premium-gradient h-14 rounded-2xl font-black text-lg mt-4 text-white border-none shadow-lg">
             {loading ? <Loader2 className="animate-spin" /> : isLogin ? 'ENTRAR AGORA' : 'FINALIZAR REGISTO'}
           </Button>
         </form>
 
         <div className="mt-8 text-center">
-          <button onClick={() => setIsLogin(!isLogin)} className="text-[10px] text-white/40 hover:text-purple-400 font-black uppercase tracking-widest">
+          <button onClick={() => setIsLogin(!isLogin)} className="text-[10px] text-[#555555] hover:text-blue-600 font-black uppercase tracking-widest">
             {isLogin ? 'Não tens conta? Criar agora' : 'Já tens conta? Entrar'}
           </button>
         </div>

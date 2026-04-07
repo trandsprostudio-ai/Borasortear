@@ -4,26 +4,38 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 263.4 70% 50.4%;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 98%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 188 91% 43%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 38 92% 50%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 263.4 70% 50.4%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221 83% 53%;
     --radius: 1rem;
+
+    /* Variáveis do Tema Bora Sortear Light */
+    --bg-color: #ffffff;
+    --text-color: #111111;
+    --secondary-text: #555555;
+    --card-bg: #f8f9fa;
+    --border-color: #e9ecef;
+    
+    /* Gradientes Principais */
+    --primary-gradient: linear-gradient(135deg, #00AEEF, #007BFF);
+    --gold-gradient: linear-gradient(135deg, #FFD700, #FFA500);
+    --success-gradient: linear-gradient(135deg, #00C853, #64DD17);
   }
 }
 
@@ -32,73 +44,50 @@
     @apply border-border;
   }
   body {
-    @apply bg-[#0A0A0F] text-foreground antialiased;
-    /* Gradientes suavizados: Reduzida a opacidade e saturação para um visual mais 'suave' */
-    background-image: 
-      radial-gradient(at 0% 0%, hsla(263, 40%, 40%, 0.08) 0px, transparent 55%),
-      radial-gradient(at 100% 100%, hsla(188, 50%, 35%, 0.05) 0px, transparent 55%);
+    background: linear-gradient(180deg, #ffffff, #f8fbff);
+    color: var(--text-color);
+    @apply antialiased;
     background-attachment: fixed;
   }
 }
 
-/* Regra de Ouro: Esconder Footer durante Splash */
-body.splash-active footer {
-  display: none !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-/* Custom Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(124, 58, 237, 0.1);
-  border-radius: 10px;
-  transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 58, 237, 0.4);
-}
-
-.glass-card {
-  @apply bg-[#111827]/60 backdrop-blur-xl border border-white/5 shadow-2xl;
-}
-
-.premium-glow {
-  box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
-}
-
+/* Utilitários de Gradiente */
 .premium-gradient {
-  background: linear-gradient(135deg, #7C3AED, #06B6D4);
+  background: var(--primary-gradient) !important;
 }
 
 .gold-gradient {
-  background: linear-gradient(135deg, #F59E0B, #D97706);
+  background: var(--gold-gradient) !important;
 }
 
-.text-gradient-purple {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#7C3AED] to-[#C084FC];
+.success-gradient {
+  background: var(--success-gradient) !important;
 }
 
-.shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+.glass-card {
+  @apply bg-white/80 backdrop-blur-xl border border-[#e0e0e0] shadow-[0_8px_30px_rgb(0,0,0,0.04)];
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.text-gradient-primary {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s infinite;
+/* Custom Scrollbar Styling (Light) */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
