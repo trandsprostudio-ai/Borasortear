@@ -26,32 +26,34 @@ const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
     <button
       onClick={onSelect}
       className={cn(
-        "relative flex flex-col items-center justify-center p-5 rounded-[1.5rem] border transition-all duration-500 min-w-[140px] group",
+        "relative flex flex-col items-center justify-center p-5 rounded-[1.5rem] border-2 transition-all duration-300 min-w-[140px] group active:scale-95",
         isSelected 
-          ? "bg-white border-blue-600 shadow-2xl shadow-blue-600/10 scale-105 z-10" 
-          : "bg-[#f8f9fa] border-[#e5e7eb] hover:bg-white hover:border-[#d1d5db]"
+          ? "bg-white border-blue-600 shadow-[0_8px_30px_rgb(0,123,255,0.2)] scale-105 z-10" 
+          : "bg-white border-[#D1D5DB] hover:border-[#9CA3AF] shadow-sm"
       )}
     >
       <div className={cn(
-        "w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-all duration-500",
-        isSelected ? "blue-gradient text-white shadow-lg shadow-blue-500/20" : "bg-white text-[#111111]/20 border border-[#e5e7eb]"
+        "w-11 h-11 rounded-2xl flex items-center justify-center mb-3 transition-all",
+        isSelected ? "premium-gradient text-white shadow-lg" : "bg-[#F3F4F6] text-[#111111]/40 border border-[#D1D5DB]"
       )}>
         {getIcon(module.name)}
       </div>
 
       <span className={cn(
-        "text-[9px] font-black uppercase tracking-[0.2em] mb-1.5",
+        "text-[10px] font-black uppercase tracking-[0.2em] mb-1.5",
         isSelected ? "text-blue-600" : "text-[#111111]/40"
       )}>
         {displayName}
       </span>
       
-      <span className="text-base font-black italic tracking-tighter text-[#111111]">
-        {module.price.toLocaleString()} <span className="text-[9px] not-italic opacity-30 uppercase ml-1">Kz</span>
+      <span className="text-lg font-black italic tracking-tighter text-[#111111]">
+        {module.price.toLocaleString()} <span className="text-[9px] not-italic opacity-40 uppercase ml-0.5">Kz</span>
       </span>
 
       {isSelected && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 rounded-full border-2 border-white shadow-sm" />
+        <div className="absolute -top-1.5 -right-1.5 bg-blue-600 text-white p-1 rounded-full border-2 border-white shadow-sm">
+           <Star size={10} fill="white" />
+        </div>
       )}
     </button>
   );

@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LayoutGrid, Loader2, HelpCircle, Gift, ArrowRight, ShieldCheck, UserPlus, Zap, Star } from 'lucide-react';
+import { LayoutGrid, Loader2, Star } from 'lucide-react';
 import ModuleCard from '@/components/raffle/ModuleCard';
 import RoomItem from '@/components/raffle/RoomItem';
 import NewsTicker from '@/components/layout/NewsTicker';
@@ -51,10 +51,11 @@ const Index = () => {
     fetchRooms(selectedModule.id);
   }, [selectedModule]);
 
-  const handleOpenConfirm = async (room: any) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setIsAuthModalOpen(true); return; }
-    setConfirmingRoom(room);
+  const handleOpenConfirm = (room: any) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { setIsAuthModalOpen(true); return; }
+      setConfirmingRoom(room);
+    });
   };
 
   const handleJoinRoom = async () => {
@@ -89,29 +90,30 @@ const Index = () => {
       <main className="max-w-[1600px] mx-auto px-4 pt-16">
         <div className="flex flex-col lg:flex-row gap-12">
           
-          <div className="flex-1 space-y-16">
-            <header className="space-y-8">
-              <div className="inline-flex items-center gap-2 bg-[#f8f9fa] border border-[#e5e7eb] px-4 py-2 rounded-full">
+          <div className="flex-1 space-y-12">
+            <header className="space-y-6">
+              <div className="inline-flex items-center gap-2 bg-[#F2F2F2] border border-[#D1D5DB] px-4 py-2 rounded-full shadow-sm">
                 <Star size={14} className="text-amber-500 fill-amber-500" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">A Maior Plataforma de Angola</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">O TEU PRÓXIMO NÍVEL DE SORTE</span>
               </div>
+              
               <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.8] text-[#111111]">
-                O TEU PRÓXIMO <br /> <span className="blue-gradient bg-clip-text text-transparent">JACKPOT</span>
+                A TUA SORTE <br /> <span className="blue-gradient-text">EM MILHÕES</span>
               </h1>
               
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pt-4">
                 <p className="text-[#555555] font-bold text-[11px] uppercase tracking-widest max-w-xs leading-relaxed">
-                  Entra nas mesas de sorteio, aguarda a lotação e ganha prémios em dinheiro real.
+                  Participa nas mesas exclusivas e garante o teu lugar no topo dos vencedores.
                 </p>
                 <div className="flex gap-3">
-                  <Button onClick={() => navigate('/wallet')} className="premium-gradient h-12 px-8 rounded-xl font-black text-[10px] uppercase text-white shadow-xl shadow-black/10">COMEÇAR AGORA</Button>
-                  <Button variant="ghost" onClick={() => navigate('/central-de-ajuda')} className="bg-[#f8f9fa] border border-[#e5e7eb] h-12 px-6 rounded-xl font-black text-[10px] uppercase">SAIBA MAIS</Button>
+                  <Button onClick={() => navigate('/wallet')} className="premium-gradient h-12 px-8 rounded-xl font-black text-[10px] uppercase text-white shadow-lg">COMEÇAR AGORA</Button>
                 </div>
               </div>
             </header>
 
-            <section className="bg-[#fcfcfc] p-1 border-y border-[#f0f0f0]">
-              <div className="flex overflow-x-auto no-scrollbar gap-4 py-8">
+            {/* Secção de Módulos com Fundo Diferenciado */}
+            <section className="bg-[#F9FAFB] p-6 rounded-[2.5rem] border border-[#E5E7EB]">
+              <div className="flex overflow-x-auto no-scrollbar gap-4 py-2">
                 {modules.map((mod) => (
                   <ModuleCard key={mod.id} module={mod} isSelected={selectedModule?.id === mod.id} onSelect={() => setSelectedModule(mod)} />
                 ))}
@@ -120,18 +122,13 @@ const Index = () => {
 
             <section className="space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-black italic uppercase tracking-tighter">Mesas Disponíveis</h2>
-                <div className="h-px flex-1 bg-[#f0f0f0] mx-8 hidden md:block" />
-                <div className="flex gap-2">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                  <div className="w-2 h-2 bg-[#f0f0f0] rounded-full" />
-                  <div className="w-2 h-2 bg-[#f0f0f0] rounded-full" />
-                </div>
+                <h2 className="text-2xl font-black italic uppercase tracking-tighter">Mesas em Aberto</h2>
+                <div className="h-px flex-1 bg-[#E5E7EB] mx-8 hidden md:block" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
                   {rooms.map((room) => (
-                    <motion.div key={room.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} layout>
+                    <motion.div key={room.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} layout>
                       <RoomItem room={room} onJoin={() => handleOpenConfirm(room)} loading={actionLoading === room.id} />
                     </motion.div>
                   ))}
@@ -140,21 +137,18 @@ const Index = () => {
             </section>
           </div>
 
-          <aside className="w-full lg:w-[360px] shrink-0">
-            <div className="sticky top-24">
-              <HallOfFame />
-              <div className="mt-8 bg-[#f8f9fa] p-8 rounded-[2.5rem] border border-[#e5e7eb]">
-                <h4 className="text-[10px] font-black uppercase text-[#111111] mb-4">Programa de Afiliados</h4>
-                <p className="text-[11px] font-bold text-[#555555] uppercase leading-relaxed mb-6">Convida amigos e recebe 5% de comissão sobre todos os prémios ganhos por eles.</p>
-                <Button onClick={() => navigate('/affiliates')} className="w-full h-12 blue-gradient rounded-xl font-black text-[10px] uppercase text-white">GERAR MEU LINK</Button>
-              </div>
+          <aside className="w-full lg:w-[380px] shrink-0 space-y-8">
+            <HallOfFame />
+            <div className="glass-card p-8 rounded-[2.5rem] border-[#D1D5DB]">
+              <h4 className="text-[10px] font-black uppercase text-[#111111] mb-4">Rede de Afiliados</h4>
+              <p className="text-[11px] font-bold text-[#555555] uppercase leading-relaxed mb-6">Convida a tua rede e fatura 5% de comissão vitalícia em cada prémio ganho.</p>
+              <Button onClick={() => navigate('/affiliates')} className="w-full h-12 bg-blue-600 hover:bg-blue-700 rounded-xl font-black text-[10px] uppercase text-white shadow-md">GERAR MEU LINK</Button>
             </div>
           </aside>
         </div>
       </main>
 
       <PenguinMascot page="home" />
-
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       {ticketModal && (
         <TicketConfirmationModal 
