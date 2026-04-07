@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Navbar from '@/components/layout/Navbar';
-import { motion } from 'framer-motion';
-import { LayoutGrid, Users, Clock, Trophy, Ticket, Loader2, History, CheckCircle2, XCircle, Search, Hash, Info } from 'lucide-react';
+import { LayoutGrid, Users, Clock, Trophy, Ticket, Loader2, History, Search, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/layout/Footer';
 import { useNavigate, Link } from 'react-router-dom';
@@ -11,7 +10,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import PenguinMascot from '@/components/ui/PenguinMascot';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDateTime, getTimeRemaining, isWithinHours } from '@/utils/date-utils';
+import { getTimeRemaining, isWithinHours } from '@/utils/date-utils';
 
 const CountdownItem = ({ expiresAt }: { expiresAt: string }) => {
   const [timeLeft, setTimeLeft] = useState("");
@@ -70,9 +69,9 @@ const MyParticipations = () => {
   const historyParticipations = participations.filter(p => p.rooms.status === 'finished' && isWithinHours(p.rooms.created_at, 48));
 
   return (
-    <div className="min-h-screen bg-white text-[#111111] pb-32">
+    <div className="min-h-screen flex flex-col bg-white text-[#111111]">
       <Navbar />
-      <main className="max-w-5xl mx-auto px-4 pt-28">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 pt-28 pb-20">
         <header className="mb-12 flex items-end justify-between">
           <h1 className="text-4xl font-black italic tracking-tighter uppercase">Minhas Mesas</h1>
           <PenguinMascot page="raffle" className="scale-50 origin-bottom" />
@@ -106,13 +105,6 @@ const MyParticipations = () => {
                     </div>
                   </div>
                   
-                  {p.source === 'bonus' && (
-                     <div className="mb-4 flex items-center gap-2 text-[8px] font-bold text-[#555555]/60 uppercase bg-white/50 p-2 rounded-lg border border-[#D1D5DB]">
-                        <Info size={10} className="text-purple-600" />
-                        Este bilhete não é elegível para prémios reais.
-                     </div>
-                  )}
-
                   <div className="pt-4 flex items-center justify-between border-t border-[#D1D5DB]">
                     <div className="flex items-center gap-2">
                       <Users size={14} className="text-[#111111]/40" />

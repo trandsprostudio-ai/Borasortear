@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Ticket, Trophy, Clock, AlertCircle, CheckCircle2, Loader2, Share2, TrendingUp, Hash, Users, XCircle, ShieldCheck, User } from 'lucide-react';
+import { Search, Ticket, Trophy, Clock, AlertCircle, Loader2, Users, XCircle, ShieldCheck, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,26 +40,17 @@ const ConsultDraw = () => {
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('first_name')
-        .eq('id', participant.user_id)
-        .maybeSingle();
+      const { data: profile } = await supabase.from('profiles').select('first_name').eq('id', participant.user_id).maybeSingle();
       
       let winnerInfo = null;
       if (participant.rooms.status === 'finished') {
-        const { data: winner } = await supabase
-          .from('winners')
-          .select('*')
-          .eq('user_id', participant.user_id)
-          .eq('draw_id', participant.rooms.id)
-          .maybeSingle();
+        const { data: winner } = await supabase.from('winners').select('*').eq('user_id', participant.user_id).eq('draw_id', participant.rooms.id).maybeSingle();
         winnerInfo = winner;
       }
 
       setResult({ ...participant, profiles: profile, winner: winnerInfo });
     } catch (err: any) {
-      setError('Ocorreu um erro na busca. Tenta novamente.');
+      setError('Ocorreu um erro na busca.');
     } finally {
       setLoading(false);
     }
@@ -68,7 +59,6 @@ const ConsultDraw = () => {
   const getStatusDisplay = () => {
     if (!result) return null;
     const status = result.rooms.status;
-    
     if (status === 'open' || status === 'processing') {
       return {
         title: 'SORTEIO EM CURSO',
@@ -78,7 +68,6 @@ const ConsultDraw = () => {
         message: 'Aguarde o encerramento da mesa para ver se foi premiado.'
       };
     }
-    
     if (result.winner) {
       return {
         title: 'VOCÊ GANHOU!',
@@ -88,7 +77,6 @@ const ConsultDraw = () => {
         message: `Parabéns! O prémio de ${Number(result.winner.prize_amount).toLocaleString()} Kz já foi creditado.`
       };
     }
-    
     return {
       title: 'NÃO PREMIADO',
       color: 'text-[#555555]/60',
@@ -101,14 +89,12 @@ const ConsultDraw = () => {
   const statusInfo = getStatusDisplay();
 
   return (
-    <div className="min-h-screen bg-white text-[#111111] pb-24">
+    <div className="min-h-screen flex flex-col bg-white text-[#111111]">
       <Navbar />
-      
-      <main className="max-w-2xl mx-auto px-4 pt-28">
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 pt-28 pb-20">
         <div className="flex flex-col items-center mb-10">
           <PenguinMascot page="raffle" className="scale-75 mb-4" />
           <h1 className="text-4xl font-black italic tracking-tighter uppercase text-center">Consultar Bilhete</h1>
-          <p className="text-[#555555]/40 font-bold text-xs uppercase tracking-widest text-center mt-2">Validação de resultados em tempo real</p>
         </div>
 
         <form onSubmit={handleSearch} className="relative mb-12">
@@ -118,7 +104,7 @@ const ConsultDraw = () => {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
               placeholder="CÓDIGO DO BILHETE"
-              className="bg-[#F3F4F6] border-[#D1D5DB] h-16 pl-14 pr-32 rounded-2xl text-xl font-black tracking-[0.2em] text-[#111111]"
+              className="bg-[#F3F4F6] border-[#D1D5DB] h-16 pl-14 pr-32 rounded-2xl text-xl font-black tracking-[0.2em]"
               maxLength={12}
             />
             <Button type="submit" disabled={loading || code.trim().length < 4} className="absolute right-2 top-2 bottom-2 premium-gradient rounded-xl px-6 font-black uppercase text-[10px] tracking-widest text-white">
@@ -129,74 +115,39 @@ const ConsultDraw = () => {
 
         <AnimatePresence mode="wait">
           {error && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border border-red-100 p-6 rounded-2xl text-red-600 text-xs font-bold text-center uppercase tracking-widest"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-red-50 border border-red-100 p-6 rounded-2xl text-red-600 text-xs font-bold text-center uppercase">
               <AlertCircle className="mx-auto mb-2" size={24} />
               {error}
             </motion.div>
           )}
 
           {result && statusInfo && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }} 
-              animate={{ opacity: 1, scale: 1 }} 
-              className="space-y-6"
-            >
-              <div className="bg-green-50 border border-green-100 px-6 py-3 rounded-2xl flex items-center justify-center gap-3">
-                <ShieldCheck className="text-green-600" size={18} />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-green-600">Entrada Confirmada e Validada</span>
-              </div>
-
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
               <div className={`glass-card rounded-[2.5rem] p-8 text-center border-2 ${statusInfo.bg}`}>
                 <div className="mb-6 flex justify-center">{statusInfo.icon}</div>
-                <h2 className={`text-4xl font-black italic tracking-tighter uppercase mb-2 ${statusInfo.color}`}>
-                  {statusInfo.title}
-                </h2>
+                <h2 className={`text-4xl font-black italic tracking-tighter uppercase mb-2 ${statusInfo.color}`}>{statusInfo.title}</h2>
                 <p className="text-[10px] font-black text-[#555555]/40 uppercase tracking-[0.3em] mb-6">{result.ticket_code}</p>
-                <p className="text-xs font-bold text-[#555555]/80 leading-relaxed max-w-xs mx-auto uppercase">
-                  {statusInfo.message}
-                </p>
+                <p className="text-xs font-bold text-[#555555]/80 leading-relaxed max-w-xs mx-auto uppercase">{statusInfo.message}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="glass-card p-6 rounded-3xl border-[#D1D5DB]">
                   <p className="text-[8px] font-black text-[#555555]/40 uppercase mb-1">Jogador</p>
-                  <div className="flex items-center gap-2">
-                    <User size={12} className="text-[#111111]/40" />
-                    <span className="text-[11px] font-black uppercase truncate text-[#111111]">
-                      {result.profiles?.first_name || 'Usuário'}
-                    </span>
-                  </div>
+                  <div className="flex items-center gap-2"><User size={12} className="text-[#111111]/40" /><span className="text-[11px] font-black uppercase truncate text-[#111111]">{result.profiles?.first_name || 'Usuário'}</span></div>
                 </div>
                 <div className="glass-card p-6 rounded-3xl border-[#D1D5DB]">
                   <p className="text-[8px] font-black text-[#555555]/40 uppercase mb-1">Mesa</p>
                   <p className="text-[11px] font-black uppercase italic text-[#111111]">{result.rooms.modules.name}</p>
-                  <p className="text-[8px] font-bold text-[#555555]/20 uppercase">ID: #{result.rooms.id.slice(0,8)}</p>
                 </div>
                 <div className="glass-card p-6 rounded-3xl border-[#D1D5DB]">
                   <p className="text-[8px] font-black text-[#555555]/40 uppercase mb-1">Participação</p>
-                  <div className="flex items-center gap-2">
-                    <Users size={12} className="text-blue-600" />
-                    <span className="text-[11px] font-black text-[#111111]">{result.rooms.current_participants}/{result.rooms.max_participants}</span>
-                  </div>
+                  <div className="flex items-center gap-2"><Users size={12} className="text-blue-600" /><span className="text-[11px] font-black text-[#111111]">{result.rooms.current_participants}/{result.rooms.max_participants}</span></div>
                 </div>
               </div>
-
-              <Button 
-                variant="ghost" 
-                onClick={() => {setResult(null); setCode('');}}
-                className="w-full text-[9px] font-black text-[#555555]/40 hover:text-[#111111] uppercase tracking-widest h-12"
-              >
-                Nova Consulta
-              </Button>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
-
       <Footer />
     </div>
   );
