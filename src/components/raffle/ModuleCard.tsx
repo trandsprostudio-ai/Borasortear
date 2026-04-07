@@ -11,44 +11,48 @@ interface ModuleCardProps {
 }
 
 const getIcon = (name: string) => {
-  if (name.includes('100')) return <Zap size={14} />;
-  if (name.includes('200')) return <Target size={14} />;
-  if (name.includes('500')) return <Award size={14} />;
-  if (name.includes('1000')) return <Trophy size={14} />;
-  if (name.includes('2000')) return <Crown size={14} />;
-  return <Gem size={14} />;
+  if (name.includes('100')) return <Zap size={16} />;
+  if (name.includes('200')) return <Target size={16} />;
+  if (name.includes('500')) return <Award size={16} />;
+  if (name.includes('1000')) return <Trophy size={16} />;
+  if (name.includes('2000')) return <Crown size={16} />;
+  return <Gem size={16} />;
 };
 
 const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
-  const displayName = module.name.replace('M', 'Módulo ');
+  const displayName = module.name.replace('M', 'Mód. ');
 
   return (
     <button
       onClick={onSelect}
       className={cn(
-        "relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all duration-300 min-w-[130px] group",
+        "relative flex flex-col items-center justify-center p-5 rounded-[1.5rem] border transition-all duration-500 min-w-[140px] group",
         isSelected 
-          ? "bg-[#E3F2FD] border-blue-500 shadow-lg" 
-          : "bg-[#f5f5f5] border-[#e0e0e0] hover:bg-[#ebebeb]"
+          ? "bg-white border-blue-600 shadow-2xl shadow-blue-600/10 scale-105 z-10" 
+          : "bg-[#f8f9fa] border-[#e5e7eb] hover:bg-white hover:border-[#d1d5db]"
       )}
     >
       <div className={cn(
-        "w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-transform group-hover:scale-110",
-        isSelected ? "premium-gradient text-white" : "bg-[#e0e0e0] text-[#555555]/40"
+        "w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-all duration-500",
+        isSelected ? "blue-gradient text-white shadow-lg shadow-blue-500/20" : "bg-white text-[#111111]/20 border border-[#e5e7eb]"
       )}>
         {getIcon(module.name)}
       </div>
 
       <span className={cn(
-        "text-[8px] font-black uppercase tracking-[0.2em] mb-1",
-        isSelected ? "text-blue-600" : "text-[#555555]/40"
+        "text-[9px] font-black uppercase tracking-[0.2em] mb-1.5",
+        isSelected ? "text-blue-600" : "text-[#111111]/40"
       )}>
         {displayName}
       </span>
       
-      <span className="text-sm font-black italic tracking-tighter text-[#111111]">
-        {module.price.toLocaleString()} <span className="text-[8px] not-italic opacity-30 uppercase ml-0.5">Kz</span>
+      <span className="text-base font-black italic tracking-tighter text-[#111111]">
+        {module.price.toLocaleString()} <span className="text-[9px] not-italic opacity-30 uppercase ml-1">Kz</span>
       </span>
+
+      {isSelected && (
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 rounded-full border-2 border-white shadow-sm" />
+      )}
     </button>
   );
 };

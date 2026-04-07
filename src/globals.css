@@ -25,17 +25,17 @@
     --ring: 221 83% 53%;
     --radius: 1rem;
 
-    /* Variáveis do Tema Bora Sortear Light */
+    /* Variáveis Premium Bora Sortear */
     --bg-color: #ffffff;
     --text-color: #111111;
     --secondary-text: #555555;
-    --card-bg: #f8f9fa;
-    --border-color: #e9ecef;
+    --card-bg: #f8f9fa; /* Cinza Platina muito leve para destacar do branco */
+    --border-color: #e0e0e0;
     
-    /* Gradientes Principais */
-    --primary-gradient: linear-gradient(135deg, #00AEEF, #007BFF);
-    --gold-gradient: linear-gradient(135deg, #FFD700, #FFA500);
-    --success-gradient: linear-gradient(135deg, #00C853, #64DD17);
+    /* Gradientes de Milhões */
+    --premium-gradient: linear-gradient(135deg, #111111, #333333); /* Preto Profundo */
+    --gold-gradient: linear-gradient(135deg, #FFD700, #FFA500);      /* Ouro Real */
+    --blue-gradient: linear-gradient(135deg, #00AEEF, #007BFF);    /* Azul Tech */
   }
 }
 
@@ -44,50 +44,58 @@
     @apply border-border;
   }
   body {
-    background: linear-gradient(180deg, #ffffff, #f8fbff);
+    background: #ffffff;
     color: var(--text-color);
     @apply antialiased;
-    background-attachment: fixed;
   }
 }
 
-/* Utilitários de Gradiente */
+/* Utilitários de Gradiente Premium */
 .premium-gradient {
-  background: var(--primary-gradient) !important;
+  background: var(--premium-gradient) !important;
 }
 
 .gold-gradient {
   background: var(--gold-gradient) !important;
 }
 
-.success-gradient {
-  background: var(--success-gradient) !important;
+.blue-gradient {
+  background: var(--blue-gradient) !important;
 }
 
+/* Contentores com Divisão Clara */
 .glass-card {
-  @apply bg-white/80 backdrop-blur-xl border border-[#e0e0e0] shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  background: #fcfcfc;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+  @apply backdrop-blur-xl transition-all duration-300;
 }
 
-.text-gradient-primary {
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.glass-card:hover {
+  box-shadow: 0 20px 50px rgba(0,0,0,0.06);
+  border-color: #d0d0d0;
 }
 
-/* Custom Scrollbar Styling (Light) */
+/* Animação Shimmer para Elementos Ouro */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite linear;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #f5f5f5;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #ccc;
+  background: #d0d0d0;
   border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #999;
 }

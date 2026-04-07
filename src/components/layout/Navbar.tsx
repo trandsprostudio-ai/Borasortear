@@ -41,7 +41,6 @@ const Navbar = () => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
-        subscribeToProfile(session.user.id);
       }
     };
     checkSession();
@@ -49,10 +48,7 @@ const Navbar = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) {
-        fetchProfile(currentUser.id);
-        subscribeToProfile(currentUser.id);
-      }
+      if (currentUser) fetchProfile(currentUser.id);
     });
 
     return () => subscription.unsubscribe();
@@ -61,19 +57,6 @@ const Navbar = () => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
     if (data) setProfile(data);
-  };
-
-  const subscribeToProfile = (userId: string) => {
-    const channel = supabase.channel(`realtime-profile-${userId}`)
-      .on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` }, 
-        (payload) => {
-          setProfile(payload.new);
-        }
-      )
-      .subscribe();
-    
-    return () => { supabase.removeChannel(channel); };
   };
 
   const handleLogout = async () => {
@@ -108,66 +91,64 @@ const Navbar = () => {
         />
       )}
 
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#e0e0e0] h-16 flex items-center px-2 md:px-6">
-        <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="shrink-0 scale-90 sm:scale-100 origin-left">
-              <Logo className="text-xl md:text-2xl" />
-            </Link>
-          </div>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#e5e7eb] h-16 flex items-center px-4 md:px-8">
+        <div className="max-w-[1600px] w-full mx-auto flex items-center justify-between">
+          <Link to="/" className="shrink-0">
+            <Logo className="text-2xl" />
+          </Link>
 
-          <div className="flex items-center gap-1.5 md:gap-4">
+          <div className="flex items-center gap-3">
             {user ? (
               <>
                 <NotificationBell userId={user.id} />
                 
-                <div className="flex items-center bg-[#f5f5f5] rounded-xl p-0.5 md:p-1 border border-[#e0e0e0]">
-                  <Link to="/wallet" className="px-2 md:px-4 py-0.5 flex flex-col items-end">
-                    <span className="text-[6px] md:text-[8px] text-blue-600 font-black uppercase">Saldo Total</span>
-                    <span className="text-[10px] md:text-sm font-black text-[#111111]">
-                      {totalDisplayBalance.toLocaleString()} <span className="text-[7px] md:text-[8px] opacity-30">Kz</span>
+                <div className="flex items-center bg-[#f8f9fa] rounded-2xl p-1 border border-[#e5e7eb] shadow-sm">
+                  <Link to="/wallet" className="px-4 py-1 flex flex-col items-end">
+                    <span className="text-[7px] text-[#555555] font-black uppercase tracking-widest">Saldo Disponível</span>
+                    <span className="text-sm font-black text-[#111111]">
+                      {totalDisplayBalance.toLocaleString()} <span className="text-[9px] opacity-40">Kz</span>
                     </span>
                   </Link>
                   <Button 
                     size="icon" 
                     onClick={() => setIsDepositOpen(true)}
-                    className="premium-gradient h-6 w-6 md:h-9 md:w-9 rounded-lg shrink-0 text-white"
+                    className="premium-gradient h-8 w-8 rounded-xl shadow-lg shadow-black/10 text-white"
                   >
-                    <Plus size={12} className="md:size-4" />
+                    <Plus size={16} />
                   </Button>
                 </div>
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="w-8 h-8 md:w-10 md:h-10 rounded-xl premium-gradient flex items-center justify-center text-white cursor-pointer outline-none shrink-0">
-                      <User size={16} />
+                    <button className="w-10 h-10 rounded-2xl premium-gradient flex items-center justify-center text-white shadow-xl shadow-black/10 transition-transform active:scale-95">
+                      <User size={20} />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-white border-[#e0e0e0] rounded-2xl p-2 z-50 shadow-xl">
+                  <DropdownMenuContent align="end" className="w-56 bg-white border-[#e5e7eb] rounded-[1.5rem] p-2 mt-2 shadow-2xl">
                     <DropdownMenuItem asChild>
-                      <Link to="/profile" className="flex items-center gap-3 p-3 cursor-pointer hover:bg-[#f5f5f5] rounded-xl text-[10px] font-black uppercase text-[#555555]">
-                        <Settings size={14} /> Perfil
+                      <Link to="/profile" className="flex items-center gap-3 p-4 cursor-pointer hover:bg-[#f8f9fa] rounded-xl text-[10px] font-black uppercase text-[#111111]">
+                        <Settings size={14} /> Definições de Perfil
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/wallet" className="flex items-center gap-3 p-3 cursor-pointer hover:bg-[#f5f5f5] rounded-xl text-[10px] font-black uppercase text-[#555555]">
-                        <Wallet size={14} /> Carteira
+                      <Link to="/wallet" className="flex items-center gap-3 p-4 cursor-pointer hover:bg-[#f8f9fa] rounded-xl text-[10px] font-black uppercase text-[#111111]">
+                        <Wallet size={14} /> Minha Carteira
                       </Link>
                     </DropdownMenuItem>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="w-full flex items-center gap-3 p-3 cursor-pointer hover:bg-red-50 rounded-xl text-[10px] font-black text-red-500 uppercase">
-                          <LogOut size={14} /> Sair
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="w-full flex items-center gap-3 p-4 cursor-pointer hover:bg-red-50 rounded-xl text-[10px] font-black text-red-500 uppercase">
+                          <LogOut size={14} /> Encerrar Sessão
                         </DropdownMenuItem>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="bg-white border-[#e0e0e0] rounded-3xl w-[90vw] max-w-sm z-[100] shadow-2xl">
+                      <AlertDialogContent className="bg-white border-[#e5e7eb] rounded-[2rem] max-w-sm">
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="text-xl font-black italic text-[#111111]">SAIR AGORA?</AlertDialogTitle>
-                          <AlertDialogDescription className="text-xs font-bold text-[#555555] uppercase tracking-widest">A sua sessão será encerrada com segurança.</AlertDialogDescription>
+                          <AlertDialogTitle className="text-xl font-black italic text-[#111111]">TERMINAR SESSÃO?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-xs font-bold text-[#555555] uppercase tracking-widest">A sua conta será desconectada com segurança.</AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                          <AlertDialogCancel className="rounded-xl mt-0 font-black text-[10px] uppercase tracking-widest border-[#e0e0e0]">VOLTAR</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleLogout} className="rounded-xl bg-red-500 hover:bg-red-600 font-black text-[10px] uppercase tracking-widest text-white border-none">CONFIRMAR</AlertDialogAction>
+                        <AlertDialogFooter className="gap-2">
+                          <AlertDialogCancel className="rounded-xl font-black text-[10px] uppercase border-[#e5e7eb]">VOLTAR</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleLogout} className="rounded-xl premium-gradient font-black text-[10px] uppercase text-white">CONFIRMAR</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
@@ -175,19 +156,19 @@ const Navbar = () => {
                 </DropdownMenu>
               </>
             ) : (
-              <div className="flex items-center gap-1.5 md:gap-2">
+              <div className="flex items-center gap-3">
                 <Button 
                   variant="ghost"
                   onClick={() => navigate('/auth?mode=login')} 
-                  className="text-[#555555] hover:text-[#111111] hover:bg-[#f5f5f5] font-black px-2 md:px-4 rounded-xl text-[9px] md:text-[10px] uppercase h-9 md:h-10"
+                  className="text-[#111111] font-black rounded-xl text-[10px] uppercase h-10 px-6"
                 >
                   ENTRAR
                 </Button>
                 <Button 
                   onClick={() => navigate('/auth?mode=signup')} 
-                  className="premium-gradient text-white font-black px-3 md:px-6 rounded-xl text-[9px] md:text-[10px] uppercase h-9 md:h-10 border-none"
+                  className="premium-gradient text-white font-black rounded-xl text-[10px] uppercase h-10 px-6 shadow-xl shadow-black/10"
                 >
-                  CRIAR CONTA
+                  REGISTAR-ME
                 </Button>
               </div>
             )}

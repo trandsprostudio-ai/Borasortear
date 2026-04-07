@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Users, ArrowRight, Loader2, TrendingUp } from 'lucide-react';
+import { Users, ArrowRight, Loader2, TrendingUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -17,35 +17,49 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
   const estimatedPrize = Math.floor((room.modules.price * room.max_participants) * 0.333);
 
   return (
-    <div className="glass-card p-5 rounded-[1.5rem] relative overflow-hidden transition-all hover:border-blue-500/30">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex flex-col">
-          <span className="text-[8px] font-black text-[#555555]/40 uppercase tracking-[0.2em]">MESA DISPONÍVEL</span>
-          <h3 className="text-sm font-black italic tracking-tighter text-[#111111]">#{room.id.slice(0, 6)}</h3>
+    <div className="glass-card p-6 rounded-[2rem] relative overflow-hidden group">
+      {/* Detalhe de luxo superior */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-[#f0f0f0]" />
+      
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+             <Sparkles size={12} className="text-amber-500" />
+             <span className="text-[9px] font-black text-[#111111] uppercase tracking-[0.2em]">Mesa Ativa</span>
+          </div>
+          <h3 className="text-base font-black italic tracking-tighter text-[#111111] uppercase">
+            Sorteio #{room.id.slice(0, 6)}
+          </h3>
         </div>
-        <div className="flex items-center gap-1.5 bg-[#E8F5E9] px-2 py-1 rounded-full border border-[#C8E6C9]">
-          <div className="w-1.5 h-1.5 bg-[#2E7D32] rounded-full animate-pulse" />
-          <span className="text-[8px] font-black text-[#2E7D32] uppercase">Aberto</span>
+        <div className="bg-[#f0f0f0] px-3 py-1.5 rounded-full border border-[#e5e7eb] flex items-center gap-2">
+           <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse" />
+           <span className="text-[8px] font-black text-[#111111] uppercase">Tempo Real</span>
         </div>
       </div>
 
-      <div className="bg-[#f5f5f5] p-3 rounded-xl border border-[#e0e0e0] mb-4">
-        <p className="text-[8px] font-black text-blue-600 uppercase tracking-widest mb-0.5">Prémio Estimado</p>
+      {/* Caixa de Prémio Ouro */}
+      <div className="gold-gradient p-5 rounded-[1.5rem] mb-6 shadow-lg shadow-amber-500/10 border border-white/20 animate-shimmer">
+        <p className="text-[9px] font-black text-black/40 uppercase tracking-widest mb-1">Prémio de Vencedor</p>
         <div className="flex items-center justify-between">
-          <span className="text-lg font-black text-[#111111] italic">{estimatedPrize.toLocaleString()} <span className="text-[10px] not-italic opacity-30">Kz</span></span>
-          <TrendingUp size={14} className="text-blue-600/40" />
+          <span className="text-2xl font-black text-black italic tracking-tighter">
+            {estimatedPrize.toLocaleString()} <span className="text-xs not-italic opacity-50">Kz</span>
+          </span>
+          <TrendingUp size={20} className="text-black/20" />
         </div>
       </div>
 
-      <div className="space-y-2 mb-4">
+      <div className="space-y-3 mb-6">
         <div className="flex justify-between items-end">
-          <span className="text-[9px] font-bold text-[#555555] uppercase tracking-widest">{room.current_participants}/{room.max_participants} Jogadores</span>
+          <div className="flex items-center gap-2">
+            <Users size={16} className="text-[#111111]/20" />
+            <span className="text-[10px] font-black text-[#111111] uppercase">{room.current_participants}/{room.max_participants} Jogadores</span>
+          </div>
           <span className={cn(
-            "text-[9px] font-black uppercase",
-            percentage > 80 ? "text-red-500" : "text-[#555555]/40"
+            "text-[10px] font-black",
+            percentage > 80 ? "text-amber-600" : "text-[#111111]/40"
           )}>{percentage}%</span>
         </div>
-        <div className="h-1.5 w-full bg-[#e0e0e0] rounded-full overflow-hidden">
+        <div className="h-2 w-full bg-[#f0f0f0] rounded-full overflow-hidden border border-[#e5e7eb]">
           <motion.div 
             initial={{ width: 0 }}
             animate={{ width: `${percentage}%` }}
@@ -57,14 +71,14 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
       <Button 
         onClick={onJoin}
         disabled={loading || room.current_participants >= room.max_participants}
-        className="w-full h-10 rounded-xl premium-gradient text-white border-none font-black text-[10px] uppercase tracking-[0.1em] group/btn shadow-md"
+        className="w-full h-12 rounded-xl premium-gradient text-white border-none font-black text-[11px] uppercase tracking-[0.1em] group/btn shadow-xl shadow-black/10 active:scale-[0.98] transition-transform"
       >
         {loading ? (
-          <Loader2 className="animate-spin" size={14} />
+          <Loader2 className="animate-spin" size={16} />
         ) : (
           <>
-            SORTEAR AGORA
-            <ArrowRight size={12} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
+            PARTICIPAR NO SORTEIO
+            <ArrowRight size={14} className="ml-2 group-hover/btn:translate-x-1 transition-transform" />
           </>
         )}
       </Button>
