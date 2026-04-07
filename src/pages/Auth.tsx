@@ -17,7 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ul/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 
 const COUNTRIES = [
   { code: '244', name: 'Angola', flag: '🇦🇴', length: 9, placeholder: '9XXXXXXXX' },
