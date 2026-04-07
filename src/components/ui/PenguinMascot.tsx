@@ -22,17 +22,21 @@ const PenguinMascot = ({
 }: PenguinMascotProps) => {
   const [isJumping, setIsJumping] = useState(false);
 
-  // Sistema de Frases Dinâmicas
+  // Sistema de Frases Dinâmicas Atualizado
   const phrases = useMemo(() => {
     const p = {
       home: [
         "Bem-vindo! Preparado para tentar a sorte?",
         "Hoje vai ser o seu dia!",
-        "Participe e ganhe prémios incríveis!",
+        "3 vencedores por mesa e tu podes ser um deles, seja o terceiro vencedor",
+        "No bora a vitória é certa",
+        "Aqui há sempre quem ganha",
+        "Entra no modulo BOSS e seja BOSS",
         "Prepara o bolso, tá a cheirar a din din! 💰"
       ],
       raffle: [
         "Bora!",
+        "3 vencedores por mesa! Tu podes ser o próximo!",
         "Quanto mais participar, mais chances tem!",
         "Boa sorte, hoje é o seu dia! 🍀"
       ],
@@ -43,6 +47,7 @@ const PenguinMascot = ({
       ],
       wallet: [
         "A tua sorte está a crescer!",
+        "No bora a vitória é certa!",
         "Dinheiro no bolso, sorriso no rosto!",
         "O próximo prémio está à tua espera!"
       ]
