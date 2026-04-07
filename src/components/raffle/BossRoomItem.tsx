@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Shield, Clock, Users, ArrowRight, Loader2, Sparkles, TrendingUp } from 'lucide-react';
+import { Shield, Clock, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
 import { getTimeRemaining } from '@/utils/date-utils';
 
 interface BossRoomItemProps {
@@ -13,7 +12,7 @@ interface BossRoomItemProps {
   loading?: boolean;
 }
 
-const BossRoomItem = ({ room, participantCount, onJoin, loading }: BossRoomItemProps) => {
+const BossRoomItem = ({ room, onJoin, loading }: BossRoomItemProps) => {
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
@@ -58,20 +57,13 @@ const BossRoomItem = ({ room, participantCount, onJoin, loading }: BossRoomItemP
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock size={14} className="text-white/40" />
-              <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Encerra em</span>
+        <div className="mb-8">
+          <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Clock size={16} className="text-amber-500" />
+              <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">O sorteio encerra em:</span>
             </div>
-            <p className="text-sm font-black text-white tracking-widest">{timeLeft || "72:00:00"}</p>
-          </div>
-          <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-            <div className="flex items-center gap-2 mb-1">
-              <Users size={14} className="text-white/40" />
-              <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Jogadores</span>
-            </div>
-            <p className="text-sm font-black text-white">{participantCount}</p>
+            <p className="text-sm font-black text-white tracking-[0.1em]">{timeLeft || "72:00:00"}</p>
           </div>
         </div>
 
