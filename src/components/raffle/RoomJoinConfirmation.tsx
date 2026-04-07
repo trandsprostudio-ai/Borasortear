@@ -7,7 +7,6 @@ import { Trophy, Users, Info, Zap, Star, Wallet, ArrowRight } from 'lucide-react
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import PenguinMascot from '@/components/ui/PenguinMascot';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -71,14 +70,6 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-md p-0 overflow-hidden flex flex-col h-full max-h-[85vh] md:max-h-[80vh]">
         <div className="flex-1 overflow-hidden flex flex-col relative">
-          {/* Penguin Mascot: Baixado e Redimensionado para não obstruir */}
-          <div className="absolute top-4 right-4 z-20 pointer-events-none">
-            <PenguinMascot 
-              page="raffle" 
-              className="scale-[0.55] origin-top-right transform-gpu" 
-            />
-          </div>
-
           <ScrollArea className="flex-1 w-full">
             <div className="p-6 md:p-8 pt-12">
               <DialogHeader className="mb-6 text-left">

@@ -183,7 +183,11 @@ const Index = () => {
           </aside>
         </div>
 
-        {/* Modais de Funcionamento */}
+        {/* Mascot no final da main para garantir que seja visto */}
+        <div className="flex justify-center mt-12 mb-8">
+           <PenguinMascot page="home" />
+        </div>
+
         <AuthModal 
           isOpen={isAuthModalOpen} 
           onClose={() => setIsAuthModalOpen(false)} 
@@ -208,7 +212,6 @@ const Index = () => {
         )}
       </main>
 
-      <PenguinMascot page="home" />
       <Footer />
     </div>
   );
