@@ -14,7 +14,7 @@ const CentralDeAjuda = () => {
   const faqs = [
     {
       q: "Como participar de um sorteio?",
-      a: "1. Faça login na sua conta. 2. Selecione o módulo desejado. 3. Escolha uma das 3 salas disponíveis. 4. Clique em 'SORTEAR' e confirme sua entrada. 5. Aguarde o encerramento da sala para ver o resultado."
+      a: "1. Faz login na tua conta. 2. Seleciona o módulo desejado. 3. Escolha uma das 3 salas disponíveis. 4. Clica em 'SORTEAR' e confirma a tua entrada. 5. Aguarda o encerramento da sala para veres o resultado."
     },
     {
       q: "A plataforma participa dos sorteios?",
@@ -26,11 +26,11 @@ const CentralDeAjuda = () => {
     },
     {
       q: "Quanto tempo dura uma sala?",
-      a: "Cada sala permanece aberta por até 3 horas. Pode fechar antes se atingir o número máximo de participantes. Você pode entrar até 10 minutos antes do encerramento."
+      a: "Cada sala permanece aberta por até 3 horas. Pode fechar antes se atingir o número máximo de participantes. Podes entrar até 10 minutos antes do encerramento."
     },
     {
       q: "Quando e onde vejo os resultados?",
-      a: "Os resultados são divulgados em até 10 minutos após o encerramento da sala. Você pode consultá-los em 'Minhas Mesas' ou em 'Consultar Bilhete' usando o código do seu bilhete."
+      a: "Os resultados são divulgados em até 10 minutos após o encerramento da sala. Podes consultá-los em 'Minhas Mesas' ou em 'Consultar Bilhete' usando o código do teu bilhete."
     }
   ];
 
@@ -42,45 +42,45 @@ const CentralDeAjuda = () => {
   const WHATSAPP_LINK = "https://wa.me/244939331003";
 
   return (
-    <div className="min-h-screen bg-white text-[#111111] pb-24">
+    <div className="min-h-screen bg-[#0A0B12] text-white pb-24">
       <Navbar />
       
       <main className="max-w-5xl mx-auto px-4 pt-28">
         <div className="text-center mb-12">
-          <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-blue-600 border border-blue-100 shadow-sm">
+          <div className="w-20 h-20 bg-blue-500/10 rounded-3xl flex items-center justify-center mx-auto mb-6 text-blue-500 border border-blue-500/20 shadow-lg shadow-blue-500/5">
             <HelpCircle size={40} />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase mb-4 text-[#111111]">Central de Ajuda</h1>
-          <p className="text-[#555555]/40 font-bold text-xs uppercase tracking-widest">Encontre respostas rápidas</p>
+          <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase mb-4">Central de Ajuda</h1>
+          <p className="text-white/20 font-black text-[10px] uppercase tracking-[0.3em]">Suporte Técnico Especializado</p>
         </div>
 
-        <div className="relative max-w-2xl mx-auto mb-12">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#111111]/20" size={20} />
+        <div className="relative max-w-2xl mx-auto mb-16">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20" size={20} />
           <Input 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Pesquisar dúvidas..." 
-            className="bg-[#F3F4F6] border-[#D1D5DB] h-14 pl-12 rounded-2xl font-black text-lg text-[#111111]"
+            placeholder="PESQUISAR DÚVIDAS..." 
+            className="bg-white/5 border-white/10 h-16 pl-14 rounded-2xl font-black text-xs uppercase tracking-widest text-white focus:border-blue-500/50 transition-all"
           />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <div className="glass-card rounded-[2rem] p-4 border-[#D1D5DB]">
+            <div className="glass-card rounded-[2.5rem] p-4 border-white/5 shadow-2xl">
               <Accordion type="single" collapsible className="w-full">
                 {filteredFaqs.length > 0 ? (
                   filteredFaqs.map((faq, idx) => (
-                    <AccordionItem key={idx} value={`item-${idx}`} className="border-[#F3F4F6] px-4">
-                      <AccordionTrigger className="text-sm font-black uppercase tracking-widest hover:no-underline hover:text-blue-600 text-left py-6 text-[#111111]">
+                    <AccordionItem key={idx} value={`item-${idx}`} className="border-none px-4">
+                      <AccordionTrigger className="text-[11px] font-black uppercase tracking-widest hover:no-underline hover:text-blue-400 text-left py-7 text-white/80 transition-all">
                         {faq.q}
                       </AccordionTrigger>
-                      <AccordionContent className="text-[#555555]/60 font-bold text-sm leading-relaxed pb-6 uppercase">
+                      <AccordionContent className="text-white/40 font-bold text-xs leading-relaxed pb-8 uppercase tracking-tight">
                         {faq.a}
                       </AccordionContent>
                     </AccordionItem>
                   ))
                 ) : (
-                  <div className="p-8 text-center text-[#555555]/20 font-black uppercase tracking-widest">
+                  <div className="p-12 text-center text-white/10 font-black uppercase tracking-widest text-xs">
                     Nenhum resultado encontrado.
                   </div>
                 )}
@@ -89,17 +89,17 @@ const CentralDeAjuda = () => {
           </div>
 
           <div className="space-y-6">
-            <div className="glass-card p-8 rounded-[2.5rem] border-green-100 bg-green-50">
+            <div className="glass-card p-8 rounded-[2.5rem] border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-transparent">
               <div className="flex items-center gap-3 mb-6">
-                <MessageCircle className="text-green-600" size={24} />
-                <h3 className="text-lg font-black italic tracking-tighter uppercase text-[#111111]">Suporte 24/7</h3>
+                <MessageCircle className="text-blue-400" size={24} />
+                <h3 className="text-lg font-black italic tracking-tighter uppercase">Suporte 24/7</h3>
               </div>
-              <p className="text-sm text-[#555555]/60 font-bold mb-6 uppercase tracking-tight">
-                Fala diretamente com a nossa equipa via WhatsApp.
+              <p className="text-[10px] text-white/40 font-black mb-8 uppercase tracking-widest leading-relaxed">
+                Fala diretamente com a nossa equipa via WhatsApp para uma resposta imediata.
               </p>
               <Button 
                 asChild
-                className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md"
+                className="w-full h-14 premium-gradient rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-600/20"
               >
                 <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">
                   <Phone size={16} className="mr-2" /> ABRIR CHAT
@@ -107,14 +107,14 @@ const CentralDeAjuda = () => {
               </Button>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-blue-100 bg-blue-50">
-              <div className="flex items-center gap-3 mb-6">
-                <Mail className="text-blue-600" size={24} />
-                <h3 className="text-lg font-black italic tracking-tighter uppercase text-[#111111]">E-mail</h3>
+            <div className="glass-card p-8 rounded-[2.5rem] border-white/5 text-center">
+              <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6 text-white/20 border border-white/10">
+                <Mail size={32} />
               </div>
-              <div className="bg-white p-4 rounded-xl border border-blue-100 text-center shadow-sm">
-                <p className="text-[10px] font-black text-[#555555]/40 uppercase tracking-widest mb-1">Contato Oficial</p>
-                <p className="text-sm font-black text-blue-600">suporte@borasorteiar.com</p>
+              <h3 className="text-lg font-black italic tracking-tighter uppercase mb-2">E-mail</h3>
+              <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-center">
+                <p className="text-[9px] font-black text-white/20 uppercase mb-1 tracking-widest">Contato Oficial</p>
+                <p className="text-[11px] font-black text-blue-400 truncate">suporte@borasorteiar.com</p>
               </div>
             </div>
           </div>
