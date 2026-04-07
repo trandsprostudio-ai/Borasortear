@@ -1,3 +1,4 @@
+= 1000), simplificando as mensagens informativas e garantindo a exibição clara dos saldos e restrições no formulário de sorteio.">
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -36,7 +37,10 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
         }
       }
     };
-    if (isOpen) fetchBalances();
+    if (isOpen) {
+      fetchBalances();
+      setUseBonus(false); // Reset ao abrir
+    }
   }, [isOpen]);
 
   if (!room) return null;
@@ -44,7 +48,9 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   const entryFee = room.modules.price;
   const maxParts = room.max_participants;
   const estimatedPrize = Math.floor((entryFee * maxParts) * 0.3333);
-  const isBonusRestricted = entryFee < 500;
+  
+  // Regra: Bónus apenas em módulos de 1000 Kz em diante
+  const isBonusRestricted = entryFee < 1000;
   
   const canUseBonus = !isBonusRestricted && bonusBalance >= entryFee;
   const canUseReal = userBalance >= entryFee;
@@ -55,7 +61,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
     
     if (!hasFunds) {
       toast.error("Saldo insuficiente!", {
-        description: "Desejas recarregar a tua carteira agora?",
+        description: "Desejas recarregar a tua carteira para continuar?",
         action: {
           label: "Recarregar",
           onClick: () => navigate('/wallet')
@@ -73,10 +79,10 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
           <ScrollArea className="flex-1 w-full">
             <div className="p-6 md:p-8 pt-12">
               <DialogHeader className="mb-6 text-left">
-                <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none text-white pr-20">Confirmar Entrada</DialogTitle>
+                <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none text-white pr-20">Confirmar Bilhete</DialogTitle>
                 <div className="flex flex-col items-start mt-4">
-                  <div className="flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-2xl border border-purple-500/20">
-                    <span className="text-xl font-black italic text-purple-400">{room.modules.name}</span>
+                  <div className="flex items-center gap-2 bg-blue-500/10 px-4 py-2 rounded-2xl border border-blue-500/20">
+                    <span className="text-xl font-black italic text-blue-400">{room.modules.name}</span>
                     <div className="w-1 h-1 bg-white/10 rounded-full" />
                     <span className="text-sm font-black text-white">{entryFee.toLocaleString()} Kz</span>
                   </div>
@@ -97,39 +103,37 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               </div>
 
               <div className="space-y-4 pb-6">
-                <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-2xl flex items-start gap-3">
-                  <Star size={18} className="text-amber-500 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-[10px] font-black text-amber-500 uppercase leading-tight">Incentivo de Convite</p>
-                    <p className="text-[9px] font-bold text-white/40 uppercase mt-0.5">Ganha 47% de comissão no 1º depósito de quem convidares!</p>
-                  </div>
+                {/* Informação Estática sobre Bónus */}
+                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-start gap-3">
+                  <Info size={18} className="text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-[10px] font-bold text-white/40 uppercase leading-tight">
+                    Caso não tenhas saldo real suficiente, podes utilizar o teu saldo de bónus para participar em mesas a partir de 1.000 Kz.
+                  </p>
                 </div>
-
-                {useBonus && (
-                  <div className="bg-purple-600/10 border border-purple-500/20 p-4 rounded-2xl flex items-start gap-3">
-                    <Info size={18} className="text-purple-600 mt-0.5 shrink-0" />
-                    <p className="text-[10px] font-black text-purple-600 uppercase leading-tight">
-                      MODO SIMULAÇÃO: Estás a usar bónus. Não serás elegível para o prémio real.
-                    </p>
-                  </div>
-                )}
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className={`p-4 rounded-2xl border transition-all ${!useBonus ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/5 border-white/10'}`}>
                     <p className="text-[8px] font-black text-white/40 uppercase mb-1">Saldo Real</p>
-                    <p className={`text-sm font-black italic ${userBalance < entryFee && !useBonus ? 'text-red-400' : 'text-white'}`}>{userBalance.toLocaleString()} Kz</p>
+                    <p className={`text-sm font-black italic ${userBalance < entryFee ? 'text-red-400' : 'text-white'}`}>{userBalance.toLocaleString()} Kz</p>
                   </div>
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
+                  <div className={`p-4 rounded-2xl border transition-all ${useBonus ? 'bg-purple-500/10 border-purple-500/30' : 'bg-white/5 border-white/10'}`}>
                     <p className="text-[8px] font-black text-white/40 uppercase mb-1">Saldo Bónus</p>
-                    <p className={`text-sm font-black italic ${bonusBalance < entryFee && useBonus ? 'text-red-400' : 'text-white'}`}>{bonusBalance.toLocaleString()} Kz</p>
+                    <p className={`text-sm font-black italic ${bonusBalance < entryFee ? 'text-red-400' : 'text-white'}`}>{bonusBalance.toLocaleString()} Kz</p>
                   </div>
                 </div>
 
-                {!isBonusRestricted && (bonusBalance >= entryFee) && (
-                  <div className="bg-purple-600/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
+                {/* Seletor de Bónus com Restrição Visível */}
+                {isBonusRestricted ? (
+                  <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10">
+                    <p className="text-[9px] font-black text-red-400 uppercase leading-tight text-center">
+                      O saldo de bónus não está disponível para este módulo. Disponível apenas em mesas de 1.000 Kz ou mais.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
                     <div className="flex flex-col">
                       <Label htmlFor="use-bonus" className="text-xs font-black uppercase tracking-widest cursor-pointer text-white">Usar Saldo Bónus</Label>
-                      <p className="text-[8px] font-bold text-white/20 uppercase">Jogar sem risco</p>
+                      <p className="text-[8px] font-bold text-white/20 uppercase">Participar com créditos</p>
                     </div>
                     <Switch 
                       id="use-bonus" 
@@ -151,11 +155,13 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               onClick={onClose} 
               className="h-14 rounded-2xl font-black text-xs uppercase border border-white/10 text-white hover:bg-white/5 transition-all"
             >
-              VOLTAR
+              CANCELAR
             </Button>
             <Button 
               onClick={handlePreConfirm}
-              className="h-14 rounded-2xl premium-gradient font-black text-xs uppercase text-white shadow-xl shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+              className={`h-14 rounded-2xl font-black text-xs uppercase text-white shadow-xl transition-all flex items-center justify-center gap-2 ${
+                hasFunds ? 'premium-gradient shadow-blue-600/20' : 'bg-white/10 border border-white/10'
+              }`}
             >
               {loading ? (
                 <>
