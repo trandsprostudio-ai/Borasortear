@@ -90,11 +90,9 @@ const MyParticipations = () => {
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        {p.source === 'bonus' ? (
-                          <span className="bg-purple-100 text-purple-600 text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-purple-200">Simulado</span>
-                        ) : (
-                          <span className="bg-green-100 text-green-600 text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-green-200">Real</span>
-                        )}
+                        <span className={`text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border ${p.source === 'bonus' ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-green-100 text-green-600 border-green-200'}`}>
+                          {p.source === 'bonus' ? 'Bónus' : 'Real'}
+                        </span>
                       </div>
                       <h3 className="text-xl font-black italic uppercase text-[#111111]">{p.rooms.modules.name}</h3>
                       <p className="text-[10px] text-[#555555]/40 font-bold uppercase">ID: #{p.rooms.id.slice(0,8)}</p>
@@ -144,7 +142,7 @@ const MyParticipations = () => {
                         <div className="flex gap-2 items-center">
                            <span className="text-[10px] font-black text-[#555555]/60">{p.ticket_code}</span>
                            <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded ${p.source === 'bonus' ? 'bg-purple-100 text-purple-600' : 'bg-green-100 text-green-600'}`}>
-                             {p.source}
+                             {p.source === 'bonus' ? 'Bónus' : 'Real'}
                            </span>
                         </div>
                       </div>
