@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LayoutGrid, Loader2, HelpCircle, Gift, ArrowRight, ShieldCheck, UserPlus } from 'lucide-react';
+import { LayoutGrid, Loader2, HelpCircle, Gift, ArrowRight, ShieldCheck, UserPlus, Zap } from 'lucide-react';
 import ModuleCard from '@/components/raffle/ModuleCard';
 import RoomItem from '@/components/raffle/RoomItem';
 import NewsTicker from '@/components/layout/NewsTicker';
@@ -126,8 +126,6 @@ const Index = () => {
 
   if (loading) return <div className="min-h-screen bg-[#0A0B12] flex items-center justify-center"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
 
-  const isAnyModalOpen = !!confirmingRoom || isAuthModalOpen || !!ticketModal;
-
   return (
     <div className="min-h-screen bg-[#0A0B12] text-white pb-32 selection:bg-purple-500/30">
       <Navbar />
@@ -196,20 +194,9 @@ const Index = () => {
             <HallOfFame />
           </aside>
         </div>
-
-        <AnimatePresence>
-          {!isAnyModalOpen && (
-            <motion.div 
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              className="fixed bottom-24 right-6 sm:right-12 z-[100] pointer-events-none"
-            >
-              <PenguinMascot page="home" className="pointer-events-auto" />
-            </motion.div>
-          )}
-        </AnimatePresence>
       </main>
+
+      <PenguinMascot page="home" />
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       {ticketModal && (
