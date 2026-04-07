@@ -30,7 +30,12 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   
-  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
+  // Recuperar país do localStorage ou usar o primeiro da lista
+  const [selectedCountry, setSelectedCountry] = useState(() => {
+    const saved = localStorage.getItem('last_country_code');
+    return COUNTRIES.find(c => c.code === saved) || COUNTRIES[0];
+  });
+
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -46,18 +51,23 @@ const Auth = () => {
     setIsLogin(mode === 'login');
   }, [mode]);
 
+  const handleCountryChange = (val: string) => {
+    const country = COUNTRIES.find(c => c.code === val) || COUNTRIES[0];
+    setSelectedCountry(country);
+    localStorage.setItem('last_country_code', val);
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanPhone = phone.trim().replace(/\D/g, '');
     
-    // Validação de Tamanho por País
     if (cleanPhone.length !== selectedCountry.length) {
       toast.error(`O número para ${selectedCountry.name} deve ter exatamente ${selectedCountry.length} dígitos.`);
       return;
     }
 
     setLoading(true);
-    // Email interno agora inclui o código do país para evitar colisões
+    // O segredo está aqui: o login deve usar o mesmo prefixo do país que o registo
     const internalEmail = `${selectedCountry.code}${cleanPhone}@bora.com`;
 
     try {
@@ -75,16 +85,15 @@ const Auth = () => {
         const finalRefCode = manualRefCode.trim().toUpperCase();
 
         if (finalRefCode) {
-          const { data: refOwner, error: refError } = await supabase
+          const { data: refOwner } = await supabase
             .from('profiles')
             .select('id')
             .eq('referral_code', finalRefCode)
             .maybeSingle();
           
-          if (refError) throw refError;
           if (!refOwner) {
             setLoading(false);
-            toast.error("Código de convite inválido ou inexistente!");
+            toast.error("Código de convite inválido!");
             return;
           }
         }
@@ -124,12 +133,12 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#f8fbff] flex flex-col items-center justify-start overflow-y-auto pt-20 pb-10 px-4">
+    <div className="min-h-screen w-full bg-[#f8fbff] flex flex-col items-center justify-start overflow-y-auto pt-12 md:pt-20 pb-10 px-4">
       <AnimatePresence>
         {showSplash && <SplashScreen message={isLogin ? "A entrar..." : "A criar conta..."} />}
       </AnimatePresence>
 
-      <Link to="/" className="fixed top-8 left-8 flex items-center gap-2 text-[#555555] hover:text-[#111111] transition-colors z-50 font-bold text-xs uppercase tracking-widest bg-white/80 backdrop-blur-md px-4 py-2 rounded-full border border-[#e0e0e0] shadow-sm">
+      <Link to="/" className="fixed top-6 left-6 flex items-center gap-2 text-[#111111] hover:text-[#0066FF] transition-colors z-50 font-black text-[10px] uppercase tracking-widest bg-white px-4 py-2.5 rounded-xl border border-[#e0e0e0] shadow-sm">
         <ArrowLeft size={16} />
         <span>Início</span>
       </Link>
@@ -137,31 +146,34 @@ const Auth = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card w-full max-w-lg p-6 md:p-10 rounded-[2.5rem]"
+        className="glass-card w-full max-w-lg p-6 md:p-10 rounded-[2.5rem] mt-12 md:mt-0"
       >
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-6">
-            <Logo className="scale-110" />
+        <div className="text-center mb-10">
+          <div className="flex justify-center mb-8">
+            <Logo className="scale-125" />
           </div>
-          <h1 className="text-2xl font-black italic tracking-tighter text-[#111111] uppercase">
-            {isLogin ? 'Entrar' : 'Criar Conta'}
+          <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase">
+            {isLogin ? 'Entrar na Conta' : 'Criar Conta Grátis'}
           </h1>
+          <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-2">
+            {isLogin ? 'Bem-vindo de volta, jogador!' : 'Junta-te a milhares de vencedores'}
+          </p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleAuth}>
-          {/* Seletor de País Unificado */}
+        <form className="space-y-5" onSubmit={handleAuth}>
+          {/* Seletor de País Unificado - Visível em Login e Cadastro */}
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">País de Residência</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">País de Residência</Label>
             <Select 
               value={selectedCountry.code} 
-              onValueChange={(val) => setSelectedCountry(COUNTRIES.find(c => c.code === val) || COUNTRIES[0])}
+              onValueChange={handleCountryChange}
             >
-              <SelectTrigger className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 text-[#111111]">
+              <SelectTrigger className="bg-white/5 border-white/10 rounded-2xl h-14 text-white font-bold">
                 <SelectValue placeholder="Selecione o país" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-[#e0e0e0] rounded-xl">
+              <SelectContent className="bg-[#111827] border-white/10 rounded-xl">
                 {COUNTRIES.map(c => (
-                  <SelectItem key={c.code} value={c.code} className="font-bold text-xs uppercase">
+                  <SelectItem key={c.code} value={c.code} className="font-black text-[10px] uppercase text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer">
                     <span className="mr-2">{c.flag}</span> {c.name} (+{c.code})
                   </SelectItem>
                 ))}
@@ -172,25 +184,25 @@ const Auth = () => {
           {!isLogin ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Nome Completo</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Nome Completo</Label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Teu nome completo" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Teu nome completo" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
                 </div>
               </div>
               
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Idade</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Idade</Label>
                 <div className="relative">
-                  <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
-                  <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="18+" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
+                  <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="18+" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Teu Telefone</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Teu Telefone</Label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[#555555]/40 font-black text-[10px]">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-white/40 font-black text-[10px]">
                     +{selectedCountry.code}
                   </div>
                   <Input 
@@ -198,63 +210,63 @@ const Auth = () => {
                     value={phone} 
                     onChange={(e) => setPhone(e.target.value)} 
                     placeholder={selectedCountry.placeholder} 
-                    className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-16 text-[#111111]" 
+                    className="bg-white/5 border-white/10 rounded-2xl h-14 pl-16 text-white font-bold" 
                     required 
                   />
                 </div>
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Dados para Recebimento (Express/Pix/IBAN)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Dados para Recebimento (Express/Pix/IBAN)</Label>
                 <div className="relative">
-                  <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
-                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número ou chave de pagamento" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
+                  <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número ou chave de pagamento" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
                 </div>
               </div>
 
               <div className="space-y-2 md:col-span-2">
                 <div className="flex justify-between items-center ml-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40">Código de Convite (Opcional)</Label>
-                  <span className="text-[8px] font-black text-green-600 uppercase tracking-widest">Bónus de 200 Kz</span>
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-white/60">Código de Convite (Opcional)</Label>
+                  <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest">Bónus de Boas-Vindas</span>
                 </div>
                 <div className="relative">
-                  <Gift className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
+                  <Gift className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <Input 
                     value={manualRefCode} 
                     onChange={(e) => setManualRefCode(e.target.value.toUpperCase())} 
                     placeholder="EX: ABC123D" 
-                    className="bg-[#f5f5f5] border-[#e0e0e0] h-12 pl-12 uppercase font-black text-[#111111]"
+                    className="bg-white/5 border-white/10 h-14 pl-12 uppercase font-black text-white"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Senha</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Senha</Label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Confirmar Senha</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Confirmar</Label>
                 <div className="relative">
-                  <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
-                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
+                  <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
                 </div>
               </div>
 
-              <div className="md:col-span-2 flex items-center space-x-2 pt-2">
-                <Checkbox id="terms" checked={acceptTerms} onCheckedChange={(c) => setAcceptTerms(c as boolean)} className="border-[#e0e0e0]" />
-                <label htmlFor="terms" className="text-[10px] font-bold text-[#555555] cursor-pointer">Aceito os termos de uso do Bora Sortear</label>
+              <div className="md:col-span-2 flex items-center space-x-3 pt-2">
+                <Checkbox id="terms" checked={acceptTerms} onCheckedChange={(c) => setAcceptTerms(c as boolean)} className="border-white/20 data-[state=checked]:bg-[#0066FF]" />
+                <label htmlFor="terms" className="text-[10px] font-bold text-white/60 cursor-pointer uppercase tracking-tight">Aceito os termos de uso do Bora Sortear</label>
               </div>
             </div>
           ) : (
             <>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Teu Telefone</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Teu Telefone</Label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[#555555]/40 font-black text-[10px]">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-white/40 font-black text-[10px]">
                     +{selectedCountry.code}
                   </div>
                   <Input 
@@ -262,29 +274,29 @@ const Auth = () => {
                     value={phone} 
                     onChange={(e) => setPhone(e.target.value)} 
                     placeholder={selectedCountry.placeholder} 
-                    className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-14 pl-16 text-[#111111]" 
+                    className="bg-white/5 border-white/10 rounded-2xl h-16 pl-16 text-white font-black text-lg" 
                     required 
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Tua Senha</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Tua Senha</Label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-14 pl-12 text-[#111111]" required />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-16 pl-12 text-white font-black text-lg" required />
                 </div>
               </div>
             </>
           )}
 
-          <Button type="submit" disabled={loading} className="w-full premium-gradient h-14 rounded-2xl font-black text-lg mt-4 text-white border-none shadow-lg">
+          <Button type="submit" disabled={loading} className="w-full premium-gradient h-16 rounded-2xl font-black text-lg mt-6 text-white border-none shadow-xl shadow-[#0066FF]/20 active:scale-95 transition-all">
             {loading ? <Loader2 className="animate-spin" /> : isLogin ? 'ENTRAR AGORA' : 'FINALIZAR REGISTO'}
           </Button>
         </form>
 
-        <div className="mt-8 text-center">
-          <button onClick={() => setIsLogin(!isLogin)} className="text-[10px] text-[#555555] hover:text-blue-600 font-black uppercase tracking-widest">
-            {isLogin ? 'Não tens conta? Criar agora' : 'Já tens conta? Entrar'}
+        <div className="mt-10 pt-8 border-t border-white/5 text-center">
+          <button onClick={() => setIsLogin(!isLogin)} className="text-[10px] text-white/40 hover:text-white font-black uppercase tracking-widest transition-colors">
+            {isLogin ? 'Ainda não tens conta? Criar agora' : 'Já tens uma conta? Entrar'}
           </button>
         </div>
       </motion.div>
