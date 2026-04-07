@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Trophy, Zap, Award, Target, Crown, Gem, Star, Shield } from 'lucide-react';
+import { Trophy, Zap, Award, Target, Crown, Gem, Check, Shield } from 'lucide-react';
 
 interface ModuleCardProps {
   module: any;
@@ -68,9 +68,9 @@ const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
       {isSelected && (
         <div className={cn(
           "absolute -top-1 -right-1 p-1.5 md:p-2 rounded-full border-2 border-white shadow-xl animate-bounce",
-          isBoss ? "bg-blue-500" : "bg-[#FFA500]"
+          isBoss ? "bg-blue-600" : "bg-[#0066FF]" // Azul para BOSS, Azul Elétrico para o resto
         )}>
-           <Star size={10} fill="white" className="text-white md:w-3 md:h-3" />
+           <Check size={10} className="text-white md:w-3 md:h-3 stroke-[4px]" />
         </div>
       )}
     </button>
