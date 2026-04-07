@@ -9,30 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import PenguinMascot from '@/components/ui/PenguinMascot';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-
-interface RoomJoinConfirmationProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  room: any;
-  loading: boolean;
-}
-
-const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: RoomJoinConfirmationProps) => {
-  const [userBalance, setUserBalance] = useState<number>(0);
-  const [bonusBalance, setBonusBalance] = useState<number>(0);
-  const [useBonus, setUseBonus] = useState(false);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchBalances = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data } = await supabase.from('profiles').select('balance, bonus_balance').eq('id', session.user.id).single();
-        if (data) {
-          setUserBalance(Number(data.balance));
+import { toast{
           setBonusBalance(Number(data.bonus_balance || 0));
         }
       }
@@ -52,7 +29,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   const hasFunds = useBonus ? canUseBonus : canUseReal;
 
   const handlePreConfirm = () => {
-    if (loading) return; // Evita cliques duplos durante o carregamento
+    if (loading) return;
     
     if (!hasFunds) {
       toast.error("Saldo insuficiente!", {
@@ -70,16 +47,20 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="glass-card border-white/10 rounded-[2.5rem] max-w-md p-0 overflow-hidden flex flex-col h-full max-h-[85vh] md:max-h-[80vh]">
-        <div className="flex-1 overflow-hidden flex flex-col">
-          <ScrollArea className="flex-1 w-full">
-            <div className="p-6 md:p-8 pt-10">
-              <div className="flex justify-center mb-4 relative z-0">
-                <PenguinMascot page="raffle" className="!static !bottom-auto !right-auto scale-75" />
-              </div>
+        <div className="flex-1 overflow-hidden flex flex-col relative">
+          {/* Penguin Mascot Ajustado: Baixado e Redimensionado */}
+          <div className="absolute top-4 right-4 z-20 pointer-events-none">
+            <PenguinMascot 
+              page="raffle" 
+              className="scale-[0.55] origin-top-right transform-gpu" 
+            />
+          </div>
 
-              <DialogHeader className="mb-6 text-center">
-                <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none text-white">Confirmar Entrada</DialogTitle>
-                <div className="flex flex-col items-center mt-4">
+          <ScrollArea className="flex-1 w-full">
+            <div className="p-6 md:p-8 pt-12">
+              <DialogHeader className="mb-6 text-left">
+                <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none text-white pr-20">Confirmar Entrada</DialogTitle>
+                <div className="flex flex-col items-start mt-4">
                   <div className="flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-2xl border border-purple-500/20">
                     <span className="text-xl font-black italic text-purple-400">{room.modules.name}</span>
                     <div className="w-1 h-1 bg-white/10 rounded-full" />
@@ -149,7 +130,6 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
           </ScrollArea>
         </div>
 
-        {/* Rodapé fixo sem absolute para evitar bloqueio de cliques */}
         <div className="p-6 bg-black/40 border-t border-white/10 backdrop-blur-sm relative z-50">
           <div className="grid grid-cols-2 gap-3">
             <Button 
@@ -161,7 +141,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
             </Button>
             <Button 
               onClick={handlePreConfirm}
-              className={`h-14 rounded-2xl premium-gradient font-black text-xs uppercase text-white shadow-xl shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-2`}
+              className="h-14 rounded-2xl premium-gradient font-black text-xs uppercase text-white shadow-xl shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
