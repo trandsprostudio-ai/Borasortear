@@ -30,7 +30,6 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   
-  // Recuperar país do localStorage ou usar o primeiro da lista
   const [selectedCountry, setSelectedCountry] = useState(() => {
     const saved = localStorage.getItem('last_country_code');
     return COUNTRIES.find(c => c.code === saved) || COUNTRIES[0];
@@ -67,7 +66,6 @@ const Auth = () => {
     }
 
     setLoading(true);
-    // O segredo está aqui: o login deve usar o mesmo prefixo do país que o registo
     const internalEmail = `${selectedCountry.code}${cleanPhone}@bora.com`;
 
     try {
@@ -132,6 +130,9 @@ const Auth = () => {
     }
   };
 
+  // Classe utilitária para inputs escuros com texto branco e correção de autofill
+  const inputClasses = "bg-[#1E293B] border-white/10 rounded-2xl text-white font-bold placeholder:text-white/20 autofill:shadow-[0_0_0px_1000px_#1E293B_inset] autofill:text-fill-white transition-all focus:bg-[#2D3748] focus:border-blue-500/50";
+
   return (
     <div className="min-h-screen w-full bg-[#f8fbff] flex flex-col items-center justify-start overflow-y-auto pt-12 md:pt-20 pb-10 px-4">
       <AnimatePresence>
@@ -161,14 +162,13 @@ const Auth = () => {
         </div>
 
         <form className="space-y-5" onSubmit={handleAuth}>
-          {/* Seletor de País Unificado - Visível em Login e Cadastro */}
           <div className="space-y-2">
             <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">País de Residência</Label>
             <Select 
               value={selectedCountry.code} 
               onValueChange={handleCountryChange}
             >
-              <SelectTrigger className="bg-white/5 border-white/10 rounded-2xl h-14 text-white font-bold">
+              <SelectTrigger className={`${inputClasses} h-14`}>
                 <SelectValue placeholder="Selecione o país" />
               </SelectTrigger>
               <SelectContent className="bg-[#111827] border-white/10 rounded-xl">
@@ -187,7 +187,7 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Nome Completo</Label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Teu nome completo" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Teu nome completo" className={`${inputClasses} h-14 pl-12`} required />
                 </div>
               </div>
               
@@ -195,7 +195,7 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Idade</Label>
                 <div className="relative">
                   <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="18+" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
+                  <Input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="18+" className={`${inputClasses} h-14 pl-12`} required />
                 </div>
               </div>
 
@@ -210,7 +210,7 @@ const Auth = () => {
                     value={phone} 
                     onChange={(e) => setPhone(e.target.value)} 
                     placeholder={selectedCountry.placeholder} 
-                    className="bg-white/5 border-white/10 rounded-2xl h-14 pl-16 text-white font-bold" 
+                    className={`${inputClasses} h-14 pl-16`} 
                     required 
                   />
                 </div>
@@ -220,7 +220,7 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Dados para Recebimento (Express/Pix/IBAN)</Label>
                 <div className="relative">
                   <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número ou chave de pagamento" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
+                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número ou chave de pagamento" className={`${inputClasses} h-14 pl-12`} required />
                 </div>
               </div>
 
@@ -235,7 +235,7 @@ const Auth = () => {
                     value={manualRefCode} 
                     onChange={(e) => setManualRefCode(e.target.value.toUpperCase())} 
                     placeholder="EX: ABC123D" 
-                    className="bg-white/5 border-white/10 h-14 pl-12 uppercase font-black text-white"
+                    className={`${inputClasses} h-14 pl-12 uppercase font-black`}
                   />
                 </div>
               </div>
@@ -244,7 +244,7 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Senha</Label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={`${inputClasses} h-14 pl-12`} required />
                 </div>
               </div>
 
@@ -252,7 +252,7 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Confirmar</Label>
                 <div className="relative">
                   <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-14 pl-12 text-white font-bold" required />
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" className={`${inputClasses} h-14 pl-12`} required />
                 </div>
               </div>
 
@@ -274,7 +274,7 @@ const Auth = () => {
                     value={phone} 
                     onChange={(e) => setPhone(e.target.value)} 
                     placeholder={selectedCountry.placeholder} 
-                    className="bg-white/5 border-white/10 rounded-2xl h-16 pl-16 text-white font-black text-lg" 
+                    className={`${inputClasses} h-16 pl-16 text-lg`} 
                     required 
                   />
                 </div>
@@ -283,7 +283,7 @@ const Auth = () => {
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Tua Senha</Label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 rounded-2xl h-16 pl-12 text-white font-black text-lg" required />
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className={`${inputClasses} h-16 pl-12 text-lg`} required />
                 </div>
               </div>
             </>
