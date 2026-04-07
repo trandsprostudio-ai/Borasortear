@@ -6,13 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Phone, Lock, User, ShieldCheck, UserCheck, Smartphone, Gift, Loader2, Globe } from 'lucide-react';
+import { ArrowLeft, Lock, User, ShieldCheck, UserCheck, Smartphone, Gift, Loader2, ChevronDown } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import Logo from '@/components/layout/Logo';
 import SplashScreen from '@/components/ui/SplashScreen';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ul/dropdown-menu";
 
 const COUNTRIES = [
   { code: '244', name: 'Angola', flag: '🇦🇴', length: 9, placeholder: '9XXXXXXXX' },
@@ -50,10 +55,9 @@ const Auth = () => {
     setIsLogin(mode === 'login');
   }, [mode]);
 
-  const handleCountryChange = (val: string) => {
-    const country = COUNTRIES.find(c => c.code === val) || COUNTRIES[0];
+  const handleCountryChange = (country: typeof COUNTRIES[0]) => {
     setSelectedCountry(country);
-    localStorage.setItem('last_country_code', val);
+    localStorage.setItem('last_country_code', country.code);
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -61,7 +65,7 @@ const Auth = () => {
     const cleanPhone = phone.trim().replace(/\D/g, '');
     
     if (cleanPhone.length !== selectedCountry.length) {
-      toast.error(`O número para ${selectedCountry.name} deve ter exatamente ${selectedCountry.length} dígitos.`);
+      toast.error(`O número deve ter ${selectedCountry.length} dígitos.`);
       return;
     }
 
@@ -130,7 +134,6 @@ const Auth = () => {
     }
   };
 
-  // Classe utilitária para inputs escuros com texto branco e correção de autofill
   const inputClasses = "bg-[#1E293B] border-white/10 rounded-2xl text-white font-bold placeholder:text-white/20 autofill:shadow-[0_0_0px_1000px_#1E293B_inset] autofill:text-fill-white transition-all focus:bg-[#2D3748] focus:border-blue-500/50";
 
   return (
@@ -162,25 +165,6 @@ const Auth = () => {
         </div>
 
         <form className="space-y-5" onSubmit={handleAuth}>
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">País de Residência</Label>
-            <Select 
-              value={selectedCountry.code} 
-              onValueChange={handleCountryChange}
-            >
-              <SelectTrigger className={`${inputClasses} h-14`}>
-                <SelectValue placeholder="Selecione o país" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#111827] border-white/10 rounded-xl">
-                {COUNTRIES.map(c => (
-                  <SelectItem key={c.code} value={c.code} className="font-black text-[10px] uppercase text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer">
-                    <span className="mr-2">{c.flag}</span> {c.name} (+{c.code})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {!isLogin ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
@@ -199,36 +183,50 @@ const Auth = () => {
                 </div>
               </div>
 
+              {/* Telefone com Seletor Integrado (Cadastro) */}
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Teu Telefone</Label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-white/40 font-black text-[10px]">
-                    +{selectedCountry.code}
-                  </div>
+                <div className="flex gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" className="bg-[#1E293B] border border-white/10 rounded-2xl h-14 px-3 flex items-center gap-1 text-white hover:bg-[#2D3748] transition-colors">
+                        <span className="text-sm">{selectedCountry.flag}</span>
+                        <ChevronDown size={14} className="text-white/40" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-[#111827] border-white/10 rounded-xl p-1 z-[100]">
+                      {COUNTRIES.map(c => (
+                        <DropdownMenuItem 
+                          key={c.code} 
+                          onClick={() => handleCountryChange(c)}
+                          className="flex items-center gap-3 p-3 font-black text-[10px] uppercase text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                        >
+                          <span>{c.flag}</span> {c.name} (+{c.code})
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Input 
                     type="tel" 
                     value={phone} 
                     onChange={(e) => setPhone(e.target.value)} 
                     placeholder={selectedCountry.placeholder} 
-                    className={`${inputClasses} h-14 pl-16`} 
+                    className={`${inputClasses} h-14 flex-1`} 
                     required 
                   />
                 </div>
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Dados para Recebimento (Express/Pix/IBAN)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Dados Bancários / Express</Label>
                 <div className="relative">
                   <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número ou chave de pagamento" className={`${inputClasses} h-14 pl-12`} required />
+                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número para recebimento de prémios" className={`${inputClasses} h-14 pl-12`} required />
                 </div>
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <div className="flex justify-between items-center ml-1">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-white/60">Código de Convite (Opcional)</Label>
-                  <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest">Bónus de Boas-Vindas</span>
-                </div>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Código de Convite (Opcional)</Label>
                 <div className="relative">
                   <Gift className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                   <Input 
@@ -263,22 +261,41 @@ const Auth = () => {
             </div>
           ) : (
             <>
+              {/* Telefone com Seletor Integrado (Login) */}
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Teu Telefone</Label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-white/40 font-black text-[10px]">
-                    +{selectedCountry.code}
-                  </div>
+                <div className="flex gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" className="bg-[#1E293B] border border-white/10 rounded-2xl h-16 px-4 flex items-center gap-2 text-white hover:bg-[#2D3748] transition-colors shadow-lg">
+                        <span className="text-xl">{selectedCountry.flag}</span>
+                        <span className="text-xs font-black text-white/40">+{selectedCountry.code}</span>
+                        <ChevronDown size={14} className="text-white/40" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="bg-[#111827] border-white/10 rounded-xl p-1 z-[100] shadow-2xl">
+                      {COUNTRIES.map(c => (
+                        <DropdownMenuItem 
+                          key={c.code} 
+                          onClick={() => handleCountryChange(c)}
+                          className="flex items-center gap-3 p-3 font-black text-[10px] uppercase text-white hover:bg-white/10 focus:bg-white/10 cursor-pointer"
+                        >
+                          <span className="text-lg">{c.flag}</span> {c.name} (+{c.code})
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                   <Input 
                     type="tel" 
                     value={phone} 
                     onChange={(e) => setPhone(e.target.value)} 
                     placeholder={selectedCountry.placeholder} 
-                    className={`${inputClasses} h-16 pl-16 text-lg`} 
+                    className={`${inputClasses} h-16 flex-1 text-lg pl-6`} 
                     required 
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-white/60 ml-1">Tua Senha</Label>
                 <div className="relative">
