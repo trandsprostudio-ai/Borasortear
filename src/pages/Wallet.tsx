@@ -51,6 +51,12 @@ const Wallet = () => {
 
   const currentBalance = Number(profile?.balance || 0);
   const bonusBalance = Number(profile?.bonus_balance || 0);
+  
+  // Cálculo de pendentes: apenas depósitos que aguardam aprovação
+  const pendingBalance = transactions
+    .filter(tx => tx.type === 'deposit' && tx.status === 'pending')
+    .reduce((acc, tx) => acc + Number(tx.amount), 0);
+
   const totalFunds = currentBalance + bonusBalance;
 
   return (
@@ -100,6 +106,14 @@ const Wallet = () => {
                 <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter">
                   {totalFunds.toLocaleString()} <span className="text-2xl md:text-3xl opacity-30 not-italic ml-2">Kz</span>
                 </h1>
+                {pendingBalance > 0 && (
+                  <div className="flex items-center gap-2 mt-2 bg-white/10 w-max px-4 py-1.5 rounded-full border border-white/10">
+                    <Clock size={12} className="text-amber-400 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                      Pendente: {pendingBalance.toLocaleString()} Kz
+                    </span>
+                  </div>
+                )}
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10 relative z-10">
@@ -138,22 +152,41 @@ const Wallet = () => {
                 <Clock size={16} /> Fluxo de Caixa
               </h3>
               <div className="space-y-6">
-                {transactions.slice(0, 5).map((tx) => (
+                {transactions.length > 0 ? transactions.slice(0, 5).map((tx) => (
                   <div key={tx.id} className="flex justify-between items-center group">
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 ${tx.status === 'completed' ? 'bg-[#f0f9f1] border-green-200 text-green-600' : 'bg-[#fff5f5] border-red-100 text-red-500'}`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 ${
+                        tx.status === 'completed' ? 'bg-[#f0f9f1] border-green-200 text-green-600' : 
+                        tx.status === 'pending' ? 'bg-amber-50 border-amber-100 text-amber-500' :
+                        'bg-[#fff5f5] border-red-100 text-red-500'
+                      }`}>
                         {tx.type === 'deposit' ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
                       </div>
                       <div>
-                        <p className="text-[11px] font-black uppercase text-[#111111]">{tx.type === 'deposit' ? 'Depósito' : 'Saque'}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-[11px] font-black uppercase text-[#111111]">{tx.type === 'deposit' ? 'Depósito' : 'Saque'}</p>
+                          {tx.status === 'pending' && <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />}
+                        </div>
                         <p className="text-[9px] text-[#555555]/40 font-bold uppercase">{new Date(tx.created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <span className={`text-sm font-black italic ${tx.status === 'completed' ? 'text-[#111111]' : 'text-red-500/40'}`}>
-                      {Number(tx.amount).toLocaleString()} <span className="text-[9px] not-italic">Kz</span>
-                    </span>
+                    <div className="text-right">
+                      <p className={`text-sm font-black italic ${tx.status === 'completed' ? 'text-[#111111]' : 'text-[#111111]/30'}`}>
+                        {Number(tx.amount).toLocaleString()} <span className="text-[9px] not-italic">Kz</span>
+                      </p>
+                      <p className={`text-[7px] font-black uppercase tracking-widest ${
+                        tx.status === 'completed' ? 'text-green-600' : 
+                        tx.status === 'pending' ? 'text-amber-500' : 'text-red-500'
+                      }`}>
+                        {tx.status === 'completed' ? 'Validado' : tx.status === 'pending' ? 'Em Análise' : 'Recusado'}
+                      </p>
+                    </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-10 opacity-20">
+                    <p className="text-[9px] font-black uppercase tracking-widest">Sem movimentações</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
