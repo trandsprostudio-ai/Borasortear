@@ -188,7 +188,7 @@ const Index = () => {
               </div>
             </header>
 
-            <section className={`p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] border-2 shadow-xl overflow-hidden ${isBossMode ? 'bg-[#0A0B12] border-amber-500/30' : 'bg-[#F9FAFB] border-[#E5E7EB]'}`}>
+            <section className={`p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] border-2 shadow-xl overflow-hidden ${isBossMode ? 'bg-[#111827] border-amber-500/30' : 'bg-[#E5E7EB] border-[#D1D5DB]'}`}>
               <div className="flex overflow-x-auto no-scrollbar gap-3 md:gap-4 py-2">
                 {modules.map((mod) => (
                   <ModuleCard 

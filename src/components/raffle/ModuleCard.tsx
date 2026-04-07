@@ -22,23 +22,24 @@ const getIcon = (name: string) => {
 
 const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
   const isBoss = module.name === 'BOSS';
-  const displayName = isBoss ? 'Módulo' : module.name.replace('M', 'Mód. ');
+  // Formata para "Módulo 100", "Módulo 200", etc.
+  const displayName = isBoss ? 'Módulo' : module.name.replace('M', 'Módulo ');
 
   return (
     <button
       onClick={onSelect}
       className={cn(
-        "relative flex flex-col items-center justify-center p-5 rounded-[2.5rem] border-2 transition-all duration-500 min-w-[150px] group active:scale-95 shadow-lg",
+        "relative flex flex-col items-center justify-center p-5 rounded-[2.5rem] border-2 transition-all duration-500 min-w-[160px] group active:scale-95 shadow-lg",
         isSelected 
           ? (isBoss ? "bg-[#0A0B12] border-amber-500 shadow-[0_20px_50px_rgba(245,158,11,0.2)] scale-105 z-10" : "bg-white border-[#0066FF] shadow-[0_20px_50px_rgba(0,102,255,0.2)] scale-105 z-10")
-          : "platinum-gradient border-[#9CA3AF] hover:border-[#0066FF] shadow-black/5"
+          : "bg-[#E5E7EB] border-[#9CA3AF] hover:border-[#0066FF] shadow-black/5" // Intensificado o fundo cinza (era platinum-gradient)
       )}
     >
       <div className={cn(
         "w-14 h-14 rounded-[1.5rem] flex items-center justify-center mb-4 transition-all shadow-md border",
         isSelected 
           ? (isBoss ? "bg-gradient-to-br from-amber-400 to-amber-600 text-black border-transparent" : "premium-gradient text-white border-transparent")
-          : "bg-white text-[#0A0B12]/40 border-[#D1D5DB] group-hover:border-[#0066FF]/20"
+          : "bg-white text-[#0A0B12]/60 border-[#D1D5DB] group-hover:border-[#0066FF]/20"
       )}>
         {getIcon(module.name)}
       </div>
@@ -47,7 +48,7 @@ const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
         "text-[10px] font-black uppercase tracking-[0.25em] mb-1.5 transition-colors",
         isSelected 
           ? (isBoss ? "text-amber-500" : "text-[#0066FF]") 
-          : "text-[#0A0B12]/40"
+          : "text-[#0A0B12]/60"
       )}>
         {displayName}
       </span>
