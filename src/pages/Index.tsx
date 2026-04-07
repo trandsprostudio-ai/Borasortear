@@ -87,17 +87,17 @@ const Index = () => {
       <Navbar />
       <NewsTicker />
       
-      <main className="max-w-[1600px] w-full mx-auto px-4 pt-16 flex-1">
-        <div className="flex flex-col lg:flex-row gap-12 mb-16">
+      <main className="max-w-[1400px] w-full mx-auto px-4 md:px-6 pt-16 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 mb-16">
           
-          <div className="flex-1 space-y-12">
+          <div className="lg:col-span-8 space-y-12">
             <header className="space-y-6">
               <div className="inline-flex items-center gap-2 bg-[#F2F2F2] border border-[#D1D5DB] px-4 py-2 rounded-full shadow-sm">
                 <Star size={14} className="text-amber-500 fill-amber-500" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">O TEU PRÓXIMO NÍVEL DE SORTE</span>
               </div>
               
-              <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.8] text-[#111111]">
+              <h1 className="text-5xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.8] text-[#111111]">
                 A TUA SORTE <br /> <span className="blue-gradient-text">EM MILHÕES</span>
               </h1>
               
@@ -106,12 +106,12 @@ const Index = () => {
                   Participa nas mesas exclusivas e garante o teu lugar no topo dos vencedores.
                 </p>
                 <div className="flex gap-3">
-                  <Button onClick={() => navigate('/wallet')} className="premium-gradient h-12 px-8 rounded-xl font-black text-[10px] uppercase text-white shadow-lg">COMEÇAR AGORA</Button>
+                  <Button onClick={() => navigate('/wallet')} className="premium-gradient h-12 px-8 rounded-xl font-black text-[10px] uppercase text-white shadow-lg border-none">COMEÇAR AGORA</Button>
                 </div>
               </div>
             </header>
 
-            <section className="bg-[#F9FAFB] p-6 rounded-[2.5rem] border border-[#E5E7EB]">
+            <section className="bg-[#F9FAFB] p-6 rounded-[3rem] border-2 border-[#E5E7EB] shadow-xl overflow-hidden">
               <div className="flex overflow-x-auto no-scrollbar gap-4 py-2">
                 {modules.map((mod) => (
                   <ModuleCard key={mod.id} module={mod} isSelected={selectedModule?.id === mod.id} onSelect={() => setSelectedModule(mod)} />
@@ -124,7 +124,7 @@ const Index = () => {
                 <h2 className="text-2xl font-black italic uppercase tracking-tighter">Mesas em Aberto</h2>
                 <div className="h-px flex-1 bg-[#E5E7EB] mx-8 hidden md:block" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 <AnimatePresence mode="popLayout">
                   {rooms.map((room) => (
                     <motion.div key={room.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} layout>
@@ -136,12 +136,15 @@ const Index = () => {
             </section>
           </div>
 
-          <aside className="w-full lg:w-[380px] shrink-0 space-y-8">
+          <aside className="lg:col-span-4 space-y-8">
             <HallOfFame />
-            <div className="glass-card p-8 rounded-[2.5rem] border-[#D1D5DB]">
-              <h4 className="text-[10px] font-black uppercase text-[#111111] mb-4">Rede de Afiliados</h4>
+            <div className="platinum-gradient p-8 rounded-[3rem] border-2 border-[#D1D5DB] shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:rotate-12 transition-transform">
+                <LayoutGrid size={80} />
+              </div>
+              <h4 className="text-[11px] font-black uppercase text-[#111111] tracking-widest mb-4">Rede de Afiliados</h4>
               <p className="text-[11px] font-bold text-[#555555] uppercase leading-relaxed mb-6">Convida a tua rede e fatura 5% de comissão vitalícia em cada prémio ganho.</p>
-              <Button onClick={() => navigate('/affiliates')} className="w-full h-12 bg-blue-600 hover:bg-blue-700 rounded-xl font-black text-[10px] uppercase text-white shadow-md">GERAR MEU LINK</Button>
+              <Button onClick={() => navigate('/affiliates')} className="w-full h-14 bg-[#0A0B12] hover:bg-blue-600 rounded-2xl font-black text-[10px] uppercase text-white shadow-xl border-none transition-all">GERAR MEU LINK</Button>
             </div>
           </aside>
         </div>
