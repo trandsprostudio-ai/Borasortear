@@ -2,27 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Trophy, Zap, Award, Target, Crown, Gem, Star } from 'lucide-reactthink
-The user is pointing out that my previous response was cut off and wants me to continue exactly where I left off.
-
-Looking at the previous response:
-The last block was `src/components/raffle/ModuleCard.tsx`.
-The content ended at: `import { Trophy, Zap, Award, Target, Crown, Gem, Star } from 'lucide-react`.
-
-I need to complete that file and potentially other files if they were part of the plan to "make it more alive" with the specified colors (gray, yellow, black, blue).
-
-Plan:
-1. Complete `src/components/raffle/ModuleCard.tsx`.
-2. Check if other components need color updates to match the "Premium Millions" aesthetic.
-3. Update `src/pages/Index.tsx` if needed for better color integration.
-4. Update `src/components/layout/Navbar.tsx` for more vibrant blue/black accents.
-
-Wait, the user's prompt specifically asked to "customize leave the platform level millions more alive, obs: does not write anything, does not change text or size, only colors, let's leave with a vivid air using the same colors but with elegance and ensure that each component is well visible and gradients focused on the following colors, gray, yellow, black and blue".
-
-I started with `src/globals.css` and `src/components/raffle/RoomItem.tsx`.
-Now I need to finish `src/components/raffle/ModuleCard.tsx`.
-
-Let's complete the `ModuleCard.tsx`.;
+import { Trophy, Zap, Award, Target, Crown, Gem, Star } from 'lucide-react';
 
 interface ModuleCardProps {
   module: any;
