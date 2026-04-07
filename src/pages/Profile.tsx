@@ -101,12 +101,12 @@ const Profile = () => {
         {/* Profile Header */}
         <div className="glass-card rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 mb-8 md:mb-10 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-12 opacity-5 hidden lg:block">
-            <Trophy size={180} />
+            <Trophy className="w-44 h-44" />
           </div>
           
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 relative z-10">
             <div className="w-24 h-24 md:w-32 md:h-32 premium-gradient rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-center shadow-2xl shrink-0">
-              <User size={48} md:size={64} className="text-white" />
+              <User className="text-white w-12 h-12 md:w-16 md:h-16" />
             </div>
 
             <div className="text-center md:text-left flex-1">
@@ -130,7 +130,7 @@ const Profile = () => {
           <div className="lg:col-span-8 space-y-6 md:space-y-8">
             <div className="glass-card p-8 md:p-10 rounded-[2rem] md:rounded-[3rem] text-center relative overflow-hidden">
               <div className="w-14 h-14 md:w-16 md:h-16 bg-green-500/10 rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-4 border border-green-500/20 text-green-400">
-                <DollarSign size={28} md:size={32} />
+                <DollarSign className="w-7 h-7 md:w-8 md:h-8" />
               </div>
               <p className="text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Ganhos Totais Acumulados</p>
               <p className="text-4xl md:text-5xl font-black italic tracking-tighter text-white">
@@ -181,7 +181,7 @@ const Profile = () => {
           <div className="lg:col-span-4 space-y-6 md:space-y-8">
             <div className="glass-card p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem]">
               <div className="flex items-center gap-3 mb-6">
-                <Wallet className="text-amber-400" size={18} md:size={20} />
+                <Wallet className="text-amber-400 w-5 h-5 md:w-6 md:h-6" />
                 <h3 className="text-lg font-black italic uppercase">Balanço</h3>
               </div>
               

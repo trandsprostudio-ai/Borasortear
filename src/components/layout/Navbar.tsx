@@ -116,14 +116,14 @@ const Navbar = () => {
                     onClick={() => setIsDepositOpen(true)}
                     className="premium-gradient h-8 w-8 md:h-10 md:w-10 rounded-lg md:rounded-xl shadow-lg text-white"
                   >
-                    <Plus size={14} className="md:size-[18px]" />
+                    <Plus className="w-4 h-4 md:w-5 md:h-5" />
                   </Button>
                 </div>
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white border border-[#E5E7EB] flex items-center justify-center text-[#0A0B12] shadow-sm">
-                      <User size={18} className="md:size-[20px]" />
+                      <User className="w-[18px] h-[18px] md:w-5 md:h-5" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 md:w-64 bg-white border-[#E5E7EB] rounded-[1.5rem] md:rounded-[2rem] p-2 md:p-3 mt-4 shadow-2xl z-[100]">
