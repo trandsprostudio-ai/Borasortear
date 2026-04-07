@@ -40,7 +40,6 @@ const Index = () => {
         if (error) throw error;
         setBossRooms(data || []);
         
-        // Buscar contagem de participantes por sala BOSS
         const { data: counts } = await supabase.from('boss_participants').select('room_id');
         if (counts) {
           const countsMap = counts.reduce((acc: any, curr: any) => {
@@ -69,7 +68,6 @@ const Index = () => {
     const fetchModules = async () => {
       const { data: modData } = await supabase.from('modules').select('*').order('price', { ascending: true });
       if (modData) {
-        // Adicionar Módulo BOSS fake à lista de cards
         const allModules = [...modData, { id: 'BOSS', name: 'BOSS', price: 0, is_boss: true }];
         setModules(allModules);
         setSelectedModule(allModules[0]);
@@ -248,12 +246,13 @@ const Index = () => {
               <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:rotate-12 transition-transform">
                 <Shield size={80} />
               </div>
-              <h4 className="text-[10px] md:text-[11px] font-black uppercase tracking-widest mb-4">REGRAS DO MÓDULO BOSS</h4>
+              <h4 className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.3em] mb-4">REGRAS DA PLATAFORMA</h4>
               <ul className="text-[9px] font-bold uppercase leading-relaxed mb-6 space-y-2 opacity-80">
-                <li>• APENAS SALDO REAL PERMITIDO</li>
-                <li>• RESULTADO APÓS 72 HORAS</li>
-                <li>• SEM MÍNIMO DE JOGADORES</li>
-                <li>• PRÉMIOS ESTIMADOS MILIONÁRIOS</li>
+                <li>• DEPÓSITOS VIA MULTICAIXA EXPRESS</li>
+                <li>• SORTEIOS 100% AUTOMÁTICOS E JUSTOS</li>
+                <li>• SAQUES RÁPIDOS EM ATÉ 24 HORAS</li>
+                <li>• GANHA 47% DE COMISSÃO POR AMIGO</li>
+                <li>• SUPORTE ESPECIALIZADO 24/7 WHATSAPP</li>
               </ul>
               <Button onClick={() => navigate('/affiliates')} className={`w-full h-12 md:h-14 ${isBossMode ? 'bg-black text-white' : 'bg-[#0A0B12] text-white'} rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] uppercase shadow-xl border-none transition-all`}>
                 GANHAR BÓNUS DE CONVITE
