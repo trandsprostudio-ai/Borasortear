@@ -142,6 +142,11 @@ const Index = () => {
             <div className="hidden lg:block">
               <HallOfFame />
             </div>
+            {/* O PINGUIM AQUI NA LATERAL NO DESKTOP */}
+            <div className="hidden lg:flex justify-center pt-10">
+              <PenguinMascot page="home" />
+            </div>
+
             <div className="platinum-gradient p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border-2 border-[#D1D5DB] shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:rotate-12 transition-transform">
                 <LayoutGrid size={80} />
@@ -154,20 +159,6 @@ const Index = () => {
         </div>
       </main>
 
-      <div className="hidden sm:block">
-        <PenguinMascot page="home" />
-      </div>
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      {ticketModal && (
-        <TicketConfirmationModal 
-          isOpen={ticketModal.open}
-          onClose={() => setTicketModal(null)}
-          ticketCode={ticketModal.code}
-          moduleName={selectedModule?.name.replace('M', 'Módulo ')}
-          price={selectedModule?.price}
-        />
-      )}
-      <RoomJoinConfirmation isOpen={!!confirmingRoom} onClose={() => setConfirmingRoom(null)} onConfirm={handleJoinRoom} room={confirmingRoom} loading={!!actionLoading} />
       <Footer />
     </div>
   );

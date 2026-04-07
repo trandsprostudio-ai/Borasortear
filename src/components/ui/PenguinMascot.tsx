@@ -1,96 +1,224 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import BoraIcon from '@/components/layout/BoraIcon';
+import { Trophy, Ticket, Clock, Zap, Star, PartyPopper } from 'lucide-react';
+
+export type PenguinState = "idle" | "waiting" | "drawing" | "winner" | "not_winner" | "loading";
+export type PenguinPage = "home" | "raffle" | "logout" | "wallet";
 
 interface PenguinMascotProps {
-  page: 'home' | 'wallet' | 'raffle' | 'profile';
+  state?: PenguinState;
+  page?: PenguinPage;
+  message?: string;
   className?: string;
 }
 
-const PenguinMascot = ({ page, className = "" }: PenguinMascotProps) => {
-  const [message, setMessage] = useState('');
-  const [isVisible, setIsVisible] = useState(false);
+const PenguinMascot = ({ 
+  state = "idle", 
+  page = "home", 
+  message, 
+  className = "" 
+}: PenguinMascotProps) => {
+  const [isJumping, setIsJumping] = useState(false);
 
-  const messages = {
-    home: [
-      "Queres triplicar o teu saldo? Escolhe uma mesa!",
-      "A sorte favorece os audazes. Bora sortear?",
-      "Viste os ganhadores VIP? Podes ser o próximo!",
-      "Sabias que ganhas 47% de comissão ao convidar amigos?"
-    ],
-    raffle: [
-      "Esta mesa está quase cheia! Entra agora.",
-      "O bilhete premiado pode ser o teu!",
-      "Já confirmaste o teu código em Consultar Bilhete?",
-      "3 vagas vencedoras nesta mesa. Tens boas chances!"
-    ],
-    wallet: [
-      "O Multicaixa Express é a forma mais rápida de recarregar.",
-      "Lembra-te: o bónus é para diversão, o saldo real é para sacar!",
-      "Processamos os teus saques em menos de 24h.",
-      "Precisas de ajuda com a recarga? Fala com o suporte."
-    ],
-    profile: [
-      "Usa o teu link de afiliado para ganhar sem jogar!",
-      "Completa os teus dados para saques mais rápidos.",
-      "Ganha bónus vitalícios convidando a tua rede.",
-      "O teu código é único. Partilha-o com orgulho!"
-    ]
-  };
-
-  useEffect(() => {
-    const showMessage = () => {
-      const pageMessages = messages[page];
-      const randomMsg = pageMessages[Math.floor(Math.random() * pageMessages.length)];
-      setMessage(randomMsg);
-      setIsVisible(true);
-
-      setTimeout(() => {
-        setIsVisible(false);
-      }, 6000);
+  // Sistema de Frases Dinâmicas
+  const phrases = useMemo(() => {
+    const p = {
+      home: [
+        "Bem-vindo! Preparado para tentar a sorte?",
+        "Hoje vai ser o seu dia!",
+        "Participe nos sorteios e ganhe prémios incríveis!",
+        "Prepara o bolso, tá a cheirar a din din! 💰"
+      ],
+      raffle: [
+        "Bora!",
+        "Quanto mais participar, mais chances tem!",
+        "Boa sorte, hoje é o seu dia! 🍀"
+      ],
+      logout: [
+        "Volte sempre!",
+        "Vou ter saudades 😄",
+        "Até breve, campeão da sorte!"
+      ],
+      wallet: [
+        "A tua sorte está a crescer!",
+        "Dinheiro no bolso, sorriso no rosto!",
+        "O próximo prémio está à tua espera!"
+      ]
     };
-
-    const timer = setTimeout(showMessage, 3000);
-    const interval = setInterval(showMessage, 20000);
-
-    return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
-    };
+    return p[page] || p.home;
   }, [page]);
 
+  const [currentPhrase, setCurrentPhrase] = useState(message || phrases[0]);
+
+  useEffect(() => {
+    if (message) {
+      setCurrentPhrase(message);
+      return;
+    }
+    
+    // Ciclo de frases aleatórias a cada 8 segundos se estiver em idle
+    const interval = setInterval(() => {
+      if (state === "idle") {
+        const next = phrases[Math.floor(Math.random() * phrases.length)];
+        setCurrentPhrase(next);
+      }
+    }, 8000);
+    
+    return () => clearInterval(interval);
+  }, [phrases, state, message]);
+
+  // Cores da Identidade
+  const colors = {
+    black: "#1E1E1E",
+    white: "#FFFFFF",
+    orange: "#FFA500",
+    gold: "#FFD700",
+    blue: "#00AEEF"
+  };
+
+  const handleInteraction = () => {
+    setIsJumping(true);
+    setTimeout(() => setIsJumping(false), 500);
+  };
+
   return (
-    <div className={`fixed right-0 top-1/2 -translate-y-1/2 flex items-center z-[100] group pointer-events-none ${className}`}>
-      <AnimatePresence>
-        {isVisible && (
-          <motion.div
-            initial={{ opacity: 0, x: 20, scale: 0.8 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 10, scale: 0.8 }}
-            className="absolute right-[80px] mr-2 max-w-[180px] sm:max-w-[220px]"
-          >
-            <div className="bg-white text-[#0A0B12] p-4 rounded-2xl rounded-tr-none shadow-2xl relative border-2 border-purple-500">
-              <p className="text-[10px] sm:text-xs font-black uppercase tracking-tight leading-tight">
-                {message}
-              </p>
-              {/* Seta do Balão */}
-              <div className="absolute top-0 -right-2 w-0 h-0 border-t-[10px] border-t-white border-r-[10px] border-r-transparent" />
-            </div>
-          </motion.div>
-        )}
+    <div 
+      className={`relative flex flex-col items-center ${className}`}
+      onClick={handleInteraction}
+    >
+      {/* Balão de Fala */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentPhrase}
+          initial={{ opacity: 0, y: 10, scale: 0.8 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -10, scale: 0.8 }}
+          className="absolute -top-20 bg-white border-2 border-[#E5E7EB] px-5 py-3 rounded-2xl shadow-xl z-20 min-w-[180px] max-w-[240px] text-center"
+        >
+          <p className="text-[10px] font-black uppercase tracking-tight text-[#1E1E1E]">
+            {state === "drawing" ? "A girar a sorte... 🎰" : 
+             state === "winner" ? "PARABÉNS! GANHASTE! 🎉" :
+             state === "loading" ? "A analisar os dados..." : currentPhrase}
+          </p>
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-b-2 border-r-2 border-[#E5E7EB] rotate-45" />
+        </motion.div>
       </AnimatePresence>
 
-      <motion.div 
-        whileHover={{ scale: 1.1, rotate: 5 }}
-        className="pointer-events-auto cursor-help mr-4"
-        onClick={() => setIsVisible(!isVisible)}
+      {/* Corpo do Pinguim (SVG Dinâmico) */}
+      <motion.div
+        animate={isJumping ? { y: -20, scaleY: 1.1 } : { y: 0, scaleY: 1 }}
+        transition={{ type: "spring", stiffness: 500, damping: 15 }}
+        className="relative w-32 h-32 cursor-pointer"
       >
-        <div className="relative">
-          <div className="absolute inset-0 bg-purple-500/20 blur-2xl rounded-full group-hover:bg-purple-500/40 transition-colors" />
-          <BoraIcon className="w-14 h-14 sm:w-20 sm:h-20 drop-shadow-[0_0_15px_rgba(124,58,237,0.5)]" />
-        </div>
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-2xl">
+          {/* Corpo Principal */}
+          <motion.ellipse 
+            cx="50" cy="65" rx="35" ry="32" 
+            fill={colors.black} 
+            animate={state === "drawing" ? { rotate: [0, 5, -5, 0] } : {}}
+            transition={{ repeat: Infinity, duration: 0.5 }}
+          />
+          
+          {/* Peito Branco */}
+          <ellipse cx="50" cy="70" rx="22" ry="25" fill={colors.white} />
+          
+          {/* Cabeça */}
+          <circle cx="50" cy="35" r="22" fill={colors.black} />
+          
+          {/* Chapéu 🎩 */}
+          <motion.g initial={{ y: -5 }} animate={{ y: 0 }}>
+            <rect x="35" y="10" width="30" height="15" fill={colors.black} rx="2" />
+            <rect x="30" y="22" width="40" height="4" fill={colors.blue} rx="1" />
+          </motion.g>
+
+          {/* Olhos Expressivos */}
+          <g>
+            <circle cx="42" cy="35" r="4" fill={colors.white} />
+            <circle cx="58" cy="35" r="4" fill={colors.white} />
+            <motion.circle 
+              cx="42" cy="35" r="2" 
+              fill="black" 
+              animate={state === "loading" ? { x: [0, 1, -1, 0] } : {}}
+              transition={{ repeat: Infinity, duration: 1 }}
+            />
+            <motion.circle 
+              cx="58" cy="35" r="2" 
+              fill="black" 
+              animate={state === "loading" ? { x: [0, 1, -1, 0] } : {}}
+              transition={{ repeat: Infinity, duration: 1 }}
+            />
+          </g>
+
+          {/* Bico */}
+          <path d="M50 42L45 48H55L50 42Z" fill={colors.orange} />
+
+          {/* Asas */}
+          <motion.path 
+            d="M15 55Q5 65 15 75" stroke={colors.black} strokeWidth="8" strokeLinecap="round" 
+            animate={state === "winner" ? { rotate: [0, -40, 0], y: [0, -10, 0] } : {}}
+            transition={{ repeat: Infinity, duration: 0.3 }}
+          />
+          <motion.path 
+            d="M85 55Q95 65 85 75" stroke={colors.black} strokeWidth="8" strokeLinecap="round" 
+            animate={state === "winner" ? { rotate: [0, 40, 0], y: [0, -10, 0] } : {}}
+            transition={{ repeat: Infinity, duration: 0.3 }}
+          />
+
+          {/* Patas */}
+          <rect x="38" y="90" width="8" height="4" fill={colors.orange} rx="2" />
+          <rect x="54" y="90" width="8" height="4" fill={colors.orange} rx="2" />
+
+          {/* Acessório Dinâmico (Moeda ou Bilhete) */}
+          <AnimatePresence>
+            {state === "waiting" && (
+              <motion.g initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
+                <rect x="70" y="45" width="20" height="12" fill={colors.blue} rx="2" />
+                <Ticket x="72" y="47" size={16} color="white" />
+              </motion.g>
+            )}
+            {(state === "idle" || state === "winner") && (
+              <motion.g 
+                initial={{ opacity: 0, scale: 0 }} 
+                animate={{ opacity: 1, scale: 1, y: [0, -5, 0] }} 
+                transition={{ y: { repeat: Infinity, duration: 2 } }}
+              >
+                <circle cx="85" cy="40" r="10" fill={colors.gold} stroke="#B8860B" strokeWidth="1" />
+                <text x="82" y="44" fontSize="10" fontWeight="bold" fill="#B8860B">Kz</text>
+              </motion.g>
+            )}
+          </AnimatePresence>
+        </svg>
+
+        {/* Efeitos Especiais (Confetes para Winner) */}
+        {state === "winner" && (
+          <motion.div className="absolute inset-0 pointer-events-none">
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 0, x: 0 }}
+                animate={{ 
+                  opacity: [0, 1, 0], 
+                  y: -50 - Math.random() * 50, 
+                  x: (Math.random() - 0.5) * 100 
+                }}
+                transition={{ repeat: Infinity, duration: 1, delay: i * 0.1 }}
+                className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full"
+                style={{ backgroundColor: [colors.gold, colors.blue, colors.orange][i % 3] }}
+              />
+            ))}
+          </motion.div>
+        )}
+
+        {/* Suspense Spinner (Drawing) */}
+        {state === "drawing" && (
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+            className="absolute -right-4 top-0 w-8 h-8 border-4 border-blue-400 border-t-transparent rounded-full"
+          />
+        )}
       </motion.div>
     </div>
   );

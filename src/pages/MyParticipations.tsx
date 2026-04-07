@@ -74,7 +74,7 @@ const MyParticipations = () => {
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 pt-28 pb-20">
         <header className="mb-12 flex items-end justify-between">
           <h1 className="text-4xl font-black italic tracking-tighter uppercase">Minhas Mesas</h1>
-          <PenguinMascot page="raffle" className="scale-50 origin-bottom" />
+          <PenguinMascot page="raffle" state={activeParticipations.length > 0 ? "waiting" : "idle"} className="scale-50 origin-bottom" />
         </header>
 
         <Tabs defaultValue="active" className="w-full">
