@@ -35,17 +35,17 @@
   }
 }
 
-/* Cards com acabamento em Platina e profundidade real */
+/* Cards com Borda Cinza Carregada Sempre Ativa */
 .glass-card {
   background: #FFFFFF;
-  border: 1px solid #E5E7EB;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+  border: 2px solid #D1D5DB; /* Borda cinza carregada */
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
   @apply transition-all duration-300;
 }
 
 .glass-card:hover {
-  border-color: #0066FF;
-  box-shadow: 0 20px 40px -15px rgba(0, 102, 255, 0.12);
+  border-color: #0066FF; /* Transição para azul no hover */
+  box-shadow: 0 20px 40px -15px rgba(0, 102, 255, 0.1);
 }
 
 /* Degradê Premium Millions (Preto e Azul) */
@@ -63,6 +63,11 @@
 /* Degradê Platina (Cinzento Elegante) */
 .platinum-gradient {
   background: linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 100%) !important;
+  border: 2px solid #9CA3AF; /* Borda cinza ainda mais carregada para este degradê */
+}
+
+.platinum-gradient:hover {
+  border-color: #0066FF;
 }
 
 /* Texto em Degradê Azul Elétrico */

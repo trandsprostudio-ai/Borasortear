@@ -29,14 +29,14 @@ const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
         "relative flex flex-col items-center justify-center p-5 rounded-[2.5rem] border-2 transition-all duration-500 min-w-[150px] group active:scale-95 shadow-lg",
         isSelected 
           ? "bg-white border-[#0066FF] shadow-[0_20px_50px_rgba(0,102,255,0.2)] scale-105 z-10" 
-          : "platinum-gradient border-[#D1D5DB] hover:border-[#0066FF]/40 shadow-black/5"
+          : "platinum-gradient border-[#9CA3AF] hover:border-[#0066FF] shadow-black/5"
       )}
     >
       <div className={cn(
         "w-14 h-14 rounded-[1.5rem] flex items-center justify-center mb-4 transition-all shadow-md border",
         isSelected 
           ? "premium-gradient text-white border-transparent" 
-          : "bg-white text-[#0A0B12]/40 border-[#E5E7EB] group-hover:border-[#0066FF]/20"
+          : "bg-white text-[#0A0B12]/40 border-[#D1D5DB] group-hover:border-[#0066FF]/20"
       )}>
         {getIcon(module.name)}
       </div>

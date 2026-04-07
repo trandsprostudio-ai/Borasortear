@@ -75,9 +75,8 @@ const Wallet = () => {
             <motion.div 
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="premium-gradient p-8 md:p-12 rounded-[3rem] shadow-2xl shadow-black/20 text-white relative overflow-hidden"
+              className="premium-gradient p-8 md:p-12 rounded-[3rem] shadow-2xl text-white relative overflow-hidden border-2 border-[#111111]"
             >
-              {/* Decorativo de fundo */}
               <div className="absolute top-0 right-0 p-10 opacity-10">
                 <WalletIcon size={120} />
               </div>
@@ -104,11 +103,11 @@ const Wallet = () => {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10 relative z-10">
-                <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
+                <div className="bg-white/5 p-6 rounded-[2rem] border-2 border-white/10">
                   <span className="text-[9px] font-black opacity-40 uppercase tracking-widest block mb-2">Fundos Sacáveis</span>
                   <span className="text-2xl font-black text-amber-400 italic">{currentBalance.toLocaleString()} Kz</span>
                 </div>
-                <div className="bg-white/5 p-6 rounded-[2rem] border border-white/10">
+                <div className="bg-white/5 p-6 rounded-[2rem] border-2 border-white/10">
                   <span className="text-[9px] font-black opacity-40 uppercase tracking-widest block mb-2">Créditos de Bónus</span>
                   <span className="text-2xl font-black italic">{bonusBalance.toLocaleString()} Kz</span>
                 </div>
@@ -117,7 +116,7 @@ const Wallet = () => {
               <div className="flex flex-col sm:flex-row gap-4 relative z-10">
                 <Button 
                    onClick={() => setModalConfig({ open: true, type: 'deposit' })} 
-                   className="flex-1 h-16 rounded-2xl font-black text-lg gold-gradient text-black border-none shadow-xl shadow-amber-500/20 active:scale-[0.98]"
+                   className="flex-1 h-16 rounded-2xl font-black text-lg gold-gradient text-black border-none shadow-xl shadow-amber-500/20"
                 >
                   <Plus size={20} className="mr-2" /> RECARREGAR
                 </Button>
@@ -125,7 +124,7 @@ const Wallet = () => {
                   variant="ghost" 
                   onClick={() => setModalConfig({ open: true, type: 'withdrawal' })}
                   disabled={currentBalance <= 0}
-                  className="flex-1 h-16 rounded-2xl font-black text-lg bg-white/10 border border-white/10 text-white hover:bg-white/20"
+                  className="flex-1 h-16 rounded-2xl font-black text-lg bg-white/10 border-2 border-white/10 text-white hover:bg-white/20"
                 >
                   <ArrowUpRight size={20} className="mr-2" /> LEVANTAR
                 </Button>
@@ -142,7 +141,7 @@ const Wallet = () => {
                 {transactions.slice(0, 5).map((tx) => (
                   <div key={tx.id} className="flex justify-between items-center group">
                     <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.status === 'completed' ? 'bg-[#f0f9f1] text-green-600' : 'bg-[#fff5f5] text-red-500'}`}>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 ${tx.status === 'completed' ? 'bg-[#f0f9f1] border-green-200 text-green-600' : 'bg-[#fff5f5] border-red-100 text-red-500'}`}>
                         {tx.type === 'deposit' ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
                       </div>
                       <div>
@@ -155,7 +154,6 @@ const Wallet = () => {
                     </span>
                   </div>
                 ))}
-                {transactions.length === 0 && <p className="text-[10px] font-black text-center text-[#555555]/20 py-10 uppercase tracking-widest">Sem movimentos</p>}
               </div>
             </div>
           </div>
