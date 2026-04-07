@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, TrendingUp, Wallet, Gift, Trophy, Users, Info } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Wallet, Gift, Trophy, Users, Info, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -41,7 +41,6 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   const entryFee = room.modules.price;
   const isBonusRestricted = entryFee < 500;
   
-  // Lógica de validação de saldo
   const canUseBonus = !isBonusRestricted && bonusBalance >= entryFee;
   const canUseReal = userBalance >= entryFee;
   
@@ -57,6 +56,17 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
 
           <DialogHeader className="mb-6 text-center">
             <DialogTitle className="text-3xl font-black italic tracking-tighter uppercase leading-none">Confirmar Entrada</DialogTitle>
+            <div className="flex flex-col items-center mt-4">
+              <div className="flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-2xl border border-purple-500/20">
+                <span className="text-xl font-black italic text-purple-400">{room.modules.name}</span>
+                <div className="w-1 h-1 bg-white/20 rounded-full" />
+                <span className="text-sm font-black text-white">{entryFee.toLocaleString()} Kz</span>
+              </div>
+              <div className="flex items-center gap-1.5 mt-2 opacity-30">
+                <Hash size={10} />
+                <span className="text-[9px] font-black uppercase tracking-widest">ID da Mesa: {room.id.slice(0, 8)}</span>
+              </div>
+            </div>
           </DialogHeader>
 
           <div className="space-y-4">
