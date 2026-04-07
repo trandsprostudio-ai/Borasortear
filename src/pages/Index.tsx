@@ -156,16 +156,16 @@ const Index = () => {
           
           <div className="lg:col-span-8 space-y-8 md:space-y-12">
             <header className="space-y-6 text-center md:text-left">
-              <div className={`inline-flex items-center gap-2 ${isBossMode ? 'bg-amber-500/10 border-amber-500/20' : 'bg-[#F2F2F2] border-[#D1D5DB]'} px-4 py-2 rounded-full shadow-sm`}>
-                <Star size={12} className={isBossMode ? 'text-amber-500 fill-amber-500' : 'text-amber-500 fill-amber-500'} />
-                <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] ${isBossMode ? 'text-amber-500' : ''}`}>
+              <div className={`inline-flex items-center gap-2 ${isBossMode ? 'bg-blue-50 border-blue-100' : 'bg-[#F2F2F2] border-[#D1D5DB]'} px-4 py-2 rounded-full shadow-sm`}>
+                <Star size={12} className={isBossMode ? 'text-blue-500 fill-blue-500' : 'text-amber-500 fill-amber-500'} />
+                <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] ${isBossMode ? 'text-blue-600' : ''}`}>
                   {isBossMode ? 'MÓDULO DE ELITE BOSS' : 'O TEU PRÓXIMO NÍVEL DE SORTE'}
                 </span>
               </div>
               
               <h1 className="text-4xl md:text-6xl lg:text-8xl font-black italic tracking-tighter uppercase leading-[0.9] text-[#111111]">
                 {isBossMode ? (
-                  <>MÓDULO <br /><span className="text-amber-500">BOSS</span></>
+                  <>MÓDULO <br /><span className="text-[#0066FF]">BOSS</span></>
                 ) : (
                   <>A TUA SORTE <br /> <span className="blue-gradient-text">EM MILHÕES</span></>
                 )}
@@ -180,7 +180,7 @@ const Index = () => {
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   <Button 
                     onClick={() => navigate('/wallet')} 
-                    className={`${isBossMode ? 'bg-amber-500 hover:bg-amber-600' : 'premium-gradient'} h-14 sm:h-12 px-8 rounded-xl font-black text-[10px] uppercase text-white shadow-lg border-none`}
+                    className={`${isBossMode ? 'bg-[#0066FF] hover:bg-blue-700' : 'premium-gradient'} h-14 sm:h-12 px-8 rounded-xl font-black text-[10px] uppercase text-white shadow-lg border-none`}
                   >
                     RECARREGAR SALDO
                   </Button>
@@ -188,7 +188,7 @@ const Index = () => {
               </div>
             </header>
 
-            <section className={`p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] border-2 shadow-xl overflow-hidden ${isBossMode ? 'bg-[#111827] border-amber-500/30' : 'bg-[#E5E7EB] border-[#D1D5DB]'}`}>
+            <section className={`p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] border-2 shadow-xl overflow-hidden ${isBossMode ? 'bg-[#EBF5FF] border-blue-200' : 'bg-[#D1D5DB] border-[#9CA3AF]'}`}>
               <div className="flex overflow-x-auto no-scrollbar gap-3 md:gap-4 py-2">
                 {modules.map((mod) => (
                   <ModuleCard 
@@ -206,7 +206,7 @@ const Index = () => {
                 <h2 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter">
                   {isBossMode ? 'Mesas BOSS Disponíveis' : 'Mesas em Aberto'}
                 </h2>
-                <div className={`h-px flex-1 mx-8 hidden lg:block ${isBossMode ? 'bg-amber-500/20' : 'bg-[#E5E7EB]'}`} />
+                <div className={`h-px flex-1 mx-8 hidden lg:block ${isBossMode ? 'bg-blue-200' : 'bg-[#E5E7EB]'}`} />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
@@ -224,7 +224,7 @@ const Index = () => {
                         </motion.div>
                       ))
                     ) : (
-                      <div className="col-span-full py-10 text-center text-white/20 font-black uppercase text-[10px] tracking-widest">
+                      <div className="col-span-full py-10 text-center text-[#111111]/20 font-black uppercase text-[10px] tracking-widest">
                         A carregar mesas premium...
                       </div>
                     )
@@ -242,7 +242,7 @@ const Index = () => {
 
           <aside className="lg:col-span-4 space-y-8">
             <HallOfFame />
-            <div className={`${isBossMode ? 'bg-amber-500 text-black' : 'platinum-gradient'} p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border-2 border-[#D1D5DB] shadow-2xl relative overflow-hidden group`}>
+            <div className={`${isBossMode ? 'bg-[#EBF5FF] text-[#111111]' : 'platinum-gradient'} p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border-2 border-[#D1D5DB] shadow-2xl relative overflow-hidden group`}>
               <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:rotate-12 transition-transform">
                 <Shield size={80} />
               </div>
@@ -254,7 +254,7 @@ const Index = () => {
                 <li>• GANHA 47% DE COMISSÃO POR AMIGO</li>
                 <li>• SUPORTE ESPECIALIZADO 24/7 WHATSAPP</li>
               </ul>
-              <Button onClick={() => navigate('/affiliates')} className={`w-full h-12 md:h-14 ${isBossMode ? 'bg-black text-white' : 'bg-[#0A0B12] text-white'} rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] uppercase shadow-xl border-none transition-all`}>
+              <Button onClick={() => navigate('/affiliates')} className={`w-full h-12 md:h-14 ${isBossMode ? 'bg-[#0066FF] text-white' : 'bg-[#0A0B12] text-white'} rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] uppercase shadow-xl border-none transition-all`}>
                 GANHAR BÓNUS DE CONVITE
               </Button>
             </div>
