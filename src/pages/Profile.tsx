@@ -26,14 +26,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Progress } from "@/components/ui/progress";
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
-  const [stats, setStats] = useState({ totalPlayed: 0, wins: 0 });
   const navigate = useNavigate();
 
   const loadAllData = useCallback(async (isRefresh = false) => {
@@ -48,21 +46,8 @@ const Profile = () => {
 
       setUser(session.user);
       
-      // Busca perfil e estatísticas básicas
-      const [profRes, partRes, winRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle(),
-        supabase.from('participants').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id),
-        supabase.from('winners').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id)
-      ]);
-
-      if (profRes.data) {
-        setProfile(profRes.data);
-      }
-      
-      setStats({
-        totalPlayed: partRes.count || 0,
-        wins: winRes.count || 0
-      });
+      const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).maybeSingle();
+      if (data) setProfile(data);
 
     } catch (err) {
       console.error("Erro ao carregar perfil:", err);
@@ -108,21 +93,21 @@ const Profile = () => {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-black" size={40} /></div>;
 
   const referralsCount = profile?.referrals_count || 0;
-  const rankInfo = referralsCount >= 10 ? { label: 'DIAMANTE', color: 'text-cyan-600', icon: Award, next: 0, progress: 100 } :
-                   referralsCount >= 5 ? { label: 'OURO', color: 'text-amber-600', icon: Trophy, next: 10, progress: (referralsCount / 10) * 100 } :
-                   referralsCount >= 2 ? { label: 'PRATA', color: 'text-slate-500', icon: Medal, next: 5, progress: (referralsCount / 5) * 100 } :
-                   { label: 'BRONZE', color: 'text-orange-700', icon: Star, next: 2, progress: (referralsCount / 2) * 100 };
+  const rankInfo = referralsCount >= 10 ? { label: 'DIAMANTE', color: 'text-cyan-400', icon: Award, next: 0, progress: 100 } :
+                   referralsCount >= 5 ? { label: 'OURO', color: 'text-amber-400', icon: Trophy, next: 10, progress: (referralsCount / 10) * 100 } :
+                   referralsCount >= 2 ? { label: 'PRATA', color: 'text-slate-300', icon: Medal, next: 5, progress: (referralsCount / 5) * 100 } :
+                   { label: 'BRONZE', color: 'text-orange-400', icon: Star, next: 2, progress: (referralsCount / 2) * 100 };
 
   return (
-    <div className="min-h-screen bg-[#F9FBFF] text-[#111111] pb-32">
+    <div className="min-h-screen bg-[#F9FBFF] text-[#111111] pb-32 font-sans">
       <Navbar />
       
       <main className="max-w-6xl mx-auto px-4 pt-28">
         
-        {/* Profile Header */}
-        <div className="glass-card rounded-[3rem] p-8 md:p-12 border-[#D1D5DB] mb-10 bg-white relative overflow-hidden">
+        {/* Profile Header - Agora com fundo escuro suave */}
+        <div className="glass-card rounded-[3rem] p-8 md:p-12 mb-10 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-12 opacity-5 hidden md:block">
-            <Trophy size={180} className="text-[#111111]" />
+            <Trophy size={180} />
           </div>
           
           <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
@@ -130,7 +115,7 @@ const Profile = () => {
               <div className="w-32 h-32 premium-gradient rounded-[2.5rem] flex items-center justify-center shadow-2xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
                 <User size={64} className="text-white" />
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-white p-2 rounded-xl border-2 border-[#D1D5DB] shadow-lg">
+              <div className="absolute -bottom-2 -right-2 bg-[#111827] p-2 rounded-xl border border-white/10 shadow-lg">
                 <rankInfo.icon size={20} className={rankInfo.color} />
               </div>
             </div>
@@ -138,26 +123,26 @@ const Profile = () => {
             <div className="text-center md:text-left flex-1">
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-2">
                 <h1 className="text-4xl font-black italic tracking-tighter uppercase">{profile?.first_name || 'Jogador'}</h1>
-                <div className={`px-4 py-1 rounded-full bg-white border-2 border-[#D1D5DB] flex items-center gap-2 ${rankInfo.color} shadow-sm`}>
+                <div className={`px-4 py-1 rounded-full bg-white/5 border border-white/10 flex items-center gap-2 ${rankInfo.color} shadow-sm`}>
                   <rankInfo.icon size={12} />
                   <span className="text-[10px] font-black uppercase tracking-widest">{rankInfo.label}</span>
                 </div>
               </div>
-              <p className="text-[11px] font-bold text-[#555555]/40 uppercase tracking-[0.2em] mb-6">Membro desde {new Date(profile?.updated_at).toLocaleDateString()}</p>
+              <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] mb-6">Membro desde {new Date(profile?.updated_at).toLocaleDateString()}</p>
               
               <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                <Button onClick={() => loadAllData(true)} variant="outline" className="h-10 rounded-xl border-[#D1D5DB] bg-white text-[10px] font-black uppercase tracking-widest hover:bg-[#F3F4F6]">
-                  <RefreshCw size={14} className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} /> Sincronizar Dados
+                <Button onClick={() => loadAllData(true)} variant="outline" className="h-10 rounded-xl border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 text-white">
+                  <RefreshCw size={14} className={`mr-2 ${refreshing ? 'animate-spin' : ''}`} /> Sincronizar
                 </Button>
                 <Button asChild className="h-10 rounded-xl premium-gradient text-white text-[10px] font-black uppercase tracking-widest border-none">
-                  <a href="/wallet">Ir para Carteira</a>
+                  <a href="/wallet">Carteira</a>
                 </Button>
               </div>
             </div>
 
             <div className="hidden lg:flex flex-col items-end gap-2 text-right">
-              <span className="text-[9px] font-black text-[#555555]/40 uppercase tracking-widest">Próximo Nível: {rankInfo.next || '-'} Convites</span>
-              <div className="w-48 h-3 bg-[#F3F4F6] rounded-full border border-[#D1D5DB] overflow-hidden p-0.5">
+              <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Nível: {referralsCount} Convites</span>
+              <div className="w-48 h-3 bg-white/5 rounded-full border border-white/10 overflow-hidden p-0.5">
                 <div className="h-full premium-gradient rounded-full" style={{ width: `${rankInfo.progress}%` }} />
               </div>
             </div>
@@ -166,55 +151,39 @@ const Profile = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* Main Dashboard Stats */}
           <div className="lg:col-span-8 space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="glass-card p-6 rounded-[2rem] border-[#D1D5DB] bg-white text-center group hover:scale-105 transition-transform">
-                <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-green-100 text-green-600">
-                  <DollarSign size={24} />
+            <div className="grid grid-cols-1 gap-6">
+              <div className="glass-card p-10 rounded-[3rem] text-center relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none" />
+                <div className="w-16 h-16 bg-green-500/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-green-500/20 text-green-400">
+                  <DollarSign size={32} />
                 </div>
-                <p className="text-[9px] font-black text-[#555555]/40 uppercase tracking-widest mb-1">Ganhos Totais</p>
-                <p className="text-2xl font-black italic text-[#111111]">{Number(profile?.total_earnings || 0).toLocaleString()} Kz</p>
-              </div>
-
-              <div className="glass-card p-6 rounded-[2rem] border-[#D1D5DB] bg-white text-center group hover:scale-105 transition-transform">
-                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100 text-blue-600">
-                  <Target size={24} />
-                </div>
-                <p className="text-[9px] font-black text-[#555555]/40 uppercase tracking-widest mb-1">Participações</p>
-                <p className="text-2xl font-black italic text-[#111111]">{stats.totalPlayed}</p>
-              </div>
-
-              <div className="glass-card p-6 rounded-[2rem] border-[#D1D5DB] bg-white text-center group hover:scale-105 transition-transform">
-                <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-100 text-amber-600">
-                  <Trophy size={24} />
-                </div>
-                <p className="text-[9px] font-black text-[#555555]/40 uppercase tracking-widest mb-1">Vitórias</p>
-                <p className="text-2xl font-black italic text-[#111111]">{stats.wins}</p>
+                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Ganhos Totais Acumulados</p>
+                <p className="text-5xl font-black italic tracking-tighter text-white">{Number(profile?.total_earnings || 0).toLocaleString()} <span className="text-xl not-italic opacity-40">Kz</span></p>
               </div>
             </div>
 
-            <div className="glass-card rounded-[2.5rem] p-10 border-[#D1D5DB] bg-white relative overflow-hidden group">
+            <div className="glass-card rounded-[3rem] p-10 relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-transform">
                 <TrendingUp size={100} />
               </div>
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 border border-purple-200">
+                <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-400 border border-purple-500/20">
                   <Users size={20} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black italic uppercase text-[#111111]">Centro de Afiliados</h3>
-                  <p className="text-[10px] font-bold text-[#555555]/40 uppercase tracking-widest">Ganha 47% de comissão agora</p>
+                  <h3 className="text-xl font-black italic uppercase">Afiliados & Convites</h3>
+                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Ganha 47% de comissão direta</p>
                 </div>
               </div>
 
               <div className="space-y-6">
                 <div className="flex flex-col gap-2">
-                  <Label className="text-[10px] font-black uppercase text-[#111111]/40 ml-1">Teu Código de Convite</Label>
-                  <div className="flex items-center justify-between bg-[#F9FAFB] p-4 rounded-2xl border-2 border-dashed border-[#D1D5DB] group/code">
-                    <span className="text-2xl font-black tracking-[0.3em] text-[#111111]">{profile?.referral_code || '---'}</span>
-                    <button onClick={() => copyToClipboard(profile?.referral_code, "Código copiado!")} className="p-3 bg-white rounded-xl border border-[#D1D5DB] shadow-sm hover:text-blue-600 transition-colors">
-                      <Copy size={18} />
+                  <Label className="text-[10px] font-black uppercase text-white/40 ml-1">Teu Código Exclusivo</Label>
+                  <div className="flex items-center justify-between bg-white/5 p-5 rounded-2xl border-2 border-dashed border-white/10 group/code">
+                    <span className="text-3xl font-black tracking-[0.3em] text-white">{profile?.referral_code || '---'}</span>
+                    <button onClick={() => copyToClipboard(profile?.referral_code, "Código copiado!")} className="p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
+                      <Copy size={18} className="text-white" />
                     </button>
                   </div>
                 </div>
@@ -223,60 +192,59 @@ const Profile = () => {
                   <Button onClick={copyInviteLink} className="flex-1 h-14 rounded-2xl premium-gradient text-white font-black text-xs uppercase tracking-widest shadow-xl border-none">
                     <Share2 size={16} className="mr-2" /> PARTILHAR LINK
                   </Button>
-                  <div className="flex-1 bg-white p-4 rounded-2xl border-2 border-[#D1D5DB] flex items-center justify-between">
+                  <div className="flex-1 bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                      <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400">
                         <Users size={16} />
                       </div>
-                      <span className="text-[10px] font-black uppercase text-[#555555]/60">Amigos Convidados</span>
+                      <span className="text-[10px] font-black uppercase text-white/40">Total Convidados</span>
                     </div>
-                    <span className="text-lg font-black italic">{referralsCount}</span>
+                    <span className="text-xl font-black italic">{referralsCount}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Side Actions */}
           <div className="lg:col-span-4 space-y-8">
-            <div className="glass-card p-8 rounded-[2.5rem] border-[#D1D5DB] bg-white">
+            <div className="glass-card p-8 rounded-[2.5rem]">
               <div className="flex items-center gap-3 mb-6">
-                <Wallet className="text-amber-500" size={20} />
-                <h3 className="text-lg font-black italic uppercase text-[#111111]">Saldos Atuais</h3>
+                <Wallet className="text-amber-400" size={20} />
+                <h3 className="text-lg font-black italic uppercase">Balanço</h3>
               </div>
               
               <div className="space-y-4">
-                <div className="p-5 rounded-2xl bg-[#F9FAFB] border border-[#D1D5DB]">
-                  <p className="text-[9px] font-black text-[#555555]/40 uppercase mb-1">Saldo de Jogo</p>
-                  <p className="text-2xl font-black italic text-[#111111]">{Number(profile?.balance || 0).toLocaleString()} Kz</p>
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                  <p className="text-[9px] font-black text-white/40 uppercase mb-1">Saldo Real</p>
+                  <p className="text-2xl font-black italic text-white">{Number(profile?.balance || 0).toLocaleString()} Kz</p>
                 </div>
-                <div className="p-5 rounded-2xl bg-[#F9FAFB] border border-[#D1D5DB]">
-                  <p className="text-[9px] font-black text-[#555555]/40 uppercase mb-1">Saldo de Bónus</p>
-                  <p className="text-2xl font-black italic text-purple-600">{Number(profile?.bonus_balance || 0).toLocaleString()} Kz</p>
+                <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                  <p className="text-[9px] font-black text-white/40 uppercase mb-1">Saldo Bónus</p>
+                  <p className="text-2xl font-black italic text-purple-400">{Number(profile?.bonus_balance || 0).toLocaleString()} Kz</p>
                 </div>
               </div>
             </div>
 
-            <div className="glass-card p-8 rounded-[2.5rem] border-red-100 bg-red-50">
+            <div className="glass-card p-8 rounded-[2.5rem] bg-red-500/5 border-red-500/20">
               <div className="flex items-center gap-3 mb-4">
-                <AlertTriangle className="text-red-600" size={18} />
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-red-600">Configurações Críticas</h3>
+                <AlertTriangle className="text-red-500" size={18} />
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-red-500">Zona de Risco</h3>
               </div>
-              <p className="text-[9px] font-bold text-red-600/40 uppercase tracking-widest leading-relaxed mb-6">A eliminação da conta apaga todos os teus prémios acumulados permanentemente.</p>
+              <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-6 leading-relaxed">A eliminação da conta é irreversível e resultará na perda de todos os saldos.</p>
               
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" className="w-full h-12 rounded-xl border border-red-200 text-red-600 hover:bg-red-100 font-black text-[10px] uppercase tracking-widest">
-                    <Trash2 size={14} className="mr-2" /> ELIMINAR CONTA
+                  <Button variant="ghost" className="w-full h-12 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500/10 font-black text-[10px] uppercase tracking-widest">
+                    ELIMINAR CONTA
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="bg-white border-[#D1D5DB] rounded-[2.5rem]">
+                <AlertDialogContent className="bg-[#111827] border-white/10 rounded-[2.5rem] text-white">
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="text-xl font-black italic uppercase text-[#111111]">Confirmar Eliminação?</AlertDialogTitle>
-                    <AlertDialogDescription className="text-xs font-bold text-[#555555] uppercase tracking-widest">Esta ação é irreversível e perderás todo o teu saldo e histórico.</AlertDialogDescription>
+                    <AlertDialogTitle className="text-xl font-black italic uppercase">Eliminar Permanentemente?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-xs font-bold text-white/40 uppercase tracking-widest">Todos os teus dados e saldos serão removidos do sistema.</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter className="gap-2">
-                    <AlertDialogCancel className="rounded-xl font-black uppercase text-[10px] border-[#D1D5DB]">CANCELAR</AlertDialogCancel>
+                    <AlertDialogCancel className="rounded-xl font-black uppercase text-[10px] border-white/10 bg-transparent text-white hover:bg-white/5">CANCELAR</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDeleteAccount} className="rounded-xl bg-red-600 hover:bg-red-700 font-black uppercase text-[10px] text-white">CONFIRMAR</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

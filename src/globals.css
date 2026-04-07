@@ -35,17 +35,32 @@
   }
 }
 
-/* Cards com Borda Mais Visível e Sombra Reforçada */
+/* Nova Estética: Soft Dark Cards */
 .glass-card {
-  background: #FFFFFF;
-  border: 2px solid #E5E7EB; /* Cinza ligeiramente mais visível */
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08); /* Sombra mais definida */
+  background: #111827; /* Escuro Suave / Navy Deep */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
+  color: #FFFFFF; /* Texto branco por defeito dentro dos cards */
   @apply transition-all duration-300;
 }
 
 .glass-card:hover {
   border-color: #0066FF;
-  box-shadow: 0 20px 40px -15px rgba(0, 102, 255, 0.15);
+  box-shadow: 0 20px 50px -15px rgba(0, 102, 255, 0.2);
+}
+
+/* Ajuste de labels dentro de cards escuros */
+.glass-card label, 
+.glass-card p:not(.text-white), 
+.glass-card span:not(.text-white) {
+  @apply text-white/60;
+}
+
+.glass-card h1, 
+.glass-card h2, 
+.glass-card h3, 
+.glass-card h4 {
+  @apply text-white;
 }
 
 /* Degradê Premium Millions (Preto e Azul) */
@@ -64,10 +79,6 @@
 .platinum-gradient {
   background: linear-gradient(135deg, #F3F4F6 0%, #D1D5DB 100%) !important;
   border: 2px solid #D1D5DB;
-}
-
-.platinum-gradient:hover {
-  border-color: #0066FF;
 }
 
 /* Texto em Degradê Azul Elétrico */
