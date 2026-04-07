@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, TrendingUp, Wallet, Gift, Trophy, Users, Info, Hash } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Wallet, Gift, Trophy, Users, Info, Hash, Zap, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -39,11 +39,12 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   if (!room) return null;
 
   const entryFee = room.modules.price;
+  const maxParts = room.max_participants;
+  const estimatedPrize = Math.floor((entryFee * maxParts) * 0.3333);
   const isBonusRestricted = entryFee < 500;
   
   const canUseBonus = !isBonusRestricted && bonusBalance >= entryFee;
   const canUseReal = userBalance >= entryFee;
-  
   const hasFunds = useBonus ? canUseBonus : canUseReal;
 
   return (
@@ -62,30 +63,49 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
                 <div className="w-1 h-1 bg-white/20 rounded-full" />
                 <span className="text-sm font-black text-white">{entryFee.toLocaleString()} Kz</span>
               </div>
-              <div className="flex items-center gap-1.5 mt-2 opacity-30">
-                <Hash size={10} />
-                <span className="text-[9px] font-black uppercase tracking-widest">ID da Mesa: {room.id.slice(0, 8)}</span>
-              </div>
             </div>
           </DialogHeader>
 
+          {/* Secção de Estimativa e Ganhadores */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="bg-green-500/5 border border-green-500/10 p-4 rounded-2xl flex flex-col items-center text-center">
+              <Trophy size={18} className="text-green-400 mb-1" />
+              <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Prémio Individual</p>
+              <p className="text-lg font-black text-green-400 italic">~{estimatedPrize.toLocaleString()} Kz</p>
+            </div>
+            <div className="bg-blue-500/5 border border-blue-500/10 p-4 rounded-2xl flex flex-col items-center text-center">
+              <Users size={18} className="text-blue-400 mb-1" />
+              <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Ganhadores</p>
+              <p className="text-lg font-black text-blue-400 italic">2 Vagas</p>
+            </div>
+          </div>
+
           <div className="space-y-4">
+            {/* Incentivo de Afiliados */}
+            <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-2xl flex items-start gap-3">
+              <Star size={18} className="text-amber-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[10px] font-black text-amber-500 uppercase leading-tight">Incentivo de Convite</p>
+                <p className="text-[9px] font-bold text-white/40 uppercase mt-0.5">Ganha 47% de comissão no 1º depósito de quem convidares!</p>
+              </div>
+            </div>
+
             {/* Aviso de Bónus Simulado */}
             {useBonus && (
               <div className="bg-purple-600/10 border border-purple-500/20 p-4 rounded-2xl flex items-start gap-3">
                 <Info size={18} className="text-purple-400 mt-0.5 shrink-0" />
                 <p className="text-[10px] font-black text-purple-400 uppercase leading-tight">
-                  ENTRADA COM BÓNUS: Este bilhete é uma SIMULAÇÃO. Não serás elegível para ganhar prémios reais.
+                  MODO SIMULAÇÃO: Estás a usar bónus. Não serás elegível para o prémio real de {estimatedPrize.toLocaleString()} Kz.
                 </p>
               </div>
             )}
 
             {/* Restrição de Bónus */}
             {isBonusRestricted && (
-              <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-start gap-3">
-                <AlertTriangle size={18} className="text-amber-500 mt-0.5 shrink-0" />
-                <p className="text-[10px] font-black text-amber-500 uppercase leading-tight">
-                  Bónus bloqueado para este módulo. Utiliza saldo real para mesas inferiores a 500 Kz.
+              <div className="bg-red-500/5 border border-red-500/10 p-3 rounded-xl flex items-start gap-2">
+                <AlertTriangle size={14} className="text-red-400 mt-0.5 shrink-0" />
+                <p className="text-[8px] font-black text-red-400 uppercase leading-tight">
+                  Módulos pequenos (M100, M200) exigem saldo real.
                 </p>
               </div>
             )}
@@ -93,11 +113,11 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                 <p className="text-[8px] font-black text-white/20 uppercase mb-1">Saldo Real</p>
-                <p className="text-base font-black italic">{userBalance.toLocaleString()} Kz</p>
+                <p className="text-sm font-black italic">{userBalance.toLocaleString()} Kz</p>
               </div>
               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                 <p className="text-[8px] font-black text-white/20 uppercase mb-1">Saldo Bónus</p>
-                <p className="text-base font-black italic">{bonusBalance.toLocaleString()} Kz</p>
+                <p className="text-sm font-black italic">{bonusBalance.toLocaleString()} Kz</p>
               </div>
             </div>
 
@@ -105,7 +125,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               <div className="bg-purple-600/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
                 <div className="flex flex-col">
                   <Label htmlFor="use-bonus" className="text-xs font-black uppercase tracking-widest cursor-pointer">Usar Saldo Bónus</Label>
-                  <p className="text-[8px] font-bold text-white/20 uppercase">Modo Simulação</p>
+                  <p className="text-[8px] font-bold text-white/20 uppercase">Jogar sem risco</p>
                 </div>
                 <Switch 
                   id="use-bonus" 
@@ -124,7 +144,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               disabled={loading || !hasFunds}
               className="h-14 rounded-xl premium-gradient font-black text-xs uppercase"
             >
-              {loading ? "..." : "CONFIRMAR"}
+              {loading ? <Zap className="animate-pulse" /> : "CONFIRMAR"}
             </Button>
           </div>
         </div>
