@@ -17,7 +17,10 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
   const estimatedPrize = Math.floor((room.modules.price * room.max_participants) * 0.333);
 
   return (
-    <div className="platinum-gradient p-6 rounded-[3rem] relative overflow-hidden group cursor-pointer border-2 border-[#E5E7EB] shadow-xl hover:shadow-2xl hover:border-[#0066FF]/30 transition-all duration-500">
+    <div 
+      onClick={onJoin}
+      className="platinum-gradient p-6 rounded-[3rem] relative overflow-hidden group cursor-pointer border-2 border-[#E5E7EB] shadow-xl hover:shadow-2xl hover:border-[#0066FF]/30 transition-all duration-500"
+    >
       <div className="flex justify-between items-start mb-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -30,7 +33,7 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
         </div>
         <div className="bg-white/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-[#D1D5DB] flex items-center gap-2 shadow-sm">
            <div className="w-2 h-2 bg-[#0066FF] rounded-full animate-pulse shadow-[0_0_8px_#0066FF]" />
-           <span className="text-[9px] font-black text-[#0A0B12] uppercase tracking-tighter">Live</span>
+           <span className="text-[9px] font-black text-[#0A0B12] uppercase tracking-widest">Live</span>
         </div>
       </div>
 
@@ -66,8 +69,11 @@ const RoomItem = ({ room, onJoin, loading }: RoomItemProps) => {
       </div>
 
       <Button 
-        onClick={(e) => { e.stopPropagation(); onJoin(); }}
-        disabled={loading || room.current_participants >= room.max_participants}
+        onClick={(e) => { 
+          e.stopPropagation(); 
+          onJoin(); 
+        }}
+        disabled={loading}
         className="w-full h-16 rounded-[1.8rem] premium-gradient text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-600/30 active:scale-95 hover:brightness-110 transition-all border-none"
       >
         {loading ? (

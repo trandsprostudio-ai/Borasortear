@@ -53,7 +53,10 @@ const Index = () => {
 
   const handleOpenConfirm = (room: any) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { setIsAuthModalOpen(true); return; }
+      if (!session) { 
+        setIsAuthModalOpen(true); 
+        return; 
+      }
       setConfirmingRoom(room);
     });
   };
@@ -65,13 +68,27 @@ const Index = () => {
     
     setActionLoading(confirmingRoom.id);
     try {
-      const { data, error } = await supabase.rpc('join_room_secure', { p_user_id: session.user.id, p_room_id: confirmingRoom.id, p_price: selectedModule.price });
-      if (error) { toast.error(`Erro: ${error.message}`); return; }
-      if (data === 'FULL') toast.error("Mesa lotada!");
-      else if (data === 'NO_BALANCE') toast.error("Saldo insuficiente!");
-      else if (data) {
+      const { data, error } = await supabase.rpc('join_room_secure', { 
+        p_user_id: session.user.id, 
+        p_room_id: confirmingRoom.id, 
+        p_price: selectedModule.price 
+      });
+      
+      if (error) { 
+        toast.error(`Erro: ${error.message}`); 
+        return; 
+      }
+      
+      if (data === 'FULL') {
+        toast.error("Mesa lotada!");
+      } else if (data === 'NO_BALANCE' || data === 'NO_BALANCE_REAL_REQUIRED') {
+        toast.error("Saldo insuficiente!");
+      } else if (data) {
         setTicketModal({ open: true, code: data });
         setConfirmingRoom(null);
+        // Refresh rooms
+        const { data: updatedRooms } = await supabase.from('rooms').select('*, modules(*)').eq('module_id', selectedModule.id).eq('status', 'open').order('created_at', { ascending: true }).limit(3);
+        if (updatedRooms) setRooms(updatedRooms);
       }
     } catch (err: any) {
       toast.error("Erro ao entrar.");
@@ -165,11 +182,33 @@ const Index = () => {
             </div>
           </aside>
         </div>
+
+        {/* Modais de Funcionamento */}
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)} 
+        />
+        
+        <RoomJoinConfirmation 
+          isOpen={!!confirmingRoom} 
+          onClose={() => setConfirmingRoom(null)} 
+          onConfirm={handleJoinRoom} 
+          room={confirmingRoom} 
+          loading={!!actionLoading} 
+        />
+
+        {ticketModal && (
+          <TicketConfirmationModal 
+            isOpen={ticketModal.open} 
+            onClose={() => setTicketModal(null)} 
+            ticketCode={ticketModal.code} 
+            moduleName={selectedModule?.name || ''} 
+            price={selectedModule?.price || 0} 
+          />
+        )}
       </main>
 
-      {/* O BORA AGORA É UM ASSISTENTE FLUTUANTE GLOBAL */}
       <PenguinMascot page="home" />
-
       <Footer />
     </div>
   );
