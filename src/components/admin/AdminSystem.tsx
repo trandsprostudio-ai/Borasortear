@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Activity, RefreshCw, LayoutGrid, Clock, Zap, Ghost, Loader2, Users, Globe, Shield, Ban } from 'lucide-react';
+import { Activity, RefreshCw, LayoutGrid, Clock, Zap, Ghost, Loader2, Users, Globe, Shield, Ban, History } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminSystem = () => {
@@ -14,6 +14,7 @@ const AdminSystem = () => {
   const [loading, setLoading] = useState(true);
   const [injectingId, setInjectingId] = useState<string | null>(null);
   const [isGlobalInjecting, setIsGlobalInjecting] = useState(false);
+  const [isCheckingExpiration, setIsCheckingExpiration] = useState(false);
   const [processingBossId, setProcessingBossId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,6 +40,21 @@ const AdminSystem = () => {
       toast.error("Erro ao sincronizar dados do sistema.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCheckExpirations = async () => {
+    setIsCheckingExpiration(true);
+    try {
+      const { error } = await supabase.rpc('check_and_draw_expired_rooms');
+      if (error) throw error;
+      
+      toast.success("Verificação de expiração concluída. Salas obsoletas foram encerradas.");
+      fetchSystemData();
+    } catch (err: any) {
+      toast.error("Erro ao verificar expirações.");
+    } finally {
+      setIsCheckingExpiration(false);
     }
   };
 
@@ -68,7 +84,6 @@ const AdminSystem = () => {
   const handleFinalizeBoss = async (roomId: string) => {
     setProcessingBossId(roomId);
     try {
-      // Chamada interna para a função de sorteio BOSS (perda garantida)
       const { error } = await supabase.rpc('perform_boss_draw', { 
         p_room_id: roomId 
       });
@@ -100,7 +115,6 @@ const AdminSystem = () => {
 
   return (
     <div className="space-y-12">
-      {/* Secção BOSS - Nova e Prioritária */}
       <section className="bg-amber-500/5 border border-amber-500/10 p-6 md:p-8 rounded-[2.5rem]">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -141,13 +155,21 @@ const AdminSystem = () => {
         </div>
       </section>
 
-      {/* Mesas Normais */}
       <section>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <h3 className="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
             <LayoutGrid className="text-purple-500" /> Mesas em Aberto
           </h3>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            <Button 
+              onClick={handleCheckExpirations} 
+              disabled={isCheckingExpiration}
+              variant="outline"
+              className="border-amber-500/20 bg-amber-500/5 text-amber-500 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-500/10"
+            >
+              {isCheckingExpiration ? <Loader2 size={14} className="animate-spin mr-2" /> : <Clock size={14} className="mr-2" />} 
+              Verificar Expirações
+            </Button>
             <Button onClick={handleGlobalInjection} disabled={isGlobalInjecting} className="bg-blue-600 h-10 rounded-xl font-black text-[10px] uppercase tracking-widest">
               {isGlobalInjecting ? <Loader2 size={14} className="animate-spin mr-2" /> : <Globe size={14} className="mr-2" />} Injeção Global
             </Button>
