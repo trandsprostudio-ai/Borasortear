@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Trophy, Zap, Award, Target, Crown, Gem } from 'lucide-react';
+import { Trophy, Zap, Award, Target, Crown, Gem, Star } from 'lucide-react';
 
 interface ModuleCardProps {
   module: any;
