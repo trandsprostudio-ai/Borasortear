@@ -48,11 +48,7 @@ const Footer = () => {
 
           {/* Coluna Segurança e Admin */}
           <div className="flex flex-col items-center md:items-end space-y-4">
-            <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-2">Certificação</h4>
-            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-              <ShieldCheck className="text-blue-500" size={16} />
-              <span className="text-white/60 text-[9px] font-black uppercase">Sistema Auditado</span>
-            </div>
+            <h4 className="text-white font-black text-xs uppercase tracking-[0.3em] mb-2">Segurança</h4>
             <Link 
               to="/admin-login" 
               className="text-white/5 hover:text-white/20 transition-all flex items-center gap-1 group mt-4"
@@ -78,23 +74,5 @@ const Footer = () => {
     </footer>
   );
 };
-
-const ShieldCheck = ({ className, size }: { className?: string, size?: number }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" />
-    <path d="m9 12 2 2 4-4" />
-  </svg>
-);
 
 export default Footer;
