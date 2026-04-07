@@ -5,7 +5,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LayoutGrid, Loader2, Star } from 'lucide-react';
+import { LayoutGrid, Loader2, Star, HelpCircle } from 'lucide-react';
 import ModuleCard from '@/components/raffle/ModuleCard';
 import RoomItem from '@/components/raffle/RoomItem';
 import NewsTicker from '@/components/layout/NewsTicker';
@@ -102,13 +102,30 @@ const Index = () => {
               <h1 className="text-4xl md:text-6xl lg:text-8xl font-black italic tracking-tighter uppercase leading-[0.9] text-[#111111]">
                 A TUA SORTE <br /> <span className="blue-gradient-text">EM MILHÕES</span>
               </h1>
+
+              {/* MASCOTE VISÍVEL NO MOBILE (ABAIXO DO TÍTULO) */}
+              <div className="lg:hidden flex justify-center py-10 scale-90">
+                <PenguinMascot page="home" />
+              </div>
               
               <div className="flex flex-col sm:flex-row items-center md:items-center gap-6 pt-2">
                 <p className="text-[#555555] font-bold text-[10px] md:text-[11px] uppercase tracking-widest max-w-xs leading-relaxed text-center md:text-left">
                   Participa nas mesas exclusivas e garante o teu lugar no topo dos vencedores.
                 </p>
-                <div className="flex gap-3">
-                  <Button onClick={() => navigate('/wallet')} className="premium-gradient h-12 px-8 rounded-xl font-black text-[10px] uppercase text-white shadow-lg border-none">COMEÇAR AGORA</Button>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <Button 
+                    onClick={() => navigate('/wallet')} 
+                    className="premium-gradient h-14 sm:h-12 px-8 rounded-xl font-black text-[10px] uppercase text-white shadow-lg border-none"
+                  >
+                    COMEÇAR AGORA
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate('/central-de-ajuda')} 
+                    className="h-14 sm:h-12 px-8 rounded-xl font-black text-[10px] uppercase text-[#111111] border-[#D1D5DB] hover:bg-[#F3F4F6]"
+                  >
+                    <HelpCircle size={14} className="mr-2" /> COMO FUNCIONA
+                  </Button>
                 </div>
               </div>
             </header>
@@ -142,7 +159,8 @@ const Index = () => {
             <div className="hidden lg:block">
               <HallOfFame />
             </div>
-            {/* O PINGUIM AQUI NA LATERAL NO DESKTOP */}
+            
+            {/* MASCOTE VISÍVEL NO DESKTOP NA LATERAL */}
             <div className="hidden lg:flex justify-center pt-10">
               <PenguinMascot page="home" />
             </div>
