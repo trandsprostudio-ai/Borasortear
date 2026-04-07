@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Trophy, Users, Info, Zap, Wallet, ArrowRight, Star, Gift, Shield } from 'lucide-react';
+import { Trophy, Users, Info, Zap, Wallet, ArrowRight, Star, Gift, Shield, CheckCircle2, Share2, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -49,10 +49,8 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
   const maxParticipants = isBossRoom ? 0 : Number(room.max_participants || 0);
   const moduleName = isBossRoom ? room.name : (room.modules?.name || 'Mesa');
   
-  // Cálculos para Módulos Padrão
   const totalPool = entryFee * maxParticipants;
   const individualPrize = Math.floor(totalPool * 0.3333);
-  const platformAmount = totalPool - (individualPrize * 2);
 
   const isBonusRestricted = isBossRoom || entryFee < 1000;
   const canUseBonus = !isBonusRestricted && bonusBalance >= entryFee;
@@ -90,28 +88,38 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
 
             {!isBossRoom ? (
               <div className="space-y-6 mb-8">
-                {/* Estimativa de Prémio Individual */}
-                <div className="bg-gradient-to-br from-green-500/20 to-transparent p-6 rounded-[2rem] border border-green-500/20 text-center">
-                  <p className="text-[9px] font-black text-green-500 uppercase tracking-widest mb-1">Podes Ganhar Individualmente</p>
-                  <p className="text-3xl font-black italic text-white">{individualPrize.toLocaleString()} <span className="text-sm not-italic opacity-40">Kz</span></p>
+                {/* 3 Vencedores e Prémio Individual */}
+                <div className="bg-gradient-to-br from-green-500/20 to-transparent p-6 rounded-[2rem] border border-green-500/20 text-center relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <Trophy size={40} />
+                  </div>
+                  <p className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-1">3 Vencedores Garantidos</p>
+                  <p className="text-3xl font-black italic text-white leading-tight">{individualPrize.toLocaleString()} <span className="text-sm not-italic opacity-40">Kz por Ganhandor</span></p>
                 </div>
 
-                {/* Divisão dos 3 Vencedores */}
-                <div className="space-y-2">
-                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-1 mb-2">Divisão da Mesa</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-white/5 border border-white/10 p-3 rounded-2xl text-center">
-                      <p className="text-[7px] font-black text-amber-500 uppercase mb-1">1º Lugar</p>
-                      <p className="text-[10px] font-black text-white">{individualPrize.toLocaleString()}</p>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 p-3 rounded-2xl text-center">
-                      <p className="text-[7px] font-black text-blue-400 uppercase mb-1">2º Lugar</p>
-                      <p className="text-[10px] font-black text-white">{individualPrize.toLocaleString()}</p>
-                    </div>
-                    <div className="bg-white/5 border border-white/10 p-3 rounded-2xl text-center opacity-40">
-                      <p className="text-[7px] font-black text-white uppercase mb-1">Plataforma</p>
-                      <p className="text-[10px] font-black text-white">{platformAmount.toLocaleString()}</p>
-                    </div>
+                {/* Incentivo de Afiliado */}
+                <div 
+                  onClick={() => navigate('/affiliates')}
+                  className="bg-purple-500/10 border border-purple-500/20 p-5 rounded-[1.8rem] flex items-center gap-4 cursor-pointer hover:bg-purple-500/20 transition-colors group"
+                >
+                  <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                    <Gift size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Ganha Mais Dinheiro</p>
+                    <p className="text-[10px] font-bold text-white/60 leading-tight uppercase">Convida amigos e recebe 47% de comissão direta no 1º depósito deles!</p>
+                  </div>
+                </div>
+
+                {/* Info Relevante da Plataforma */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
+                    <CheckCircle2 size={16} className="text-blue-400 shrink-0" />
+                    <span className="text-[8px] font-black text-white/40 uppercase tracking-widest leading-tight">Sorteios 100% Automáticos</span>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
+                    <Clock size={16} className="text-amber-400 shrink-0" />
+                    <span className="text-[8px] font-black text-white/40 uppercase tracking-widest leading-tight">Saques Rápidos via Express</span>
                   </div>
                 </div>
               </div>
