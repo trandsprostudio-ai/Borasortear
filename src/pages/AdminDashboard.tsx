@@ -21,7 +21,7 @@ import ActionConfirmModal from '@/components/ui/ActionConfirmModal';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [totalUsers, setTotalUsers] = { useState(0) };
+  const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showExitSplash, setShowExitSplash] = useState(false);
