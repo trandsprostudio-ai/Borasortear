@@ -6,12 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Phone, Lock, User, ShieldCheck, UserCheck, Smartphone, Gift, Loader2 } from 'lucide-react';
+import { ArrowLeft, Phone, Lock, User, ShieldCheck, UserCheck, Smartphone, Gift, Loader2, Globe } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import Logo from '@/components/layout/Logo';
 import SplashScreen from '@/components/ui/SplashScreen';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const COUNTRIES = [
+  { code: '244', name: 'Angola', flag: '🇦🇴', length: 9, placeholder: '9XXXXXXXX' },
+  { code: '55', name: 'Brasil', flag: '🇧🇷', length: 11, placeholder: '119XXXXXXXX' },
+  { code: '351', name: 'Portugal', flag: '🇵🇹', length: 9, placeholder: '9XXXXXXXX' },
+];
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -23,6 +30,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -42,13 +50,15 @@ const Auth = () => {
     e.preventDefault();
     const cleanPhone = phone.trim().replace(/\D/g, '');
     
-    if (!cleanPhone || cleanPhone.length < 9) {
-      toast.error("Número de telefone inválido.");
+    // Validação de Tamanho por País
+    if (cleanPhone.length !== selectedCountry.length) {
+      toast.error(`O número para ${selectedCountry.name} deve ter exatamente ${selectedCountry.length} dígitos.`);
       return;
     }
 
     setLoading(true);
-    const internalEmail = `${cleanPhone}@bora.com`;
+    // Email interno agora inclui o código do país para evitar colisões
+    const internalEmail = `${selectedCountry.code}${cleanPhone}@bora.com`;
 
     try {
       if (isLogin) {
@@ -85,7 +95,8 @@ const Auth = () => {
           options: {
             data: { 
               full_name: fullName,
-              phone_number: cleanPhone,
+              phone_number: `${selectedCountry.code}${cleanPhone}`,
+              country_code: selectedCountry.code,
               referred_by: finalRefCode || null
             }
           }
@@ -138,6 +149,26 @@ const Auth = () => {
         </div>
 
         <form className="space-y-4" onSubmit={handleAuth}>
+          {/* Seletor de País Unificado */}
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">País de Residência</Label>
+            <Select 
+              value={selectedCountry.code} 
+              onValueChange={(val) => setSelectedCountry(COUNTRIES.find(c => c.code === val) || COUNTRIES[0])}
+            >
+              <SelectTrigger className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 text-[#111111]">
+                <SelectValue placeholder="Selecione o país" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-[#e0e0e0] rounded-xl">
+                {COUNTRIES.map(c => (
+                  <SelectItem key={c.code} value={c.code} className="font-bold text-xs uppercase">
+                    <span className="mr-2">{c.flag}</span> {c.name} (+{c.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {!isLogin ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2 md:col-span-2">
@@ -159,16 +190,25 @@ const Auth = () => {
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Teu Telefone</Label>
                 <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
-                  <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[#555555]/40 font-black text-[10px]">
+                    +{selectedCountry.code}
+                  </div>
+                  <Input 
+                    type="tel" 
+                    value={phone} 
+                    onChange={(e) => setPhone(e.target.value)} 
+                    placeholder={selectedCountry.placeholder} 
+                    className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-16 text-[#111111]" 
+                    required 
+                  />
                 </div>
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Nº Multicaixa Express (Para Saques)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Dados para Recebimento (Express/Pix/IBAN)</Label>
                 <div className="relative">
                   <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
-                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número para receber prémios" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
+                  <Input value={bankInfo} onChange={(e) => setBankInfo(e.target.value)} placeholder="Número ou chave de pagamento" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-12 pl-12 text-[#111111]" required />
                 </div>
               </div>
 
@@ -214,8 +254,17 @@ const Auth = () => {
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-[#555555]/40 ml-1">Teu Telefone</Label>
                 <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555555]/20" size={18} />
-                  <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9XXXXXXXX" className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-14 pl-12 text-[#111111]" required />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[#555555]/40 font-black text-[10px]">
+                    +{selectedCountry.code}
+                  </div>
+                  <Input 
+                    type="tel" 
+                    value={phone} 
+                    onChange={(e) => setPhone(e.target.value)} 
+                    placeholder={selectedCountry.placeholder} 
+                    className="bg-[#f5f5f5] border-[#e0e0e0] rounded-2xl h-14 pl-16 text-[#111111]" 
+                    required 
+                  />
                 </div>
               </div>
               <div className="space-y-2">
