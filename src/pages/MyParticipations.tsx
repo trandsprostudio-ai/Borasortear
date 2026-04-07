@@ -64,13 +64,13 @@ const MyParticipations = () => {
     getSession();
   }, [navigate, fetchParticipations]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-black" size={40} /></div>;
 
   const activeParticipations = participations.filter(p => p.rooms.status === 'open' || p.rooms.status === 'processing');
   const historyParticipations = participations.filter(p => p.rooms.status === 'finished' && isWithinHours(p.rooms.created_at, 48));
 
   return (
-    <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
+    <div className="min-h-screen bg-white text-[#111111] pb-32">
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 pt-28">
         <header className="mb-12 flex items-end justify-between">
@@ -79,82 +79,95 @@ const MyParticipations = () => {
         </header>
 
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="bg-white/5 border border-white/10 p-1 rounded-2xl h-14 mb-10">
-            <TabsTrigger value="active" className="rounded-xl px-8 font-black text-[10px] uppercase data-[state=active]:bg-purple-600 h-full">Ativas</TabsTrigger>
-            <TabsTrigger value="history" className="rounded-xl px-8 font-black text-[10px] uppercase data-[state=active]:bg-purple-600 h-full">Histórico (48h)</TabsTrigger>
+          <TabsList className="bg-[#F3F4F6] border border-[#D1D5DB] p-1 rounded-2xl h-14 mb-10">
+            <TabsTrigger value="active" className="rounded-xl px-8 font-black text-[10px] uppercase data-[state=active]:bg-white data-[state=active]:text-blue-600 h-full shadow-sm">Ativas</TabsTrigger>
+            <TabsTrigger value="history" className="rounded-xl px-8 font-black text-[10px] uppercase data-[state=active]:bg-white data-[state=active]:text-blue-600 h-full shadow-sm">Histórico (48h)</TabsTrigger>
           </TabsList>
 
           <TabsContent value="active">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {activeParticipations.map((p) => (
-                <div key={p.id} className="glass-card p-6 rounded-[2rem] border-white/5 relative overflow-hidden">
+              {activeParticipations.length > 0 ? activeParticipations.map((p) => (
+                <div key={p.id} className="glass-card p-6 rounded-[2rem] border-[#D1D5DB] relative overflow-hidden">
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         {p.source === 'bonus' ? (
-                          <span className="bg-purple-500/20 text-purple-400 text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-purple-500/20">Simulado</span>
+                          <span className="bg-purple-100 text-purple-600 text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-purple-200">Simulado</span>
                         ) : (
-                          <span className="bg-green-500/20 text-green-400 text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-green-500/20">Real</span>
+                          <span className="bg-green-100 text-green-600 text-[7px] font-black px-2 py-0.5 rounded uppercase tracking-widest border border-green-200">Real</span>
                         )}
                       </div>
-                      <h3 className="text-xl font-black italic uppercase">{p.rooms.modules.name}</h3>
-                      <p className="text-[10px] text-white/20">ID: #{p.rooms.id.slice(0,8)}</p>
+                      <h3 className="text-xl font-black italic uppercase text-[#111111]">{p.rooms.modules.name}</h3>
+                      <p className="text-[10px] text-[#555555]/40 font-bold uppercase">ID: #{p.rooms.id.slice(0,8)}</p>
                     </div>
-                    <div className="bg-white/5 p-3 rounded-2xl text-center border border-white/5">
-                      <Ticket size={16} className="text-purple-500 mx-auto mb-1" />
-                      <span className="text-[10px] font-black tracking-widest">{p.ticket_code}</span>
+                    <div className="bg-white p-3 rounded-2xl text-center border border-[#D1D5DB] shadow-sm">
+                      <Ticket size={16} className="text-blue-600 mx-auto mb-1" />
+                      <span className="text-[10px] font-black tracking-widest text-[#111111]">{p.ticket_code}</span>
                     </div>
                   </div>
                   
                   {p.source === 'bonus' && (
-                     <div className="mb-4 flex items-center gap-2 text-[8px] font-bold text-white/30 uppercase bg-white/5 p-2 rounded-lg border border-white/5">
-                        <Info size={10} />
+                     <div className="mb-4 flex items-center gap-2 text-[8px] font-bold text-[#555555]/60 uppercase bg-white/50 p-2 rounded-lg border border-[#D1D5DB]">
+                        <Info size={10} className="text-purple-600" />
                         Este bilhete não é elegível para prémios reais.
                      </div>
                   )}
 
-                  <div className="pt-4 flex items-center justify-between border-t border-white/5">
+                  <div className="pt-4 flex items-center justify-between border-t border-[#D1D5DB]">
                     <div className="flex items-center gap-2">
-                      <Users size={14} className="text-white/20" />
-                      <span className="text-[10px] font-bold text-white/40">{p.rooms.current_participants}/{p.rooms.max_participants}</span>
+                      <Users size={14} className="text-[#111111]/40" />
+                      <span className="text-[10px] font-bold text-[#555555]/60">{p.rooms.current_participants}/{p.rooms.max_participants} Jogadores</span>
                     </div>
-                    <div className="flex items-center gap-2 text-amber-500">
+                    <div className="flex items-center gap-2 text-blue-600">
                       <Clock size={12} />
                       <span className="text-[10px] font-black"><CountdownItem expiresAt={p.rooms.expires_at} /></span>
                     </div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="md:col-span-2 py-20 text-center glass-card rounded-[2rem]">
+                  <Search size={40} className="mx-auto mb-4 text-[#111111]/10" />
+                  <p className="text-[10px] font-black uppercase text-[#555555]/40 tracking-widest">Nenhuma participação ativa encontrada.</p>
+                  <Button asChild variant="link" className="text-blue-600 font-black text-xs uppercase mt-4">
+                    <Link to="/">Participar de uma Mesa</Link>
+                  </Button>
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="history">
             <div className="space-y-4">
-              {historyParticipations.map((p) => {
+              {historyParticipations.length > 0 ? historyParticipations.map((p) => {
                 const roomWinners = winnersList[p.rooms.id] || [];
                 const iWon = roomWinners.some((w: any) => w.user_id === user?.id);
                 return (
-                  <div key={p.id} className="glass-card p-6 rounded-[2rem] border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+                  <div key={p.id} className="glass-card p-6 rounded-[2rem] border-[#D1D5DB] flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${iWon ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-white/20'}`}>
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${iWon ? 'bg-green-100 text-green-600' : 'bg-white text-[#111111]/20 border border-[#D1D5DB]'}`}>
                         {iWon ? <Trophy size={24} /> : <History size={24} />}
                       </div>
                       <div>
-                        <h4 className="text-lg font-black italic uppercase">{p.rooms.modules.name}</h4>
+                        <h4 className="text-lg font-black italic uppercase text-[#111111]">{p.rooms.modules.name}</h4>
                         <div className="flex gap-2 items-center">
-                           <span className="text-[8px] font-black text-white/20">{p.ticket_code}</span>
-                           <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded ${p.source === 'bonus' ? 'bg-purple-500/20 text-purple-400' : 'bg-green-500/20 text-green-400'}`}>
+                           <span className="text-[10px] font-black text-[#555555]/60">{p.ticket_code}</span>
+                           <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded ${p.source === 'bonus' ? 'bg-purple-100 text-purple-600' : 'bg-green-100 text-green-600'}`}>
                              {p.source}
                            </span>
                         </div>
                       </div>
                     </div>
-                    <div className={`px-6 py-2 rounded-xl border ${iWon ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-white/5 border-white/5 text-white/20'} text-[10px] font-black uppercase tracking-widest`}>
+                    <div className={`px-6 py-2 rounded-xl border ${iWon ? 'bg-green-100 border-green-200 text-green-600' : 'bg-white border-[#D1D5DB] text-[#555555]/40'} text-[10px] font-black uppercase tracking-widest shadow-sm`}>
                       {iWon ? 'Premiado' : 'Não Premiado'}
                     </div>
                   </div>
                 );
-              })}
+              }) : (
+                <div className="py-20 text-center glass-card rounded-[2rem]">
+                  <History size={40} className="mx-auto mb-4 text-[#111111]/10" />
+                  <p className="text-[10px] font-black uppercase text-[#555555]/40 tracking-widest">O teu histórico de 48h está vazio.</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

@@ -66,63 +66,65 @@ const Affiliates = () => {
     toast.success("Link de convite copiado!");
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0B12]"><Loader2 className="animate-spin text-purple-500" size={40} /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-black" size={40} /></div>;
 
   return (
-    <div className="min-h-screen bg-[#0A0B12] text-white pb-32">
+    <div className="min-h-screen bg-white text-[#111111] pb-32">
       <Navbar />
       
       <main className="max-w-6xl mx-auto px-4 pt-28">
         <header className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-full border border-purple-500/20 mb-6">
-            <Gift size={14} className="text-purple-400" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-400">Programa de Afiliados Premium</span>
+          <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full border border-blue-100 mb-6 shadow-sm">
+            <Gift size={14} className="text-blue-600" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Programa de Afiliados VIP</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black italic tracking-tighter uppercase mb-4 leading-none">Cresce com a <br /><span className="text-purple-500">Tua Rede</span></h1>
-          <p className="text-white/40 font-bold text-[10px] uppercase tracking-widest max-w-2xl mx-auto leading-relaxed">
-            Recebe <span className="text-green-400">500 Kz de bónus</span> por cada amigo e uma <span className="text-green-400">super comissão de 47%</span> sobre o primeiro depósito deles.
+          <h1 className="text-5xl md:text-6xl font-black italic tracking-tighter uppercase mb-4 leading-none text-[#111111]">Ganha com a <br /><span className="text-blue-600">Tua Rede</span></h1>
+          <p className="text-[#555555]/60 font-bold text-[10px] uppercase tracking-widest max-w-2xl mx-auto leading-relaxed">
+            Recebe <span className="text-green-600">500 Kz de bónus</span> por cada amigo e uma <span className="text-green-600">super comissão de 47%</span> no primeiro depósito.
           </p>
         </header>
 
         {user ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
             <div className="lg:col-span-2 space-y-8">
-              <div className="glass-card p-10 rounded-[3rem] border-purple-500/20 bg-gradient-to-br from-purple-600/10 to-transparent">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
+              <div className="glass-card p-10 rounded-[3rem] border-[#D1D5DB] bg-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                   <Users size={120} className="text-[#111111]" />
+                </div>
+                
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10 relative z-10">
                   <div>
-                    <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2">Teu Dashboard</h3>
-                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Ganhos de rede em tempo real</p>
+                    <h3 className="text-2xl font-black italic tracking-tighter uppercase mb-2 text-[#111111]">Teus Rendimentos</h3>
+                    <p className="text-[10px] font-bold text-[#555555]/40 uppercase tracking-widest">Atualizado em tempo real</p>
                   </div>
                   <div className="flex gap-4">
                     <div className="text-right">
-                      <p className="text-[8px] font-black text-white/20 uppercase mb-1">Ganhos Reais</p>
-                      <p className="text-2xl font-black text-green-400 italic">{stats.totalEarned.toLocaleString()} Kz</p>
+                      <p className="text-[8px] font-black text-[#555555]/40 uppercase mb-1">Total Ganho</p>
+                      <p className="text-2xl font-black text-green-600 italic">{stats.totalEarned.toLocaleString()} Kz</p>
                     </div>
-                    <div className="w-px h-10 bg-white/5 mx-2" />
+                    <div className="w-px h-10 bg-[#D1D5DB] mx-2" />
                     <div className="text-right">
-                      <p className="text-[8px] font-black text-white/20 uppercase mb-1">Amigos</p>
-                      <p className="text-2xl font-black text-purple-400 italic">{stats.count}</p>
+                      <p className="text-[8px] font-black text-[#555555]/40 uppercase mb-1">Referenciados</p>
+                      <p className="text-2xl font-black text-blue-600 italic">{stats.count}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-[#0A0B12]/60 p-6 rounded-3xl border border-white/5 space-y-6">
-                  <div className="flex flex-col md:flex-row items-center gap-6">
-                    <div className="flex-1 w-full">
-                      <Label className="text-[10px] font-black uppercase text-white/40 mb-2 block ml-1">Teu Link de Convite</Label>
-                      <div className="relative">
-                        <Input 
-                          readOnly 
-                          value={`${window.location.origin}/auth?mode=signup&ref=${profile?.referral_code || ''}`} 
-                          className="bg-white/5 border-white/10 h-14 pr-16 font-bold text-xs text-purple-400 rounded-2xl"
-                        />
-                        <Button 
-                          onClick={copyLink}
-                          className="absolute right-2 top-2 bottom-2 bg-purple-600 hover:bg-purple-700 rounded-xl px-4 font-black text-[10px] uppercase"
-                        >
-                          <Copy size={14} className="mr-2" /> COPIAR
-                        </Button>
-                      </div>
+                <div className="bg-[#F3F4F6] p-6 rounded-3xl border border-[#D1D5DB] space-y-6 relative z-10">
+                  <div className="flex flex-col items-start gap-4">
+                    <Label className="text-[10px] font-black uppercase text-[#555555]/60 mb-1 ml-1">Teu Link de Convite</Label>
+                    <div className="relative w-full">
+                      <Input 
+                        readOnly 
+                        value={`${window.location.origin}/auth?mode=signup&ref=${profile?.referral_code || ''}`} 
+                        className="bg-white border-[#D1D5DB] h-14 pr-16 font-bold text-xs text-blue-600 rounded-2xl shadow-sm"
+                      />
+                      <Button 
+                        onClick={copyLink}
+                        className="absolute right-2 top-2 bottom-2 premium-gradient text-white rounded-xl px-4 font-black text-[10px] uppercase shadow-md"
+                      >
+                        <Copy size={14} className="mr-2" /> COPIAR
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -130,22 +132,28 @@ const Affiliates = () => {
             </div>
 
             <div className="space-y-6">
-              <div className="glass-card p-8 rounded-[2.5rem] border-white/5">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-400 mb-6 flex items-center gap-2">
-                  <Trophy size={14} /> Benefícios
+              <div className="glass-card p-8 rounded-[2.5rem] border-[#D1D5DB]">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-6 flex items-center gap-2">
+                  <Trophy size={14} /> Benefícios VIP
                 </h4>
                 <div className="space-y-4">
                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded bg-green-500/10 flex items-center justify-center text-green-400 shrink-0">
+                      <div className="w-6 h-6 rounded bg-green-100 flex items-center justify-center text-green-600 shrink-0">
                         <Zap size={12} />
                       </div>
-                      <p className="text-[10px] font-bold text-white/40 uppercase">47% de comissão no 1º depósito</p>
+                      <p className="text-[10px] font-bold text-[#555555]/80 uppercase leading-tight">Comissão de 47% no 1º depósito</p>
                    </div>
                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center text-purple-400 shrink-0">
+                      <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
                         <Gift size={12} />
                       </div>
-                      <p className="text-[10px] font-bold text-white/40 uppercase">500 Kz de bónus por registo</p>
+                      <p className="text-[10px] font-bold text-[#555555]/80 uppercase leading-tight">500 Kz de bónus instantâneo</p>
+                   </div>
+                   <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                        <TrendingUp size={12} />
+                      </div>
+                      <p className="text-[10px] font-bold text-[#555555]/80 uppercase leading-tight">Comissão vitalícia de 5% sobre prémios</p>
                    </div>
                 </div>
               </div>
@@ -153,14 +161,14 @@ const Affiliates = () => {
           </div>
         ) : (
           <div className="max-w-4xl mx-auto mb-20">
-             <div className="glass-card p-12 rounded-[3rem] border-purple-500/20 text-center">
-                <Megaphone size={48} className="mx-auto mb-6 text-purple-500" />
-                <h3 className="text-3xl font-black italic tracking-tighter uppercase mb-4">Torna-te um Parceiro</h3>
-                <p className="text-white/40 font-bold text-sm mb-8 max-w-lg mx-auto leading-relaxed">
-                  Faz o registo para obteres o teu link e ganhares comissões reais sobre os depósitos da tua rede.
+             <div className="glass-card p-12 rounded-[3rem] border-[#D1D5DB] text-center bg-white shadow-2xl">
+                <Megaphone size={48} className="mx-auto mb-6 text-blue-600" />
+                <h3 className="text-3xl font-black italic tracking-tighter uppercase mb-4 text-[#111111]">Torna-te um Parceiro</h3>
+                <p className="text-[#555555]/60 font-bold text-sm mb-8 max-w-lg mx-auto leading-relaxed uppercase">
+                  Regista-te para obteres o teu link e começares a faturar comissões reais hoje mesmo.
                 </p>
-                <Button onClick={() => navigate('/auth?mode=signup')} className="h-16 px-10 rounded-2xl premium-gradient font-black text-lg shadow-2xl shadow-purple-500/20">
-                  REGISTAR AGORA <ArrowRight size={20} className="ml-2" />
+                <Button onClick={() => navigate('/auth?mode=signup')} className="h-16 px-10 rounded-2xl premium-gradient text-white font-black text-lg shadow-2xl shadow-blue-600/20">
+                  CRIAR CONTA DE AFILIADO <ArrowRight size={20} className="ml-2" />
                 </Button>
              </div>
           </div>
