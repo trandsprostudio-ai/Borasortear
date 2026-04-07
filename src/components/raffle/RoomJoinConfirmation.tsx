@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Trophy, Users, Info, Zap, Wallet, ArrowRight, Star, Gift } from 'lucide-react';
+import { Trophy, Users, Info, Zap, Wallet, ArrowRight, Star, Gift, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -44,14 +44,17 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
 
   if (!room) return null;
 
-  // Adaptar para estrutura de sala normal ou mesa BOSS
   const isBossRoom = !!room.entry_fee;
   const entryFee = isBossRoom ? Number(room.entry_fee) : Number(room.modules?.price || 0);
+  const maxParticipants = isBossRoom ? 0 : Number(room.max_participants || 0);
   const moduleName = isBossRoom ? room.name : (room.modules?.name || 'Mesa');
   
-  // Regra BOSS: Bloqueio total de bónus
+  // Cálculos para Módulos Padrão
+  const totalPool = entryFee * maxParticipants;
+  const individualPrize = Math.floor(totalPool * 0.3333);
+  const platformAmount = totalPool - (individualPrize * 2);
+
   const isBonusRestricted = isBossRoom || entryFee < 1000;
-  
   const canUseBonus = !isBonusRestricted && bonusBalance >= entryFee;
   const canUseReal = userBalance >= entryFee;
   const hasFunds = useBonus ? canUseBonus : canUseReal;
@@ -85,29 +88,47 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
               </div>
             </DialogHeader>
 
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-green-500/5 border border-green-500/10 p-5 rounded-2xl flex flex-col items-center text-center">
-                <Trophy size={20} className="text-green-500 mb-2" />
-                <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Status</p>
-                <p className="text-lg font-black text-green-500 italic uppercase">{isBossRoom ? 'Boss' : 'Standard'}</p>
-              </div>
-              <div className="bg-blue-500/5 border border-blue-500/10 p-5 rounded-2xl flex flex-col items-center text-center">
-                <Users size={20} className="text-blue-500 mb-2" />
-                <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Resultado</p>
-                <p className="text-lg font-black text-blue-500 italic uppercase">{isBossRoom ? '72H' : 'Auto'}</p>
-              </div>
-            </div>
+            {!isBossRoom ? (
+              <div className="space-y-6 mb-8">
+                {/* Estimativa de Prémio Individual */}
+                <div className="bg-gradient-to-br from-green-500/20 to-transparent p-6 rounded-[2rem] border border-green-500/20 text-center">
+                  <p className="text-[9px] font-black text-green-500 uppercase tracking-widest mb-1">Podes Ganhar Individualmente</p>
+                  <p className="text-3xl font-black italic text-white">{individualPrize.toLocaleString()} <span className="text-sm not-italic opacity-40">Kz</span></p>
+                </div>
 
-            <div className="space-y-4 mb-6">
-              <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-start gap-3">
-                <Info size={18} className="text-blue-400 mt-0.5 shrink-0" />
-                <p className="text-[10px] font-bold text-white/40 uppercase leading-tight">
-                  {isBossRoom 
-                    ? "Esta é uma mesa premium com ciclo de 72 horas. Apenas saldo real é permitido para entrada."
-                    : "Participa nas mesas exclusivas e garante o teu lugar no topo dos vencedores."}
-                </p>
+                {/* Divisão dos 3 Vencedores */}
+                <div className="space-y-2">
+                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest ml-1 mb-2">Divisão da Mesa</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-white/5 border border-white/10 p-3 rounded-2xl text-center">
+                      <p className="text-[7px] font-black text-amber-500 uppercase mb-1">1º Lugar</p>
+                      <p className="text-[10px] font-black text-white">{individualPrize.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 p-3 rounded-2xl text-center">
+                      <p className="text-[7px] font-black text-blue-400 uppercase mb-1">2º Lugar</p>
+                      <p className="text-[10px] font-black text-white">{individualPrize.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 p-3 rounded-2xl text-center opacity-40">
+                      <p className="text-[7px] font-black text-white uppercase mb-1">Plataforma</p>
+                      <p className="text-[10px] font-black text-white">{platformAmount.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-amber-500/5 border border-amber-500/10 p-5 rounded-2xl flex flex-col items-center text-center">
+                  <Shield size={20} className="text-amber-500 mb-2" />
+                  <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Status</p>
+                  <p className="text-lg font-black text-amber-500 italic uppercase">BOSS</p>
+                </div>
+                <div className="bg-blue-500/5 border border-blue-500/10 p-5 rounded-2xl flex flex-col items-center text-center">
+                  <Clock size={20} className="text-blue-500 mb-2" />
+                  <p className="text-[8px] font-black text-white/40 uppercase tracking-widest">Resultado</p>
+                  <p className="text-lg font-black text-blue-500 italic uppercase">72H</p>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 mb-6">
               <div className={`p-4 rounded-2xl border transition-all ${!useBonus ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/5 border-white/10'}`}>
@@ -121,7 +142,7 @@ const RoomJoinConfirmation = ({ isOpen, onClose, onConfirm, room, loading }: Roo
             </div>
 
             {!isBossRoom && (
-              <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
+              <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between mb-6">
                 <div className="flex flex-col">
                   <Label htmlFor="use-bonus" className="text-xs font-black uppercase tracking-widest cursor-pointer text-white">Usar Saldo Bónus</Label>
                   <p className="text-[8px] font-bold text-white/20 uppercase">Participar com créditos ganhos</p>
