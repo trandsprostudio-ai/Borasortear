@@ -149,12 +149,6 @@ const Affiliates = () => {
                       </div>
                       <p className="text-[10px] font-bold text-[#555555]/80 uppercase leading-tight">500 Kz de bónus instantâneo</p>
                    </div>
-                   <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-                        <TrendingUp size={12} />
-                      </div>
-                      <p className="text-[10px] font-bold text-[#555555]/80 uppercase leading-tight">Comissão vitalícia de 5% sobre prémios</p>
-                   </div>
                 </div>
               </div>
             </div>

@@ -143,7 +143,7 @@ const Index = () => {
                 <LayoutGrid size={80} />
               </div>
               <h4 className="text-[11px] font-black uppercase text-[#111111] tracking-widest mb-4">Rede de Afiliados</h4>
-              <p className="text-[11px] font-bold text-[#555555] uppercase leading-relaxed mb-6">Convida a tua rede e fatura 5% de comissão vitalícia em cada prémio ganho.</p>
+              <p className="text-[11px] font-bold text-[#555555] uppercase leading-relaxed mb-6">Convida a tua rede e fatura uma super comissão de 47% no primeiro depósito de cada amigo.</p>
               <Button onClick={() => navigate('/affiliates')} className="w-full h-14 bg-[#0A0B12] hover:bg-blue-600 rounded-2xl font-black text-[10px] uppercase text-white shadow-xl border-none transition-all">GERAR MEU LINK</Button>
             </div>
           </aside>

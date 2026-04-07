@@ -76,7 +76,7 @@ const DrawOverlay = ({ isOpen, onClose, winners, roomInfo }: DrawOverlayProps) =
         <div className="bg-purple-600/10 p-4 rounded-2xl border border-purple-600/20 mb-8 flex items-center justify-between">
           <div className="text-left">
             <p className="text-[9px] font-black text-purple-400 uppercase mb-1">Bónus de Afiliado</p>
-            <p className="text-xs font-bold text-white/60 leading-tight">Ganha 5% sobre os ganhos dos teus indicados!</p>
+            <p className="text-xs font-bold text-white/60 leading-tight">Ganha uma super comissão de 47% no primeiro depósito dos teus convidados!</p>
           </div>
           <Button size="icon" variant="ghost" onClick={handleCopyLink} className="text-purple-400 hover:bg-purple-600/20">
             <Share2 size={16} />
