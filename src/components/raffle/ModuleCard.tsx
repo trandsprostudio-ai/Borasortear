@@ -28,16 +28,16 @@ const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
     <button
       onClick={onSelect}
       className={cn(
-        "relative flex flex-col items-center justify-center p-5 rounded-[2.5rem] border-2 transition-all duration-500 min-w-[160px] group active:scale-95 shadow-lg",
+        "relative flex flex-col items-center justify-center p-4 md:p-5 rounded-[2rem] md:rounded-[2.5rem] border-2 transition-all duration-500 min-w-[130px] md:min-w-[160px] group active:scale-95 shadow-lg snap-center",
         isSelected 
           ? (isBoss 
-              ? "bg-[#EBF5FF] border-[#0066FF] shadow-[0_20px_50px_rgba(0,102,255,0.15)] scale-105 z-10" // Azul leve para o BOSS
+              ? "bg-[#EBF5FF] border-[#0066FF] shadow-[0_20px_50px_rgba(0,102,255,0.15)] scale-105 z-10" 
               : "bg-white border-[#0066FF] shadow-[0_20px_50px_rgba(0,102,255,0.2)] scale-105 z-10")
-          : "bg-[#D1D5DB] border-[#9CA3AF] hover:border-[#0066FF] shadow-black/5" // Cinza mais intenso para o estado normal
+          : "bg-[#D1D5DB] border-[#9CA3AF] hover:border-[#0066FF] shadow-black/5"
       )}
     >
       <div className={cn(
-        "w-14 h-14 rounded-[1.5rem] flex items-center justify-center mb-4 transition-all shadow-md border",
+        "w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-[1.5rem] flex items-center justify-center mb-3 md:mb-4 transition-all shadow-md border",
         isSelected 
           ? (isBoss ? "bg-gradient-to-br from-blue-400 to-blue-600 text-white border-transparent" : "premium-gradient text-white border-transparent")
           : "bg-white text-[#0A0B12]/60 border-[#D1D5DB] group-hover:border-[#0066FF]/20"
@@ -46,33 +46,31 @@ const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
       </div>
 
       <span className={cn(
-        "text-[10px] font-black uppercase tracking-[0.25em] mb-1.5 transition-colors",
-        isSelected 
-          ? (isBoss ? "text-[#0066FF]" : "text-[#0066FF]") 
-          : "text-[#0A0B12]/60"
+        "text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.25em] mb-1 md:mb-1.5 transition-colors",
+        isSelected ? "text-[#0066FF]" : "text-[#0A0B12]/60"
       )}>
         {displayName}
       </span>
       
       <span className={cn(
-        "text-xl font-black italic tracking-tighter text-[#0A0B12]",
+        "text-base md:text-xl font-black italic tracking-tighter text-[#0A0B12]",
         isSelected && isBoss && "text-[#0066FF]"
       )}>
         {isBoss ? (
-          <span className="text-amber-600 text-sm uppercase tracking-widest not-italic">PREMIUM</span>
+          <span className="text-amber-600 text-[10px] md:text-sm uppercase tracking-widest not-italic">PREMIUM</span>
         ) : (
           <>
-            {module.price.toLocaleString()} <span className="text-[10px] not-italic opacity-40 uppercase ml-0.5">Kz</span>
+            {module.price.toLocaleString()} <span className="text-[8px] md:text-[10px] not-italic opacity-40 uppercase ml-0.5">Kz</span>
           </>
         )}
       </span>
 
       {isSelected && (
         <div className={cn(
-          "absolute -top-2 -right-2 p-2 rounded-full border-2 border-white shadow-xl animate-bounce",
+          "absolute -top-1 -right-1 p-1.5 md:p-2 rounded-full border-2 border-white shadow-xl animate-bounce",
           isBoss ? "bg-blue-500" : "bg-[#FFA500]"
         )}>
-           <Star size={12} fill="white" className="text-white" />
+           <Star size={10} fill="white" className="text-white md:w-3 md:h-3" />
         </div>
       )}
     </button>
