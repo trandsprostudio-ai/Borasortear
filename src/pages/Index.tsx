@@ -102,11 +102,6 @@ const Index = () => {
               <h1 className="text-4xl md:text-6xl lg:text-8xl font-black italic tracking-tighter uppercase leading-[0.9] text-[#111111]">
                 A TUA SORTE <br /> <span className="blue-gradient-text">EM MILHÕES</span>
               </h1>
-
-              {/* MASCOTE VISÍVEL NO MOBILE (ABAIXO DO TÍTULO) */}
-              <div className="lg:hidden flex justify-center py-10 scale-90">
-                <PenguinMascot page="home" />
-              </div>
               
               <div className="flex flex-col sm:flex-row items-center md:items-center gap-6 pt-2">
                 <p className="text-[#555555] font-bold text-[10px] md:text-[11px] uppercase tracking-widest max-w-xs leading-relaxed text-center md:text-left">
@@ -159,11 +154,6 @@ const Index = () => {
             <div className="hidden lg:block">
               <HallOfFame />
             </div>
-            
-            {/* MASCOTE VISÍVEL NO DESKTOP NA LATERAL */}
-            <div className="hidden lg:flex justify-center pt-10">
-              <PenguinMascot page="home" />
-            </div>
 
             <div className="platinum-gradient p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border-2 border-[#D1D5DB] shadow-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:rotate-12 transition-transform">
@@ -176,6 +166,9 @@ const Index = () => {
           </aside>
         </div>
       </main>
+
+      {/* O BORA AGORA É UM ASSISTENTE FLUTUANTE GLOBAL */}
+      <PenguinMascot page="home" />
 
       <Footer />
     </div>
