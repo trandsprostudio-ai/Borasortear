@@ -26,33 +26,35 @@ const ModuleCard = ({ module, isSelected, onSelect }: ModuleCardProps) => {
     <button
       onClick={onSelect}
       className={cn(
-        "relative flex flex-col items-center justify-center p-5 rounded-[2rem] border-2 transition-all duration-300 min-w-[140px] group active:scale-95",
+        "relative flex flex-col items-center justify-center p-5 rounded-[2.5rem] border-2 transition-all duration-500 min-w-[150px] group active:scale-95 shadow-lg",
         isSelected 
-          ? "bg-white border-[#0066FF] shadow-[0_15px_40px_rgba(0,102,255,0.15)] scale-105 z-10" 
-          : "bg-[#F9FAFB] border-[#E5E7EB] hover:border-[#D1D5DB] shadow-sm"
+          ? "bg-white border-[#0066FF] shadow-[0_20px_50px_rgba(0,102,255,0.2)] scale-105 z-10" 
+          : "platinum-gradient border-[#D1D5DB] hover:border-[#0066FF]/40 shadow-black/5"
       )}
     >
       <div className={cn(
-        "w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-all shadow-sm",
-        isSelected ? "premium-gradient text-white" : "bg-white text-[#0A0B12]/40 border border-[#E5E7EB]"
+        "w-14 h-14 rounded-[1.5rem] flex items-center justify-center mb-4 transition-all shadow-md border",
+        isSelected 
+          ? "premium-gradient text-white border-transparent" 
+          : "bg-white text-[#0A0B12]/40 border-[#E5E7EB] group-hover:border-[#0066FF]/20"
       )}>
         {getIcon(module.name)}
       </div>
 
       <span className={cn(
-        "text-[10px] font-black uppercase tracking-[0.2em] mb-1.5",
+        "text-[10px] font-black uppercase tracking-[0.25em] mb-1.5 transition-colors",
         isSelected ? "text-[#0066FF]" : "text-[#0A0B12]/40"
       )}>
         {displayName}
       </span>
       
-      <span className="text-lg font-black italic tracking-tighter text-[#0A0B12]">
-        {module.price.toLocaleString()} <span className="text-[9px] not-italic opacity-40 uppercase ml-0.5">Kz</span>
+      <span className="text-xl font-black italic tracking-tighter text-[#0A0B12]">
+        {module.price.toLocaleString()} <span className="text-[10px] not-italic opacity-40 uppercase ml-0.5">Kz</span>
       </span>
 
       {isSelected && (
-        <div className="absolute -top-1.5 -right-1.5 bg-[#FFA500] text-white p-1.5 rounded-full border-2 border-white shadow-md">
-           <Star size={10} fill="white" />
+        <div className="absolute -top-2 -right-2 bg-[#FFA500] text-white p-2 rounded-full border-2 border-white shadow-xl animate-bounce">
+           <Star size={12} fill="white" />
         </div>
       )}
     </button>
